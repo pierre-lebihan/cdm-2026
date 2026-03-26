@@ -1,5 +1,6 @@
-import { isPast } from 'date-fns'
-import { Suspense, useCallback, useMemo, type ChangeEvent } from 'react'
+import { format, isPast } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { Suspense, useCallback, useMemo } from 'react'
 import { useSelectedWinner } from '../../../hooks/winner'
 import {
   useCompetitionData,
@@ -17,9 +18,9 @@ const FinalWinner = () => {
     return new Date(competitionData.start_date)
   }, [competitionData?.start_date])
 
-  const handleChange = useCallback(
-    (e: ChangeEvent<HTMLSelectElement>) => {
-      saveWinner(e.target.value)
+  const handleTeamSelect = useCallback(
+    (teamId: string) => {
+      saveWinner(teamId)
     },
     [saveWinner],
   )
@@ -27,6 +28,13 @@ const FinalWinner = () => {
   if (!CompetitionStartDate) return null
 
   const locked = isPast(CompetitionStartDate)
+
+  const lockLabel = useMemo(() => {
+    if (!competitionData?.start_date) return null
+    return format(new Date(competitionData.start_date), "d MMMM yyyy 'à' HH:mm", {
+      locale: fr,
+    })
+  }, [competitionData?.start_date])
 
   return (
     <div className="bg-white rounded-2xl py-6 px-5 text-center shadow-card">
@@ -39,9 +47,15 @@ const FinalWinner = () => {
           : competitionLabel === 'Pronostics'
             ? 'Qui sera le vainqueur final ?'
             : `Qui gagnera ${competitionLabel} ?`}
+        {!locked && lockLabel != null && (
+          <span className="block mt-2 text-gray-500">
+            Clôture des pronostics vainqueur au coup d&apos;envoi du premier quart de finale (
+            {lockLabel}).
+          </span>
+        )}
       </p>
       <Suspense fallback={null}>
-        <FinalWinnerChoice userTeam={team} disabled={locked} onValueChange={handleChange} />
+        <FinalWinnerChoice userTeam={team} disabled={locked} onTeamSelect={handleTeamSelect} />
       </Suspense>
     </div>
   )

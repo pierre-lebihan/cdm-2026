@@ -7,13 +7,13 @@ import { useTeams } from '../../../hooks/teams'
 interface FinalWinnerChoiceProps {
   userTeam: string | null | undefined
   disabled: boolean
-  onValueChange: (e: { target: { value: string } }) => void
+  onTeamSelect: (teamId: string) => void
 }
 
 const FinalWinnerChoice = ({
   userTeam,
   disabled,
-  onValueChange,
+  onTeamSelect,
 }: FinalWinnerChoiceProps) => {
   const teams = useTeams()
   const selectedTeam = find(teams, (t) => t.id === userTeam)
@@ -51,7 +51,7 @@ const FinalWinnerChoice = ({
   }, [open])
 
   const handleSelect = (teamId: string) => {
-    onValueChange({ target: { value: teamId } })
+    onTeamSelect(teamId)
     setOpen(false)
     setSearch('')
   }

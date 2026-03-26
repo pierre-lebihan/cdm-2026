@@ -3,8 +3,8 @@
 INSERT INTO competitions (name, launch_bet, start_date, active)
 SELECT
   'Ligue des champions 2024-25',
-  TIMESTAMPTZ '2025-03-01 00:00:00+00',
-  TIMESTAMPTZ '2025-04-08 19:00:00+00',
+  TIMESTAMPTZ '2026-01-01 00:00:00+00',
+  TIMESTAMPTZ '2026-04-08 19:00:00+00',
   false
 WHERE NOT EXISTS (
   SELECT 1 FROM competitions WHERE name = 'Ligue des champions 2024-25'
@@ -32,19 +32,19 @@ WITH ldc AS (
   SELECT id FROM competitions WHERE name = 'Ligue des champions 2024-25' LIMIT 1
 )
 INSERT INTO teams (id, code, group_name, name, win_odd, elimination, unveiled, competition_id)
-SELECT v.id, v.code, v.group_name, v.name, NULL, false, true, ldc.id
+SELECT v.id, v.code, v.group_name, v.name, v.win_odd, false, true, ldc.id
 FROM ldc
 CROSS JOIN (
   VALUES
-    ('cl-arsenal', 'ars', 'Quarts de finale', 'Arsenal'),
-    ('cl-realmadrid', 'rma', 'Quarts de finale', 'Real Madrid'),
-    ('cl-psg', 'psg', 'Quarts de finale', 'Paris Saint-Germain'),
-    ('cl-astonvilla', 'avl', 'Quarts de finale', 'Aston Villa'),
-    ('cl-barcelona', 'bar', 'Quarts de finale', 'FC Barcelone'),
-    ('cl-dortmund', 'dort', 'Quarts de finale', 'Borussia Dortmund'),
-    ('cl-bayern', 'bay', 'Quarts de finale', 'Bayern Munich'),
-    ('cl-inter', 'it', 'Quarts de finale', 'Inter Milan')
-) AS v(id, code, group_name, name);
+    ('cl-arsenal', 'arsenal', 'Quarts de finale', 'Arsenal', 7.0::numeric),
+    ('cl-realmadrid', 'realmadrid', 'Quarts de finale', 'Real Madrid', 5.5::numeric),
+    ('cl-psg', 'psg', 'Quarts de finale', 'Paris Saint-Germain', 6.0::numeric),
+    ('cl-astonvilla', 'astonvilla', 'Quarts de finale', 'Aston Villa', 22.0::numeric),
+    ('cl-barcelona', 'barcelona', 'Quarts de finale', 'FC Barcelone', 7.5::numeric),
+    ('cl-dortmund', 'dort', 'Quarts de finale', 'Borussia Dortmund', 15.0::numeric),
+    ('cl-bayern', 'bay', 'Quarts de finale', 'Bayern Munich', 5.5::numeric),
+    ('cl-inter', 'inter', 'Quarts de finale', 'Inter Milan', 12.0::numeric)
+) AS v(id, code, group_name, name, win_odd);
 
 WITH ldc AS (
   SELECT id FROM competitions WHERE name = 'Ligue des champions 2024-25' LIMIT 1
@@ -87,7 +87,7 @@ CROSS JOIN (
   VALUES
     (
       'ucl25-qf1-l1',
-      '2025-04-08 19:00:00+00',
+      '2026-04-08 19:00:00+00',
       'Londres',
       'cl-arsenal',
       'cl-realmadrid',
@@ -99,7 +99,7 @@ CROSS JOIN (
     ),
     (
       'ucl25-qf1-l2',
-      '2025-04-15 19:00:00+00',
+      '2026-04-15 19:00:00+00',
       'Madrid',
       'cl-realmadrid',
       'cl-arsenal',
@@ -111,7 +111,7 @@ CROSS JOIN (
     ),
     (
       'ucl25-qf2-l1',
-      '2025-04-09 19:00:00+00',
+      '2026-04-09 19:00:00+00',
       'Paris',
       'cl-psg',
       'cl-astonvilla',
@@ -123,7 +123,7 @@ CROSS JOIN (
     ),
     (
       'ucl25-qf2-l2',
-      '2025-04-15 20:00:00+00',
+      '2026-04-15 20:00:00+00',
       'Birmingham',
       'cl-astonvilla',
       'cl-psg',
@@ -135,7 +135,7 @@ CROSS JOIN (
     ),
     (
       'ucl25-qf3-l1',
-      '2025-04-09 19:00:00+00',
+      '2026-04-09 19:00:00+00',
       'Barcelone',
       'cl-barcelona',
       'cl-dortmund',
@@ -147,7 +147,7 @@ CROSS JOIN (
     ),
     (
       'ucl25-qf3-l2',
-      '2025-04-15 19:00:00+00',
+      '2026-04-15 19:00:00+00',
       'Dortmund',
       'cl-dortmund',
       'cl-barcelona',
@@ -159,7 +159,7 @@ CROSS JOIN (
     ),
     (
       'ucl25-qf4-l1',
-      '2025-04-08 19:00:00+00',
+      '2026-04-08 19:00:00+00',
       'Munich',
       'cl-bayern',
       'cl-inter',
@@ -171,7 +171,7 @@ CROSS JOIN (
     ),
     (
       'ucl25-qf4-l2',
-      '2025-04-16 19:00:00+00',
+      '2026-04-16 19:00:00+00',
       'Milan',
       'cl-inter',
       'cl-bayern',

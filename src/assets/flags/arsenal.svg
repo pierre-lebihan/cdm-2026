@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Arsenal">
+  <rect width="64" height="64" rx="8" fill="#EF0107"/>
+  <path fill="#fff" d="M32 12l14 8v16c0 10-6 18-14 22-8-4-14-12-14-22V20l14-8z"/>
+  <text x="32" y="38" text-anchor="middle" fill="#EF0107" font-size="14" font-family="system-ui,sans-serif" font-weight="700">A</text>
+</svg>

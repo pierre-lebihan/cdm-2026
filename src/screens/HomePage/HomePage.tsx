@@ -11,25 +11,26 @@ import { useNavigate } from 'react-router'
 const WinnerChoice = () => {
   const competitionData = useCompetitionData()
 
-  const LaunchBetDate = useMemo(
-    () =>
-      competitionData?.launchBet
-        ? new Date(competitionData.launchBet.seconds * 1000)
-        : null,
-    [competitionData?.launchBet],
-  )
+  const launchBetOk = useMemo(() => {
+    if (!competitionData?.launch_bet) return true
+    return isPast(new Date(competitionData.launch_bet))
+  }, [competitionData?.launch_bet])
 
-  if (!competitionData || !LaunchBetDate) return null
+  if (!competitionData?.start_date) return null
 
-  return isPast(LaunchBetDate) ? (
+  if (!launchBetOk) {
+    return (
+      <div className="bg-white rounded-2xl p-5 shadow-card text-center">
+        <p className="text-gray-500 text-sm">
+          Le pronostic du vainqueur final sera bientôt accessible !
+        </p>
+      </div>
+    )
+  }
+
+  return (
     <div className="mb-7">
       <FinalWinner />
-    </div>
-  ) : (
-    <div className="bg-white rounded-2xl p-5 shadow-card text-center">
-      <p className="text-gray-500 text-sm">
-        Le pronostic du vainqueur final sera bientôt accessible !
-      </p>
     </div>
   )
 }
