@@ -276,8 +276,6 @@ export type Database = {
           last_connection: string | null
           nb_connections: number | null
           role: string | null
-          score: number | null
-          winner_team: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -287,8 +285,6 @@ export type Database = {
           last_connection?: string | null
           nb_connections?: number | null
           role?: string | null
-          score?: number | null
-          winner_team?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -298,8 +294,6 @@ export type Database = {
           last_connection?: string | null
           nb_connections?: number | null
           role?: string | null
-          score?: number | null
-          winner_team?: string | null
         }
         Relationships: []
       }

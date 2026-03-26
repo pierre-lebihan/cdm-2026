@@ -83,7 +83,8 @@ populate/            # Scripts admin
 ### Tables principales
 | Table | Role |
 |-------|------|
-| `profiles` | Profils utilisateurs (lie a `auth.users`) |
+| `profiles` | Profils utilisateurs (lie a `auth.users`) — sans score ni vainqueur |
+| `competition_profiles` | Score + vainqueur final par compétition (`competition_id`, `user_id`) |
 | `teams` | Equipes (code, nom, groupe, cotes) |
 | `matches` | Matchs (equipes, scores, cotes, phase, termine) |
 | `bets` | Paris des utilisateurs par match |
@@ -94,7 +95,7 @@ populate/            # Scripts admin
 ### Vues
 - `matches_with_teams` — matchs + noms/codes des equipes
 - `bets_with_profiles` — paris + display_name/avatar
-- `ranking` — profils classes par score
+- `ranking` — classement par `competition_id` (score et vainqueur depuis `competition_profiles`)
 
 ### Triggers importants
 - `calculate_match_scores` — recalcule les points des paris quand un score de match est mis a jour

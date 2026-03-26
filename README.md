@@ -2,7 +2,7 @@
 
 Application de pronostics entre amis pour la Coupe du Monde 2026.
 
-**Stack** : React 19, Vite 6, TypeScript 5, Supabase (Auth + PostgreSQL), MUI 6, Tailwind CSS 3.
+**Stack** : React 19, Vite 6, TypeScript 5, Supabase (Auth + PostgreSQL), Tailwind CSS 3.
 
 ---
 
@@ -42,114 +42,14 @@ Notez l'**URL du projet** et la **clé anon (publique)** depuis `Settings > API`
 
 ### 3. Créer le schéma de base de données
 
-> **Note** : Si le projet a été configuré via Supabase MCP, le schéma est déjà en place.
+Le schéma est versionné dans `supabase/migrations/`. **Source de vérité** : appliquer les migrations sur le projet Supabase (CLI ou CI).
 
-Allez dans `SQL Editor` dans le dashboard Supabase et exécutez le script suivant :
-
-```sql
--- Table profiles (extension de auth.users)
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  display_name TEXT,
-  avatar_url TEXT,
-  email TEXT,
-  winner_team TEXT,
-  score INTEGER DEFAULT 0,
-  nb_connections INTEGER DEFAULT 0,
-  last_connection TIMESTAMPTZ,
-  role TEXT DEFAULT 'user'
-);
-
--- Table teams
-CREATE TABLE teams (
-  id TEXT PRIMARY KEY,
-  code TEXT NOT NULL,
-  group_name TEXT,
-  name TEXT NOT NULL,
-  win_odd NUMERIC,
-  elimination BOOLEAN DEFAULT FALSE,
-  unveiled BOOLEAN DEFAULT FALSE
-);
-
--- Table matches
-CREATE TABLE matches (
-  id TEXT PRIMARY KEY,
-  date_time TIMESTAMPTZ,
-  city TEXT,
-  team_a TEXT REFERENCES teams(id),
-  team_b TEXT REFERENCES teams(id),
-  streaming TEXT,
-  score_a INTEGER,
-  score_b INTEGER,
-  odds_a NUMERIC,
-  odds_b NUMERIC,
-  odds_draw NUMERIC,
-  phase TEXT,
-  finished BOOLEAN DEFAULT FALSE,
-  api_id TEXT
-);
-
--- Table bets
-CREATE TABLE bets (
-  id TEXT PRIMARY KEY,
-  match_id TEXT REFERENCES matches(id),
-  user_id UUID REFERENCES auth.users(id),
-  bet_team_a INTEGER,
-  bet_team_b INTEGER,
-  points_won INTEGER DEFAULT 0,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Table competitions (config globale)
-CREATE TABLE competitions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  launch_bet TIMESTAMPTZ,
-  start_date TIMESTAMPTZ
-);
-
--- Table groups (tribus)
-CREATE TABLE groups (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  join_key TEXT UNIQUE,
-  created_by UUID REFERENCES auth.users(id),
-  members UUID[] DEFAULT '{}',
-  awaiting_members UUID[] DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Table group_apply (demandes d'adhésion)
-CREATE TABLE group_apply (
-  id TEXT PRIMARY KEY,
-  group_id UUID REFERENCES groups(id),
-  user_id UUID REFERENCES auth.users(id),
-  status TEXT DEFAULT 'sent',
-  validated_at TIMESTAMPTZ
-);
-
--- Création auto d'un profil à l'inscription
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, display_name, avatar_url, email)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
-    NEW.raw_user_meta_data->>'avatar_url',
-    NEW.email
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE OR REPLACE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- Insérer une compétition par défaut
-INSERT INTO competitions (launch_bet, start_date)
-VALUES ('2026-06-11T08:00:00Z', '2026-06-11T18:00:00Z');
+```bash
+# Depuis la racine du repo, avec le CLI Supabase installé et le projet lié
+supabase db push
 ```
+
+Ne pas recréer le schéma à la main dans le SQL Editor : les fichiers SQL du repo incluent tables, vues (`ranking`, `matches_with_teams`, …), triggers et RLS. Les scores et le vainqueur final par compétition sont dans `competition_profiles`, pas dans `profiles`.
 
 ### 4. Row Level Security (RLS)
 
@@ -250,8 +150,7 @@ src/
 │   ├── Rules/
 │   └── User/        # Profil d'un joueur
 ├── index.css        # Tailwind + styles globaux
-├── main.tsx         # Entry point React 19
-└── theme.ts         # MUI theme
+└── main.tsx         # Entry point React 19
 ```
 
 ---
@@ -261,14 +160,13 @@ src/
 - ~~**Row Level Security**~~ : ✅ RLS policies configurées
 - **Edge Functions** : Migrer les Cloud Functions (cron scores, cotes, notifications)
 - **Notifications push** : Remplacer Firebase Cloud Messaging
-- **Populate scripts** : Adapter les scripts de peuplement vers Supabase
+- **Populate scripts** : Scripts dans `populate/` (service role) — alignés sur `competition_profiles`
 - **Tests** : Réécrire les tests unitaires
 - **Code splitting** : Optimiser le bundle size (actuellement ~1MB)
 
 ---
 
-## Ancienne stack (legacy)
+## Dossiers annexes
 
-Les dossiers `functions/` et `populate/` contiennent le code des Cloud Functions Firebase
-et des scripts de peuplement. Ils ne sont plus utilisés par l'application frontend
-mais sont conservés comme référence pour la future migration vers Supabase Edge Functions.
+- `supabase/functions/` : Edge Functions (cron résultats / cotes).
+- `populate/` : scripts admin (service role) pour classements et contrôles.
