@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useIsUserAdmin } from '../hooks/user'
 import { useMatches, type NormalizedMatch } from '../hooks/matches'
+import { useCompetition } from '../contexts/CompetitionContext'
 import Flag from 'components/Flag'
 
 type MatchScoreEdit = {
@@ -139,6 +140,13 @@ const Admin = () => {
   const isAdmin = useIsUserAdmin()
   const navigate = useNavigate()
   const matches = useMatches()
+  const {
+    competitions,
+    activeCompetitionId,
+    setActiveCompetitionId,
+    competition: publicCompetition,
+    setPublicCompetition,
+  } = useCompetition()
   const [filter, setFilter] = useState<'all' | 'pending' | 'finished'>('pending')
 
   useEffect(() => {
@@ -181,6 +189,14 @@ const Admin = () => {
     [],
   )
 
+  const handleSetPublic = useCallback(
+    async (id: string) => {
+      await setPublicCompetition(id)
+      toast.success('Compétition publique mise à jour')
+    },
+    [setPublicCompetition],
+  )
+
   if (!isAdmin) return null
   if (!matches) {
     return (
@@ -212,6 +228,41 @@ const Admin = () => {
       <p className="text-sm text-gray-500 mb-5">
         Mettre à jour les scores déclenche le recalcul automatique des points.
       </p>
+
+      {/* Competition selector */}
+      <div className="bg-white rounded-xl p-4 shadow-card mb-6">
+        <h2 className="text-sm font-bold text-navy mb-3">Compétition</h2>
+
+        <div className="flex flex-col gap-2">
+          <label className="text-xs text-gray-500">Vue admin (ce que je vois) :</label>
+          <select
+            className="w-full py-2 px-3 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-indigo-500"
+            value={activeCompetitionId ?? ''}
+            onChange={(e) => setActiveCompetitionId(e.target.value)}
+          >
+            {competitions.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} {c.active ? '(publique)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-2 mt-3">
+          <label className="text-xs text-gray-500">
+            Compétition publique (vue par les utilisateurs) :
+            <span className="font-semibold text-navy ml-1">{publicCompetition?.name ?? '—'}</span>
+          </label>
+          {activeCompetitionId && activeCompetitionId !== publicCompetition?.id && (
+            <button
+              className="text-xs font-semibold py-1.5 px-4 rounded-full bg-indigo-500 text-white border-none cursor-pointer hover:bg-indigo-600 transition-colors self-start"
+              onClick={() => handleSetPublic(activeCompetitionId)}
+            >
+              Rendre cette compétition publique
+            </button>
+          )}
+        </div>
+      </div>
 
       <div className="flex gap-1 justify-center mb-6">
         <button

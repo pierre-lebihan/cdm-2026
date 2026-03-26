@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './screens/App/App'
 import { AuthProvider } from './contexts/AuthContext'
+import { CompetitionProvider } from './contexts/CompetitionContext'
 import './index.css'
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -16,9 +17,11 @@ root.render(
   <React.StrictMode>
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Suspense fallback="Chargement...">
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <CompetitionProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </CompetitionProvider>
       </Suspense>
     </BrowserRouter>
   </React.StrictMode>,

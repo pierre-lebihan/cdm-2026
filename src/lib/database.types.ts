@@ -16,6 +16,7 @@ export type Database = {
         Row: {
           bet_team_a: number | null
           bet_team_b: number | null
+          competition_id: string | null
           id: string
           match_id: string | null
           points_won: number | null
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           bet_team_a?: number | null
           bet_team_b?: number | null
+          competition_id?: string | null
           id: string
           match_id?: string | null
           points_won?: number | null
@@ -34,6 +36,7 @@ export type Database = {
         Update: {
           bet_team_a?: number | null
           bet_team_b?: number | null
+          competition_id?: string | null
           id?: string
           match_id?: string | null
           points_won?: number | null
@@ -57,20 +60,55 @@ export type Database = {
           },
         ]
       }
+      competition_profiles: {
+        Row: {
+          competition_id: string
+          user_id: string
+          score: number
+          winner_team: string | null
+        }
+        Insert: {
+          competition_id: string
+          user_id: string
+          score?: number
+          winner_team?: string | null
+        }
+        Update: {
+          competition_id?: string
+          user_id?: string
+          score?: number
+          winner_team?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'competition_profiles_competition_id_fkey'
+            columns: ['competition_id']
+            isOneToOne: false
+            referencedRelation: 'competitions'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       competitions: {
         Row: {
           id: string
           launch_bet: string | null
+          name: string
+          active: boolean
           start_date: string | null
         }
         Insert: {
           id?: string
           launch_bet?: string | null
+          name?: string
+          active?: boolean
           start_date?: string | null
         }
         Update: {
           id?: string
           launch_bet?: string | null
+          name?: string
+          active?: boolean
           start_date?: string | null
         }
         Relationships: []
@@ -164,6 +202,7 @@ export type Database = {
         Row: {
           api_id: string | null
           city: string | null
+          competition_id: string | null
           date_time: string | null
           finished: boolean | null
           id: string
@@ -180,6 +219,7 @@ export type Database = {
         Insert: {
           api_id?: string | null
           city?: string | null
+          competition_id?: string | null
           date_time?: string | null
           finished?: boolean | null
           id: string
@@ -196,6 +236,7 @@ export type Database = {
         Update: {
           api_id?: string | null
           city?: string | null
+          competition_id?: string | null
           date_time?: string | null
           finished?: boolean | null
           id?: string
@@ -265,6 +306,7 @@ export type Database = {
       teams: {
         Row: {
           code: string
+          competition_id: string | null
           elimination: boolean | null
           group_name: string | null
           id: string
@@ -274,6 +316,7 @@ export type Database = {
         }
         Insert: {
           code: string
+          competition_id?: string | null
           elimination?: boolean | null
           group_name?: string | null
           id: string
@@ -283,6 +326,7 @@ export type Database = {
         }
         Update: {
           code?: string
+          competition_id?: string | null
           elimination?: boolean | null
           group_name?: string | null
           id?: string
@@ -290,7 +334,15 @@ export type Database = {
           unveiled?: boolean | null
           win_odd?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'teams_competition_id_fkey'
+            columns: ['competition_id']
+            isOneToOne: false
+            referencedRelation: 'competitions'
+            referencedColumns: ['id']
+          },
+        ]
       }
     }
     Views: {
@@ -327,6 +379,7 @@ export type Database = {
         Row: {
           api_id: string | null
           city: string | null
+          competition_id: string | null
           date_time: string | null
           finished: boolean | null
           id: string | null
@@ -364,6 +417,7 @@ export type Database = {
       }
       ranking: {
         Row: {
+          competition_id: string | null
           avatar_url: string | null
           display_name: string | null
           id: string | null

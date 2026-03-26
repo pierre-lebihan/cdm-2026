@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useCompetition } from '../contexts/CompetitionContext'
 import type { Tables } from '../lib/database.types'
 
 type MatchWithTeamsRow = Tables<'matches_with_teams'>
@@ -22,6 +23,7 @@ export interface NormalizedMatch {
   display: boolean
   idApiRugby: string | null
   groupName: string | null
+  competitionId: string | null
 }
 
 function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
@@ -45,22 +47,26 @@ function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
     display: true,
     idApiRugby: row.api_id,
     groupName: row.group_name ?? null,
+    competitionId: row.competition_id ?? null,
   }
 }
 
 export function useMatches(): NormalizedMatch[] | null {
   const [matches, setMatches] = useState<NormalizedMatch[] | null>(null)
+  const { activeCompetitionId } = useCompetition()
 
   useEffect(() => {
+    if (!activeCompetitionId) return
     supabase
       .from('matches_with_teams')
       .select('*')
+      .eq('competition_id', activeCompetitionId)
       .order('date_time', { ascending: true })
       .then(({ data }) => {
         const normalized = data?.map(normalizeMatch)
         setMatches(normalized ?? null)
       })
-  }, [])
+  }, [activeCompetitionId])
 
   return matches
 }

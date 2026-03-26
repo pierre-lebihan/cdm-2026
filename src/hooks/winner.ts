@@ -1,29 +1,51 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
-import { useUserProfile, useUpdateProfile } from './user'
+import { useAuth } from '../contexts/AuthContext'
+import { useCompetition } from '../contexts/CompetitionContext'
 
 export function useSelectedWinner(): [string | null | undefined, (team: string) => Promise<void>] {
-  const profile = useUserProfile()
-  const updateProfile = useUpdateProfile()
+  const { user } = useAuth()
+  const { activeCompetitionId } = useCompetition()
+  const [winnerTeam, setWinnerTeam] = useState<string | null | undefined>(undefined)
+
+  useEffect(() => {
+    if (!user?.id || !activeCompetitionId) return
+    supabase
+      .from('competition_profiles')
+      .select('winner_team')
+      .eq('competition_id', activeCompetitionId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setWinnerTeam(data?.winner_team ?? null)
+      })
+  }, [user?.id, activeCompetitionId])
 
   const updater = useCallback(
     async (team: string) => {
-      if (!profile?.id) return
+      if (!user?.id || !activeCompetitionId) return
+
       const { error } = await supabase
-        .from('profiles')
-        .update({ winner_team: team })
-        .eq('id', profile.id)
+        .from('competition_profiles')
+        .upsert(
+          {
+            competition_id: activeCompetitionId,
+            user_id: user.id,
+            winner_team: team,
+          },
+          { onConflict: 'competition_id,user_id' },
+        )
 
       if (error) {
         toast.error('Mise à jour échouée :(')
         return
       }
-      updateProfile({ winner_team: team })
+      setWinnerTeam(team)
       toast.success('Équipe mise à jour')
     },
-    [profile?.id, updateProfile],
+    [user?.id, activeCompetitionId],
   )
 
-  return [profile?.winner_team, updater]
+  return [winnerTeam, updater]
 }

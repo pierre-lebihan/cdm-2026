@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useCompetition } from '../contexts/CompetitionContext'
 import type { Tables } from '../lib/database.types'
 
 type TeamRow = Tables<'teams'>
@@ -45,11 +46,14 @@ export function useTeam(id: string | null | undefined): NormalizedTeam | null {
 
 export function useTeams(): NormalizedTeam[] {
   const [teams, setTeams] = useState<NormalizedTeam[]>([])
+  const { activeCompetitionId } = useCompetition()
 
   useEffect(() => {
+    if (!activeCompetitionId) return
     supabase
       .from('teams')
       .select('*')
+      .eq('competition_id', activeCompetitionId)
       .order('win_odd', { ascending: true })
       .then(({ data }) =>
         setTeams(
@@ -59,7 +63,7 @@ export function useTeams(): NormalizedTeam[] {
           }) ?? [],
         ),
       )
-  }, [])
+  }, [activeCompetitionId])
 
   return teams
 }

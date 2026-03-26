@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useCompetition } from '../contexts/CompetitionContext'
 import type { Tables } from '../lib/database.types'
 import type { MatchPrediction } from '../lib/openrouter'
 
@@ -73,6 +74,7 @@ export function useBetFromUser(matchId: string | undefined, uid: string | undefi
 
 export function useBet(matchId: string | undefined): [NormalizedBet | undefined, (betData: { betTeamA: number; betTeamB: number }) => Promise<void>] {
   const { user } = useAuth()
+  const { activeCompetitionId } = useCompetition()
   const uid = user?.id
   const [bet, setBetState] = useState<BetRow | null>(null)
 
@@ -95,6 +97,7 @@ export function useBet(matchId: string | undefined): [NormalizedBet | undefined,
         id,
         match_id: matchId!,
         user_id: uid,
+        competition_id: activeCompetitionId,
         bet_team_a: betData.betTeamA,
         bet_team_b: betData.betTeamB,
         updated_at: new Date().toISOString(),
@@ -104,7 +107,7 @@ export function useBet(matchId: string | undefined): [NormalizedBet | undefined,
         .upsert(row, { onConflict: 'id' })
         .select()
         .single()
-      
+
       if (error) {
         console.error('Erreur upsert bet:', error)
         toast.error('Erreur lors de la sauvegarde du pronostic')
@@ -113,7 +116,7 @@ export function useBet(matchId: string | undefined): [NormalizedBet | undefined,
         toast.success('Pronostic sauvegardé')
       }
     },
-    [matchId, uid],
+    [matchId, uid, activeCompetitionId],
   )
 
   const normalizedBet = useMemo(() => normalizeBet(bet), [bet])
@@ -123,22 +126,24 @@ export function useBet(matchId: string | undefined): [NormalizedBet | undefined,
 
 export function useAllUserBets() {
   const { user } = useAuth()
+  const { activeCompetitionId } = useCompetition()
   const [bettedMatchIds, setBettedMatchIds] = useState<Set<string> | null>(null)
   const [version, setVersion] = useState(0)
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !activeCompetitionId) return
     supabase
       .from('bets')
       .select('match_id')
       .eq('user_id', user.id)
+      .eq('competition_id', activeCompetitionId)
       .then(({ data }) => {
         const ids = new Set(
           (data ?? []).flatMap((b) => b.match_id ? [b.match_id] : [])
         )
         setBettedMatchIds(ids)
       })
-  }, [user, version])
+  }, [user, activeCompetitionId, version])
 
   const refresh = useCallback(() => {
     setVersion((v) => v + 1)
@@ -150,11 +155,13 @@ export function useAllUserBets() {
 export async function saveBatchBets(
   userId: string,
   predictions: MatchPrediction[],
+  competitionId: string | null,
 ): Promise<number> {
   const rows = predictions.map((p) => ({
     id: `${p.match_id}_${userId}`,
     match_id: p.match_id,
     user_id: userId,
+    competition_id: competitionId,
     bet_team_a: p.score_a,
     bet_team_b: p.score_b,
     updated_at: new Date().toISOString(),

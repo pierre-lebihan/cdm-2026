@@ -1,33 +1,26 @@
-import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { useMemo } from 'react'
+import { useCompetition } from '../contexts/CompetitionContext'
 
 interface CompetitionData {
   id: string
   launch_bet: string | null
   start_date: string | null
+  name: string
+  active: boolean
   launchBet: { seconds: number } | null
 }
 
 export function useCompetitionData(): CompetitionData | null {
-  const [competition, setCompetition] = useState<CompetitionData | null>(null)
+  const { competitions, activeCompetitionId } = useCompetition()
 
-  useEffect(() => {
-    supabase
-      .from('competitions')
-      .select('*')
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setCompetition({
-            ...data,
-            launchBet: data.launch_bet
-              ? { seconds: new Date(data.launch_bet).getTime() / 1000 }
-              : null,
-          })
-        }
-      })
-  }, [])
-
-  return competition
+  return useMemo(() => {
+    const comp = competitions.find((c) => c.id === activeCompetitionId)
+    if (!comp) return null
+    return {
+      ...comp,
+      launchBet: comp.launch_bet
+        ? { seconds: new Date(comp.launch_bet).getTime() / 1000 }
+        : null,
+    }
+  }, [competitions, activeCompetitionId])
 }

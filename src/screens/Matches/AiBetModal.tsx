@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCompetition } from '../../contexts/CompetitionContext'
 import { saveBatchBets } from '../../hooks/bets'
 import { generatePredictions, type AiProvider } from '../../lib/openrouter'
 import type { NormalizedMatch } from '../../hooks/matches'
@@ -77,6 +78,7 @@ const AiBetModal = ({
   isAdmin,
 }: AiBetModalProps) => {
   const { user, profile } = useAuth()
+  const { activeCompetitionId } = useCompetition()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [step, setStep] = useState<ModalStep>('prompt')
   const [prompt, setPrompt] = useState('')
@@ -162,7 +164,7 @@ const AiBetModal = ({
           throw new Error("L'IA n'a retourné aucun pronostic valide")
         }
 
-        const count = await saveBatchBets(user.id, predictions)
+        const count = await saveBatchBets(user.id, predictions, activeCompetitionId)
         toast.success(
           `${count} pronostic${count > 1 ? 's' : ''} rempli${count > 1 ? 's' : ''} par l'IA !`,
         )
