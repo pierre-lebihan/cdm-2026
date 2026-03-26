@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { syncCrispUser } from '../lib/crisp'
 import { supabase } from '../lib/supabase'
 import type { Session, User } from '@supabase/supabase-js'
 import type { Tables } from '../lib/database.types'
@@ -51,6 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (!session?.user) {
+      syncCrispUser({ email: null, nickname: null })
+      return
+    }
+    const email = session.user.email ?? profile?.email ?? null
+    const nickname = profile?.display_name ?? null
+    syncCrispUser({ email, nickname })
+  }, [session, profile])
 
   async function fetchOrCreateProfile(user: User) {
     const { data, error } = await supabase
