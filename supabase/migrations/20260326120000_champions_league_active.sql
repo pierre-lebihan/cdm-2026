@@ -10,7 +10,8 @@ WHERE NOT EXISTS (
   SELECT 1 FROM competitions WHERE name = 'Ligue des champions 2024-25'
 );
 
-UPDATE competitions SET active = (name = 'Ligue des champions 2024-25');
+UPDATE competitions SET active = false;
+UPDATE competitions SET active = true WHERE name = 'Ligue des champions 2024-25';
 
 DELETE FROM bets
 WHERE competition_id = (
