@@ -210,6 +210,7 @@ export type Database = {
           odds_b: number | null
           odds_draw: number | null
           phase: string | null
+          pre_match_reminder_sent_at: string | null
           score_a: number | null
           score_b: number | null
           streaming: string | null
@@ -227,6 +228,7 @@ export type Database = {
           odds_b?: number | null
           odds_draw?: number | null
           phase?: string | null
+          pre_match_reminder_sent_at?: string | null
           score_a?: number | null
           score_b?: number | null
           streaming?: string | null
@@ -244,6 +246,7 @@ export type Database = {
           odds_b?: number | null
           odds_draw?: number | null
           phase?: string | null
+          pre_match_reminder_sent_at?: string | null
           score_a?: number | null
           score_b?: number | null
           streaming?: string | null
@@ -381,6 +384,7 @@ export type Database = {
           odds_b: number | null
           odds_draw: number | null
           phase: string | null
+          pre_match_reminder_sent_at: string | null
           score_a: number | null
           score_b: number | null
           streaming: string | null
