@@ -8,25 +8,15 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'favicon-32x32.png', 'apple-touch-icon.png', 'icon-192x192.png', 'icon-256x256.png', 'icon-384x384.png', 'icon-512x512.png'],
+      includeAssets: ['favicon.ico', 'icon-192x192.png', 'icon-256x256.png', 'icon-384x384.png', 'icon-512x512.png'],
       manifest: {
         short_name: 'Make Prono Great Again',
         name: 'Make Prono Great Again',
         icons: [
           {
             src: 'favicon.ico',
-            sizes: '48x48',
-            type: 'image/x-icon'
-          },
-          {
-            src: 'favicon-32x32.png',
             sizes: '32x32',
-            type: 'image/png'
-          },
-          {
-            src: 'apple-touch-icon.png',
-            sizes: '180x180',
-            type: 'image/png'
+            type: 'image/x-icon'
           },
           {
             src: 'icon-192x192.png',
@@ -50,8 +40,8 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ],
-        theme_color: '#1a1f72',
-        background_color: '#1a1f72',
+        theme_color: '#19194b',
+        background_color: '#bcffff',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',

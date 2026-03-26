@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import { Suspense, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import logoUrl from '../../assets/logo.svg'
 import { useIsUserConnected, useIsUserAdmin } from '../../hooks/user'
 import { useCompetitionDisplayName } from '../../hooks/competition'
 
@@ -132,11 +131,16 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
         className={`fixed top-0 left-0 bottom-0 z-[1100] w-72 bg-white shadow-2xl transform transition-transform duration-300 ease-out ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-gray-100">
-            <img src={logoUrl} alt="Make Prono Great Again" className="h-14 w-auto flex-shrink-0" />
-            <span className="block text-[0.65rem] text-gray-400 leading-snug">
-              {competitionSubtitle}
-            </span>
+          <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-gray-100">
+            <span className="text-2xl">🏆</span>
+            <div>
+              <span className="block text-base font-extrabold text-navy leading-tight">
+                Make Prono Great Again
+              </span>
+              <span className="block text-[0.65rem] text-gray-400 mt-0.5">
+                {competitionSubtitle}
+              </span>
+            </div>
           </div>
 
           <nav className="flex-1 py-3 px-3 overflow-y-auto">
