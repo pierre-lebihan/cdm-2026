@@ -22,6 +22,23 @@ export function initOneSignal(): Promise<void> {
     appId,
     allowLocalhostAsSecureOrigin: import.meta.env.DEV,
     serviceWorkerPath: serviceWorkerUrl(),
+    promptOptions: {
+      slidedown: {
+        prompts: [
+          {
+            type: 'push',
+            autoPrompt: false,
+            delay: {},
+            text: {
+              actionMessage:
+                'Rappels avant les matchs quand ton prono manque — rien de spam.',
+              acceptButton: 'Autoriser',
+              cancelButton: 'Plus tard',
+            },
+          },
+        ],
+      },
+    },
   })
     .then(() => undefined)
     .catch((err: unknown) => {
@@ -38,11 +55,6 @@ export async function bindOneSignalUser(userId: string | null): Promise<void> {
   await initOneSignal()
   if (userId) {
     await OneSignal.login(userId)
-    const flagKey = 'mpga-onesignal-prompt-session'
-    if (!sessionStorage.getItem(flagKey)) {
-      sessionStorage.setItem(flagKey, '1')
-      await OneSignal.Slidedown.promptPush()
-    }
     return
   }
   await OneSignal.logout()

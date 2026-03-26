@@ -2,6 +2,7 @@
 
 ## Frontend
 
+- **Installer l’app vs notifications** : sur **iPhone**, le push web ne marche en pratique qu’en **PWA** (ajout à l’écran d’accueil) — l’encart d’installation reste prioritaire ; la carte « Ne rate pas les matchs » explique cette étape sur iOS. Sur **Android / bureau**, les notifications peuvent fonctionner **sans** installation ; les deux encarts peuvent coexister (install en bas à droite, rappels matchs en bas à gauche sur grand écran).
 - Variable **`VITE_ONESIGNAL_APP_ID`** : ID d’app OneSignal (dashboard → Settings → Keys & IDs).
 - En production, ajoute la même variable dans les secrets GitHub du workflow de déploiement (`VITE_ONESIGNAL_APP_ID`).
 - Le SDK est initialisé dans `src/lib/onesignal.ts` ; après connexion Google, l’**external_id** OneSignal = UUID Supabase (`OneSignal.login`), pour que les rappels match ciblent les bons abonnés.

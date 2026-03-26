@@ -12,6 +12,7 @@ import ConnectionWidget from './ConnectionWidget/ConnectionWidget'
 import NavigationMenu from './NavigationMenu'
 import InstallPrompt from 'components/InstallPrompt'
 import PwaUpdatePrompt from 'components/PwaUpdatePrompt'
+import NotificationPrompt from 'components/NotificationPrompt'
 import { OneSignalSubscriber } from 'components/OneSignalSubscriber'
 
 const AnalyticsPage = lazy(() => import('../Analytics'))
@@ -66,6 +67,7 @@ const App = () => {
         </Suspense>
       </main>
       <InstallPrompt />
+      <NotificationPrompt />
       <PwaUpdatePrompt />
       <OneSignalSubscriber />
       <Toaster position="bottom-center" />
