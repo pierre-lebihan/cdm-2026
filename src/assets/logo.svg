@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 540" width="560" height="540">
+  <defs>
+    <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e2e2e2"/>
+      <stop offset="35%" stop-color="#ffffff"/>
+      <stop offset="65%" stop-color="#c8c8c8"/>
+      <stop offset="100%" stop-color="#a0a0a0"/>
+    </linearGradient>
+    <linearGradient id="navyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e2480"/>
+      <stop offset="100%" stop-color="#151a5e"/>
+    </linearGradient>
+    <filter id="dropshadow" x="-18%" y="-18%" width="136%" height="136%">
+      <feDropShadow dx="4" dy="5" stdDeviation="8" flood-color="rgba(0,0,0,0.5)"/>
+    </filter>
+    <clipPath id="shieldClip">
+      <path d="M280,28 L508,90 L508,298 Q508,428 280,510 Q52,428 52,298 L52,90 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Shield outer border (silver/metallic) -->
+  <path d="M280,14 L522,80 L522,302 Q522,444 280,524 Q38,444 38,302 L38,80 Z"
+        fill="url(#silverGrad)" filter="url(#dropshadow)"/>
+
+  <!-- Shield body (navy) -->
+  <path d="M280,28 L508,90 L508,298 Q508,428 280,510 Q52,428 52,298 L52,90 Z"
+        fill="url(#navyGrad)"/>
+
+  <!-- All decorative content clipped to shield shape -->
+  <g clip-path="url(#shieldClip)">
+
+    <!-- Red side decorative columns -->
+    <rect x="52" y="90" width="46" height="380" fill="#cc1122"/>
+    <rect x="462" y="90" width="46" height="380" fill="#cc1122"/>
+
+    <!-- Red top banner (behind soccer ball) -->
+    <rect x="98" y="96" width="364" height="50" fill="#cc1122"/>
+    <!-- Small stars in top banner -->
+    <polygon points="175,117 178,126 187,126 180,131 183,140 175,135 167,140 170,131 163,126 172,126" fill="white"/>
+    <polygon points="213,117 216,126 225,126 218,131 221,140 213,135 205,140 208,131 201,126 210,126" fill="#003087"/>
+    <polygon points="347,117 350,126 359,126 352,131 355,140 347,135 339,140 342,131 335,126 344,126" fill="white"/>
+    <polygon points="385,117 388,126 397,126 390,131 393,140 385,135 377,140 380,131 373,126 382,126" fill="#003087"/>
+
+    <!-- ===== SOCCER BALL (top, large) ===== -->
+    <circle cx="280" cy="152" r="52" fill="white"/>
+    <circle cx="280" cy="152" r="52" fill="none" stroke="#dddddd" stroke-width="1.5"/>
+    <!-- Central hexagon patch -->
+    <polygon points="280,110 293,117 293,131 280,138 267,131 267,117" fill="#1a1a1a"/>
+    <!-- Upper patches -->
+    <polygon points="304,122 315,137 309,152 294,152 286,137 293,122" fill="#1a1a1a"/>
+    <polygon points="256,122 267,122 274,137 267,152 252,152 246,137" fill="#1a1a1a"/>
+    <!-- Lower patches (partial) -->
+    <polygon points="304,162 315,148 326,154 324,169 310,175 300,166" fill="#1a1a1a" opacity="0.35"/>
+    <polygon points="256,162 246,166 236,160 234,145 245,139 256,148" fill="#1a1a1a" opacity="0.35"/>
+    <!-- Shine highlight -->
+    <ellipse cx="263" cy="127" rx="13" ry="9" fill="white" opacity="0.5"/>
+
+    <!-- ===== MIDDLE RED RIBBON / BANNER ===== -->
+    <rect x="52" y="260" width="456" height="64" fill="#cc1122"/>
+    <!-- Dark edge lines -->
+    <rect x="52" y="260" width="456" height="8" fill="#8b0010"/>
+    <rect x="52" y="316" width="456" height="8" fill="#8b0010"/>
+    <!-- Ribbon "tails" on sides -->
+    <polygon points="52,260 52,324 28,292" fill="#cc1122"/>
+    <polygon points="508,260 508,324 532,292" fill="#cc1122"/>
+    <!-- Stars in middle ribbon (white ★ navy ★ white) -->
+    <polygon points="175,291 178.5,301 189,301 181,307 184,317 175,311 166,317 169,307 161,301 171.5,301" fill="white"/>
+    <polygon points="280,288 284.5,300 297,300 287,307 291,319 280,312 269,319 273,307 263,300 275.5,300" fill="#003087"/>
+    <polygon points="385,291 388.5,301 399,301 391,307 394,317 385,311 376,317 379,307 371,301 381.5,301" fill="white"/>
+
+    <!-- ===== BOTTOM SOCCER BALL (small) ===== -->
+    <circle cx="280" cy="426" r="34" fill="white"/>
+    <circle cx="280" cy="426" r="34" fill="none" stroke="#dddddd" stroke-width="1.5"/>
+    <polygon points="280,398 289,404 289,416 280,422 271,416 271,404" fill="#1a1a1a"/>
+    <polygon points="295,408 303,419 299,431 287,431 280,419 287,408" fill="#1a1a1a"/>
+    <polygon points="265,408 273,408 280,419 273,431 261,431 257,419" fill="#1a1a1a"/>
+    <ellipse cx="269" cy="406" rx="8" ry="5" fill="white" opacity="0.5"/>
+
+    <!-- ===== BOTTOM BANNER RIBBON ===== -->
+    <path d="M115,462 Q197,475 280,479 Q363,475 445,462 L433,490 Q361,499 280,502 Q199,499 127,490 Z"
+          fill="#cc1122"/>
+    <path d="M115,462 Q197,475 280,479 Q363,475 445,462 L441,467 Q362,479 280,483 Q198,479 119,467 Z"
+          fill="#8b0010"/>
+    <!-- Stars on bottom ribbon -->
+    <polygon points="198,474 200.5,481 207,481 202,485 204,492 198,488 192,492 194,485 189,481 195.5,481" fill="white"/>
+    <polygon points="280,472 282.5,479 289,479 284,483 286,490 280,486 274,490 276,483 271,479 277.5,479" fill="#003087"/>
+    <polygon points="362,474 364.5,481 371,481 366,485 368,492 362,488 356,492 358,485 353,481 359.5,481" fill="white"/>
+
+  </g>
+
+  <!-- ===== TOP STARS ARC (above shield top) ===== -->
+  <polygon points="155,68 158.5,79 170,79 161,85 164,96 155,89 146,96 149,85 140,79 151.5,79" fill="#cc1122"/>
+  <polygon points="203,52 206.5,63 218,63 209,69 212,80 203,73 194,80 197,69 188,63 199.5,63" fill="#003087"/>
+  <polygon points="280,44 285,57 299,57 288,65 292,78 280,70 268,78 272,65 261,57 275,57" fill="#cc1122"/>
+  <polygon points="357,52 360.5,63 372,63 363,69 366,80 357,73 348,80 351,69 342,63 353.5,63" fill="#003087"/>
+  <polygon points="405,68 408.5,79 420,79 411,85 414,96 405,89 396,96 399,85 390,79 401.5,79" fill="#cc1122"/>
+
+  <!-- ===== TEXT ROW 1: MAKE | PRONO ===== -->
+  <!-- MAKE: centered in left third (x=52–240), PRONO: centered in right portion (x=290–508) -->
+  <text
+    x="148" y="248"
+    text-anchor="middle"
+    font-family="Impact, 'Arial Black', Arial, sans-serif"
+    font-size="66" font-weight="900" font-style="italic"
+    fill="#cc1122" stroke="#7a000a" stroke-width="2.5" paint-order="stroke">MAKE</text>
+  <text
+    x="392" y="248"
+    text-anchor="middle"
+    font-family="Impact, 'Arial Black', Arial, sans-serif"
+    font-size="66" font-weight="900"
+    fill="white" stroke="#999999" stroke-width="1.5" paint-order="stroke">PRONO</text>
+
+  <!-- ===== TEXT ROW 2: GREAT | AGAIN ===== -->
+  <text
+    x="155" y="390"
+    text-anchor="middle"
+    font-family="Impact, 'Arial Black', Arial, sans-serif"
+    font-size="64" font-weight="900"
+    fill="white" stroke="#999999" stroke-width="1.5" paint-order="stroke">GREAT</text>
+  <text
+    x="382" y="390"
+    text-anchor="middle"
+    font-family="Impact, 'Arial Black', Arial, sans-serif"
+    font-size="64" font-weight="900" font-style="italic"
+    fill="#cc1122" stroke="#7a000a" stroke-width="2.5" paint-order="stroke">AGAIN</text>
+
+</svg>

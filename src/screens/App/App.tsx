@@ -1,6 +1,7 @@
 import { Menu, X } from 'lucide-react'
 import { Suspense, lazy, useState } from 'react'
 import { Route, Routes, Link } from 'react-router-dom'
+import logoUrl from '../../assets/logo.svg'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from '../../contexts/AuthContext'
 import { useIsUserConnected, useIsUserAdmin } from '../../hooks/user'
@@ -34,7 +35,9 @@ const App = () => {
         <button type="button" aria-label="Menu" onClick={() => setMenuOpen(!menuOpen)} className="p-2 -ml-2 rounded-full text-navy hover:bg-navy/[0.06] transition-colors">
           {menuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
-        <Link to="/" className="text-[1.05rem] font-extrabold text-navy tracking-tight hover:opacity-80 active:scale-95 transition-all inline-block" title="Retour à l'accueil">Make Prono Great Again</Link>
+        <Link to="/" className="hover:opacity-80 active:scale-95 transition-all inline-block" title="Retour à l'accueil">
+          <img src={logoUrl} alt="Make Prono Great Again" className="h-10 w-auto" />
+        </Link>
         <div className="shrink-0">
           <ConnectionWidget />
         </div>
