@@ -28,7 +28,7 @@ const CreateGroup = ({ onSuccess }: { onSuccess: () => void }) => {
           <input
             id="group-name"
             className="w-full py-2.5 px-3.5 border-[1.5px] border-gray-200 rounded-[10px] text-sm outline-none transition-colors bg-white focus:border-indigo-500 placeholder:text-gray-300"
-            placeholder="Ex: Les Bleus 2026"
+            placeholder="Ex : Les intouchables"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />

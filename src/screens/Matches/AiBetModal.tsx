@@ -78,7 +78,7 @@ const AiBetModal = ({
   isAdmin,
 }: AiBetModalProps) => {
   const { user, profile } = useAuth()
-  const { activeCompetitionId } = useCompetition()
+  const { activeCompetitionId, competition } = useCompetition()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [step, setStep] = useState<ModalStep>('prompt')
   const [prompt, setPrompt] = useState('')
@@ -154,10 +154,12 @@ const AiBetModal = ({
       setError(null)
 
       try {
+        const aiCompetitionLabel = competition?.name?.trim() ?? ''
         const predictions = await generatePredictions(
           matchesToPredict,
           prompt,
           provider,
+          aiCompetitionLabel,
         )
 
         if (predictions.length === 0) {
@@ -175,7 +177,15 @@ const AiBetModal = ({
         setStep('error')
       }
     },
-    [user, matchesToPredict, prompt, onComplete, onClose],
+    [
+      user,
+      matchesToPredict,
+      prompt,
+      onComplete,
+      onClose,
+      activeCompetitionId,
+      competition?.name,
+    ],
   )
 
   const handleChooseProvider = useCallback(

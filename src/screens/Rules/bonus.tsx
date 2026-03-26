@@ -1,16 +1,20 @@
+import { useCompetitionDisplayName } from '../../hooks/competition'
 import Section from './component/rulesSection'
 import Table from './component/table'
 
-const Bonus = () => (
-  <Section>
+function Bonus() {
+  const competitionLabel = useCompetitionDisplayName()
+  const winnerCopy =
+    competitionLabel === 'Pronostics'
+      ? 'Chaque joueur pronostique le vainqueur final avant le début de la compétition. Si le pronostic est correct, la cote associée est ajoutée au total de points.'
+      : `Chaque joueur pronostique le champion de « ${competitionLabel} » avant le début de la compétition. Si le pronostic est correct, la cote associée est ajoutée au total de points.`
+
+  return (
+    <Section>
     <h2 className="text-xl font-bold text-navy">Règles additionnelles</h2>
     <br />
     <h3 className="text-lg font-bold text-navy">Vainqueur final</h3>
-    <p>
-      Chaque joueur pronostique le champion de la Coupe du Monde 2026 avant
-      le début de la compétition. Si le pronostic est correct, la cote
-      associée est ajoutée au total de points.
-    </p>
+    <p>{winnerCopy}</p>
     <div>
       <h3 className="text-lg font-bold text-navy">Répartition des points</h3>
       <p>
@@ -41,6 +45,7 @@ const Bonus = () => (
       </p>
     </div>
   </Section>
-)
+  )
+}
 
 export default Bonus

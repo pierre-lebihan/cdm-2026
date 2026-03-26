@@ -53,8 +53,13 @@ SELECT
 FROM profiles p
 ON CONFLICT (competition_id, user_id) DO NOTHING;
 
--- 6. Update matches_with_teams view to include competition_id
-CREATE OR REPLACE VIEW matches_with_teams AS
+-- 6–7. Recreate views: CREATE OR REPLACE cannot insert new columns inside m.* / b.*
+-- (e.g. competition_id on matches) without breaking column order vs existing view.
+DROP VIEW IF EXISTS ranking CASCADE;
+DROP VIEW IF EXISTS bets_with_profiles CASCADE;
+DROP VIEW IF EXISTS matches_with_teams CASCADE;
+
+CREATE VIEW matches_with_teams AS
 SELECT
   m.*,
   ta.name  AS team_a_name,
@@ -66,9 +71,15 @@ FROM matches m
 LEFT JOIN teams ta ON m.team_a = ta.id
 LEFT JOIN teams tb ON m.team_b = tb.id;
 
--- 7. Update ranking view to use competition_profiles
--- The view now needs a competition_id column for filtering
-CREATE OR REPLACE VIEW ranking AS
+CREATE VIEW bets_with_profiles AS
+SELECT
+  b.*,
+  p.display_name AS user_display_name,
+  p.avatar_url   AS user_avatar_url
+FROM bets b
+LEFT JOIN profiles p ON b.user_id = p.id;
+
+CREATE VIEW ranking AS
 SELECT
   cp.competition_id,
   p.id,
@@ -176,6 +187,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 9. RLS for competition_profiles
 ALTER TABLE competition_profiles ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "competition_profiles_select_authenticated" ON competition_profiles;
+DROP POLICY IF EXISTS "competition_profiles_insert_own" ON competition_profiles;
+DROP POLICY IF EXISTS "competition_profiles_update_own" ON competition_profiles;
+DROP POLICY IF EXISTS "competition_profiles_admin_all" ON competition_profiles;
+
 CREATE POLICY "competition_profiles_select_authenticated" ON competition_profiles
   FOR SELECT TO authenticated USING (true);
 
@@ -188,6 +204,6 @@ CREATE POLICY "competition_profiles_update_own" ON competition_profiles
 CREATE POLICY "competition_profiles_admin_all" ON competition_profiles
   FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
--- Keep security_invoker on updated views
 ALTER VIEW matches_with_teams SET (security_invoker = true);
+ALTER VIEW bets_with_profiles SET (security_invoker = true);
 ALTER VIEW ranking SET (security_invoker = true);

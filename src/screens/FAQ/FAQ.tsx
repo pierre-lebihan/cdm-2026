@@ -1,7 +1,19 @@
 import { memo } from 'react'
+import { useCompetitionDisplayName } from '../../hooks/competition'
 import FaqEntry from './FaqEntry'
 
+function faqWhatIsItAnswer(competitionLabel: string): string {
+  const suffix =
+    ' À chaque bon pronostic, vous marquez un certain nombre de points, qui cumulés au fur et à mesure détermineront votre place dans le classement de votre tribu.'
+  if (competitionLabel === 'Pronostics') {
+    return `Un site qui vous permet de jouer avec des pronostics sportifs, entre amis ou en famille.${suffix}`
+  }
+  return `Un site qui vous permet de jouer avec les pronostics de ${competitionLabel}, entre amis ou en famille.${suffix}`
+}
+
 function FAQPage() {
+  const competitionLabel = useCompetitionDisplayName()
+
   return (
     <div className="max-w-[600px] mx-auto py-6 px-4 pb-12">
       <div className="text-center mb-6">
@@ -15,9 +27,7 @@ function FAQPage() {
 
       <FaqEntry
         question="Qu'est-ce que c'est ?"
-        answer="Un site qui vous permet de jouer avec les pronostics de la Coupe du Monde 2026, entre amis ou en famille.
-          À chaque bon pronostic, vous marquez un certain nombre de points, qui cumulés au fur et à mesure
-          détermineront votre place dans le classement de votre tribu."
+        answer={faqWhatIsItAnswer(competitionLabel)}
       />
       <FaqEntry
         question="Est-ce gratuit ?"

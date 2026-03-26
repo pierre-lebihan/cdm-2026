@@ -11,6 +11,7 @@ import {
 import { Suspense, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useIsUserConnected, useIsUserAdmin } from '../../hooks/user'
+import { useCompetitionDisplayName } from '../../hooks/competition'
 
 const FootballIcon = (props: LucideProps) => (
   <svg
@@ -98,6 +99,7 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
   const isAdmin = useIsUserAdmin()
   const navigate = useNavigate()
   const location = useLocation()
+  const competitionSubtitle = useCompetitionDisplayName()
 
   useEffect(() => {
     if (!menuOpen) return
@@ -136,7 +138,7 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
                 Make Prono Great Again
               </span>
               <span className="block text-[0.65rem] text-gray-400 mt-0.5">
-                Coupe du Monde 2026
+                {competitionSubtitle}
               </span>
             </div>
           </div>

@@ -1,6 +1,9 @@
 import { isPast } from 'date-fns'
 import { useMemo } from 'react'
-import { useCompetitionData } from '../../hooks/competition'
+import {
+  useCompetitionData,
+  useCompetitionDisplayName,
+} from '../../hooks/competition'
 import { useIsUserConnected } from '../../hooks/user'
 import FinalWinner from './FinalWinner/FinalWinner'
 import { useNavigate } from 'react-router'
@@ -34,13 +37,14 @@ const WinnerChoice = () => {
 const HomePage = () => {
   const navigate = useNavigate()
   const signedIn = useIsUserConnected()
+  const competitionTitle = useCompetitionDisplayName()
 
   return (
     <div className="py-8 px-4 pb-12 max-w-[520px] mx-auto">
       <div className="text-center mb-7">
         <div className="text-5xl mb-2">🏆</div>
         <h1 className="text-2xl font-extrabold text-navy m-0 mb-2">
-          Coupe du Monde 2026
+          {competitionTitle}
         </h1>
         <p className="text-sm text-gray-500 leading-relaxed">
           Pronostiquez les résultats des matches, marquez des points et

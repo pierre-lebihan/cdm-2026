@@ -16,10 +16,14 @@ export interface MatchPrediction {
   score_b: number
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(competitionLabel: string): string {
+  const scope =
+    competitionLabel.trim() === ''
+      ? 'cette compétition'
+      : competitionLabel.trim()
   return [
     'Tu es un expert en football et en pronostics sportifs.',
-    'On te demande de prédire les scores des matchs de la Coupe du Monde 2026.',
+    `On te demande de prédire les scores des matchs (${scope}).`,
     '',
     'Règles strictes :',
     '- Retourne UNIQUEMENT un tableau JSON valide, sans texte avant ni après, sans blocs markdown',
@@ -81,6 +85,7 @@ export async function generatePredictions(
   matches: NormalizedMatch[],
   preferences: string,
   provider: AiProvider,
+  competitionLabel: string,
 ): Promise<MatchPrediction[]> {
   const apiKey = import.meta.env.VITE_OPENROUTER_KEY || ''
   if (!apiKey) {
@@ -97,7 +102,7 @@ export async function generatePredictions(
     body: JSON.stringify({
       model: MODEL_MAP[provider],
       messages: [
-        { role: 'system', content: buildSystemPrompt() },
+        { role: 'system', content: buildSystemPrompt(competitionLabel) },
         { role: 'user', content: buildUserPrompt(matches, preferences) },
       ],
       temperature: 0.8,

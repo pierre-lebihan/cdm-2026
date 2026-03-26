@@ -1,12 +1,16 @@
 import { isPast } from 'date-fns'
 import { Suspense, useCallback, useMemo, type ChangeEvent } from 'react'
 import { useSelectedWinner } from '../../../hooks/winner'
-import { useCompetitionData } from '../../../hooks/competition'
+import {
+  useCompetitionData,
+  useCompetitionDisplayName,
+} from '../../../hooks/competition'
 import FinalWinnerChoice from './FinalWinnerChoice'
 
 const FinalWinner = () => {
   const [team, saveWinner] = useSelectedWinner()
   const competitionData = useCompetitionData()
+  const competitionLabel = useCompetitionDisplayName()
 
   const CompetitionStartDate = useMemo(() => {
     if (!competitionData?.start_date) return null
@@ -30,7 +34,11 @@ const FinalWinner = () => {
         {locked ? 'Votre vainqueur final' : 'Choisissez le vainqueur'}
       </h3>
       <p className="text-xs text-gray-400 m-0 mb-4">
-        {locked ? 'Vous avez parié pour :' : 'Qui gagnera la Coupe du Monde 2026 ?'}
+        {locked
+          ? 'Vous avez parié pour :'
+          : competitionLabel === 'Pronostics'
+            ? 'Qui sera le vainqueur final ?'
+            : `Qui gagnera ${competitionLabel} ?`}
       </p>
       <Suspense fallback={null}>
         <FinalWinnerChoice userTeam={team} disabled={locked} onValueChange={handleChange} />

@@ -1,4 +1,5 @@
 import { useGoogleLogin } from '../../hooks/user'
+import { useCompetitionDisplayName } from '../../hooks/competition'
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -23,13 +24,16 @@ const GoogleIcon = () => (
 
 const ConnectionModal = () => {
   const authenticateWithGoogle = useGoogleLogin()
+  const competitionLabel = useCompetitionDisplayName()
 
   return (
     <div className="py-8 px-7 text-center flex flex-col gap-3">
       <div className="text-4xl mb-1">⚽</div>
       <h2 className="text-xl font-extrabold text-navy m-0">Bienvenue !</h2>
       <p className="text-sm text-gray-500 mb-2">
-        Connectez-vous pour pronostiquer les matchs de la Coupe du Monde 2026
+        {competitionLabel === 'Pronostics'
+          ? 'Connectez-vous pour pronostiquer les matchs et défier vos amis.'
+          : `Connectez-vous pour pronostiquer les matchs de ${competitionLabel}.`}
       </p>
 
       <button
