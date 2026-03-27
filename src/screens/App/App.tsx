@@ -21,6 +21,7 @@ const GroupsPage = lazy(() => import('../Groups/Groups'))
 const Profile = lazy(() => import('../Profile/Profile'))
 const RankingPage = lazy(() => import('../Ranking/Ranking'))
 const RulesPage = lazy(() => import('../Rules/rules'))
+const AlgorithmPage = lazy(() => import('../Rules/algorithm'))
 const AdminPage = lazy(() => import('../Admin'))
 
 const App = () => {
@@ -48,6 +49,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/rules" element={<RulesPage />} />
+            <Route path="/rules/algorithm" element={<AlgorithmPage />} />
             <Route path="/faq" element={<FAQPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
 
@@ -66,6 +68,14 @@ const App = () => {
           </Routes>
         </Suspense>
       </main>
+      <footer className="border-t border-black/[0.06] bg-white/90 py-3 px-4 text-center">
+        <Link
+          to="/rules/algorithm"
+          className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+        >
+          Règlement détaillé et algorithme
+        </Link>
+      </footer>
       <InstallPrompt />
       <NotificationPrompt />
       <PwaUpdatePrompt />

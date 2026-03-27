@@ -5,7 +5,7 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useBet } from '../../../hooks/bets'
 import InformationMatch from './InformationMatch'
-import Odds from './Odds'
+import BettingFeel from './BettingFeel'
 import ValidIcon from './ValidIcon'
 import Flag from '../../../components/Flag'
 import PlayoffWinnerSelector from './PlayoffWinnerSelector'
@@ -97,9 +97,9 @@ const Match = ({ match }) => {
 
   return (
     <div className="w-full bg-white rounded-[14px] py-3.5 px-4 shadow-card border-none text-left flex flex-col gap-2.5 transition-all duration-150">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-2">
         <InformationMatch phase={match.phase} groupName={match.groupName} />
-        <span className="text-xs font-semibold text-gray-400">{timeStr}</span>
+        <span className="text-xs font-semibold text-gray-400 shrink-0">{timeStr}</span>
       </div>
 
       <div className="flex items-center justify-between gap-2">
@@ -153,10 +153,12 @@ const Match = ({ match }) => {
         />
       )}
 
-      <Odds
-        {...match}
-        scoreA={currentBet?.betTeamA}
-        scoreB={currentBet?.betTeamB}
+      <BettingFeel
+        matchId={match.id}
+        phase={match.phase}
+        betTeamA={currentBet?.betTeamA}
+        betTeamB={currentBet?.betTeamB}
+        betPlayoffWinner={currentBet?.betPlayoffWinner}
       />
     </div>
   )

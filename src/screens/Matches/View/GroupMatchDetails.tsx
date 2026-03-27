@@ -24,7 +24,7 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
   const navigate = useNavigate()
   const membersIds = opponents?.map((o) => o.id)
 
-  const bets = useBetsFromGame(match.id)
+  const bets = useBetsFromGame(match.id, true)
 
   const normalizedBets = useMemo(
     () =>

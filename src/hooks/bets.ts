@@ -40,20 +40,29 @@ function normalizeBet(row: BetRow | null): NormalizedBet | undefined {
   }
 }
 
-export function useBetsFromGame(matchId: string | undefined) {
+export function useBetsFromGame(matchId: string | undefined, enabled: boolean) {
   const [bets, setBets] = useState<NormalizedBet[] | null>(null)
 
   useEffect(() => {
-    if (!matchId) return
+    if (!matchId || !enabled) {
+      if (!enabled) {
+        setBets(null)
+      }
+      return
+    }
     supabase
       .from('bets')
       .select('*')
       .eq('match_id', matchId)
-      .then(({ data }) => setBets(data?.flatMap((b) => {
-        const n = normalizeBet(b)
-        return n ? [n] : []
-      }) ?? null))
-  }, [matchId])
+      .then(({ data }) =>
+        setBets(
+          data?.flatMap((b) => {
+            const n = normalizeBet(b)
+            return n ? [n] : []
+          }) ?? null,
+        ),
+      )
+  }, [matchId, enabled])
 
   return bets
 }
