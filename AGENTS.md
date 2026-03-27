@@ -157,3 +157,48 @@ Push sur `main` declenche le workflow `.github/workflows/deploy.yml` :
 - L'app est une PWA avec Service Worker (vite-plugin-pwa), manifest genere dans `vite.config.ts`
 - Theme couleur : `navy` (#19194B), `cream` (#f9f6ed) — definis dans `tailwind.config.js`
 - Police principale : Inter (fallback Roboto, system-ui)
+
+## Cursor Cloud specific instructions
+
+### Service overview
+
+This is a frontend-only React SPA. The only local process is the **Vite dev server** (`npm run dev` on port 3000). The backend is hosted Supabase — no local database or Docker is required.
+
+### Environment variables
+
+The following secrets must be injected as environment variables (and written to `.env` at the repo root) for the app to work:
+
+- `VITE_SUPABASE_URL` — required
+- `VITE_SUPABASE_PUBLISHABLE_KEY` — required
+- `VITE_OPENROUTER_KEY` — optional (AI predictions feature)
+
+### Running the dev server
+
+```bash
+npm run dev
+```
+
+Serves on `http://localhost:3000/`. Vite HMR is active; changes to `src/` are reflected immediately.
+
+### Build & type-check
+
+```bash
+npm run build   # runs tsc --noEmit then vite build → output in build/
+```
+
+### Linting & formatting
+
+- `npm run lint` — ESLint is referenced in scripts but **not installed** as a devDependency (pre-existing gap). This command will fail.
+- `npm run prettier:check` / `npm run prettier:write` — Prettier works correctly.
+
+### Node.js version
+
+`package.json` requires `node >= 24`. The update script uses nvm to ensure Node 24 is active. Always source nvm before running npm commands:
+
+```bash
+export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm use 24
+```
+
+### Authentication
+
+Google OAuth is the only auth method. Testing authenticated flows requires signing in via the Desktop pane — the agent cannot complete Google OAuth programmatically.
