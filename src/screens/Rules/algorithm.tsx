@@ -20,10 +20,10 @@ const AlgorithmPage = () => (
     <section className="mb-8">
       <h2 className="text-lg font-bold text-navy m-0 mb-3">1. Points de précision (par match)</h2>
       <p className="text-sm text-gray-600 m-0 mb-3 leading-relaxed">
-        Tous les critères ci-dessous qui dépendent du score à 90 minutes ne s’appliquent que si tu as le bon
-        résultat (victoire domicile, nul, ou victoire extérieur). Sinon, ces lignes tombent à zéro — sauf le
-        « gagnant » en phase finale, qui peut parfois être sauvé par le vainqueur après prolongations ou tirs au
-        but (voir règles phase finale).
+        Le <strong>Résultat</strong> et le <strong>Bonus score exact</strong> nécessitent le bon résultat à
+        90 min (V / N / D). La <strong>Proximité</strong> et l’<strong>Écart de buts</strong> sont attribués
+        si le résultat à 90 min est correct <em>ou</em> si le bon gagnant est prédit (phase finale uniquement).
+        Le <strong>Gagnant</strong> est toujours indépendant du résultat à 90 min en phase finale.
       </p>
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-card">
         <table className="w-full text-sm text-left">
@@ -43,12 +43,16 @@ const AlgorithmPage = () => (
               <td className="p-3 text-right font-mono tabular-nums">8</td>
             </tr>
             <tr className="border-b border-gray-100">
-              <td className="p-3">Proximité du score (écart total de buts, max 3)</td>
+              <td className="p-3">
+                Proximité du score — max(3 − écart total des buts, 0)
+              </td>
               <td className="p-3 text-right font-mono tabular-nums">0 à 3</td>
             </tr>
             <tr className="border-b border-gray-100">
-              <td className="p-3">Écart de buts correct (marge de victoire ou nul)</td>
-              <td className="p-3 text-right font-mono tabular-nums">3</td>
+              <td className="p-3">
+                Écart de buts — max(3 − |marge réelle − marge pariée|, 0)
+              </td>
+              <td className="p-3 text-right font-mono tabular-nums">0 à 3</td>
             </tr>
             <tr>
               <td className="p-3">Bonus score exact à 90 min</td>

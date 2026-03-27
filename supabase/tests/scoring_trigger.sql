@@ -65,10 +65,10 @@ BEGIN
   WHERE id IN ('g-exact-win-m', 'g-diff2-win-m', 'g-margin-win-m', 'g-wrong-win-m', 'g-far-win-m');
 
   PERFORM _assert(_pts('g-exact-win') = 20,  'Groupe – score exact victoire = 20');
-  PERFORM _assert(_pts('g-diff2-win') = 11,  'Groupe – bon vainqueur diff 2 = 11');
-  PERFORM _assert(_pts('g-margin-win') = 14, 'Groupe – bon vainqueur diff 2 meme marge = 14');
+  PERFORM _assert(_pts('g-diff2-win') = 12,  'Groupe – bon vainqueur diff 2 = 12');
+  PERFORM _assert(_pts('g-margin-win') = 14, 'Groupe – bon vainqueur meme marge = 14');
   PERFORM _assert(_pts('g-wrong-win') = 0,   'Groupe – mauvais vainqueur = 0');
-  PERFORM _assert(_pts('g-far-win') = 10,    'Groupe – diff 4 proximite=0 = 10');
+  PERFORM _assert(_pts('g-far-win') = 11,    'Groupe – diff 4 proximite=0 ecart=1 = 11');
 END $$;
 
 -- ════════════════════════════════════════════════════════════
@@ -142,7 +142,7 @@ BEGIN
   PERFORM _assert(_pts('p-draw-good') = 20, 'Playoff – nul exact + bon vainqueur penalties = 20');
   PERFORM _assert(_pts('p-draw-bad')  = 12, 'Playoff – nul exact + mauvais vainqueur penalties = 12');
   PERFORM _assert(_pts('p-draw-diff') = 14, 'Playoff – nul diff 2 + bon vainqueur penalties = 14');
-  PERFORM _assert(_pts('p-draw-no90') = 8,  'Playoff – prono victoire A sur nul + A gagne = 8');
+  PERFORM _assert(_pts('p-draw-no90') = 10, 'Playoff – prono victoire A sur nul + A gagne = 10');
 END $$;
 
 -- ════════════════════════════════════════════════════════════
@@ -174,11 +174,11 @@ BEGIN
 
   PERFORM _bet('p-draw-bet-real-win', 'p-draw-bet-real-win-m', '00000000-0000-0000-0000-000000000001', 1, 1, 'A');
   UPDATE matches SET score_a = 2, score_b = 0, playoff_winner = 'A' WHERE id = 'p-draw-bet-real-win-m';
-  PERFORM _assert(_pts('p-draw-bet-real-win') = 8, 'Playoff – prono nul + bon vainqueur sur victoire reelle = 8');
+  PERFORM _assert(_pts('p-draw-bet-real-win') = 10, 'Playoff – prono nul + bon vainqueur sur victoire reelle = 10');
 
   PERFORM _bet('p-win-bet-real-draw', 'p-win-bet-real-draw-m', '00000000-0000-0000-0000-000000000002', 2, 0, 'A');
   UPDATE matches SET score_a = 1, score_b = 1, playoff_winner = 'A' WHERE id = 'p-win-bet-real-draw-m';
-  PERFORM _assert(_pts('p-win-bet-real-draw') = 8, 'Playoff – prono victoire A sur nul + A gagne penaltys = 8');
+  PERFORM _assert(_pts('p-win-bet-real-draw') = 10, 'Playoff – prono victoire A sur nul + A gagne penaltys = 10');
 
   PERFORM _bet('p-draw-wrong-winner', 'p-draw-wrong-winner-m', '00000000-0000-0000-0000-000000000001', 1, 1, 'B');
   UPDATE matches SET score_a = 2, score_b = 0, playoff_winner = 'A' WHERE id = 'p-draw-wrong-winner-m';
@@ -205,7 +205,7 @@ BEGIN
   UPDATE matches SET score_a = 3, score_b = 0 WHERE id = 'mult-2p-m';
 
   PERFORM _assert(_pts('mult-exact') = 27, 'Mult – score exact 20 * mult ≈ 27');
-  PERFORM _assert(_pts('mult-diff')  = 15, 'Mult – base 11 * mult ≈ 15');
+  PERFORM _assert(_pts('mult-diff')  = 16, 'Mult – base 12 * mult ≈ 16');
 END $$;
 
 -- ── Vérification du score de competition_profiles ──────────
