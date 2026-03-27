@@ -6,34 +6,34 @@ const Groups = () => (
     <div>
       <h2 className="text-xl font-bold text-navy">Règles durant la phase de groupe</h2>
       <p>
-        Les pronostics fonctionnent avec un système de côtes basé sur notre
-        propre système de calcul. Pour chaque match, une côte est proposée pour
-        chaque résultat possible. Ces côtes multiplieront les points attribués.
+        Pour chaque match, vous pouvez marquer jusqu&apos;à <strong>20 points</strong> répartis
+        en 5 critères indépendants. Si le résultat (V/N/D) est incorrect, vous obtenez 0 point.
       </p>
-      <p>
-        Les points sont attribués comme suit :
-      </p>
-      <ol>
-        <li>
-          Le type de résultat compte en priorité : Gagnant / Perdant / Match Nul
-        </li>
-        <li>
-          Score parfait = 100% de la côte. Score approchant = malus
-          proportionnel à l&apos;écart (minimum : un tiers de la côte).
-        </li>
-      </ol>
+      <div className="overflow-x-auto">
+        <Table
+          header={['Critère', 'Description', 'Points']}
+          rows={[
+            ['Résultat Correct', 'Victoire / Nul / Défaite correcte', '2'],
+            ['Gagnant Correct', 'Bonne équipe gagnante (hors nul)', '8'],
+            ['Proximité du Score', '3 − écart total des buts (min 0)', '0–3'],
+            ['Écart de Buts', 'Bonne marge de victoire / nul', '3'],
+            ['Bonus Score Exact', 'Score 100 % exact', '4'],
+          ]}
+        />
+      </div>
     </div>
     <div>
-      <p><u>Exemple : France 3-0 Mexique (cote : 116)</u></p>
+      <p><u>Exemples : France 3-0 Mexique</u></p>
       <br />
       <div className="overflow-x-auto">
         <Table
-          header={['Situation', 'Prono', 'Calcul', 'Points']}
+          header={['Prono', 'Résultat', 'Gagnant', 'Proximité', 'Écart', 'Bonus', 'Total']}
           rows={[
-            ['Score parfait', '3-0', '116', '116'],
-            ['Bon résultat', '2-1', '116 − |3−2| − |0−1|', '114'],
-            ['Bon résultat', '4-0', '116 − |3−4|', '115'],
-            ['Mauvais vainqueur', '1-2', '—', '0'],
+            ['3-0', '2', '8', '3', '3', '4', '20'],
+            ['4-0', '2', '8', '2 (diff 1)', '0 (marge 4≠3)', '0', '12'],
+            ['4-1', '2', '8', '1 (diff 2)', '3 (marge 3=3)', '0', '14'],
+            ['2-1', '2', '8', '1 (diff 2)', '0 (marge 1≠3)', '0', '11'],
+            ['0-2', '0 (mauvais résultat)', '—', '—', '—', '—', '0'],
           ]}
         />
       </div>

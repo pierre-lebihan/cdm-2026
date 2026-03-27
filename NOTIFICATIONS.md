@@ -17,7 +17,6 @@ Dans le dashboard Supabase → **Edge Functions** → **Secrets** (ou `supabase 
 | `ONESIGNAL_APP_ID` | Même valeur que `VITE_ONESIGNAL_APP_ID` |
 | `ONESIGNAL_REST_API_KEY` | Clé REST API (dashboard OneSignal → Keys & IDs, **pas** la clé du client web) |
 | `PUBLIC_SITE_URL` | Optionnel. URL du site pour le lien dans les notifs (défaut : `https://makepronogreatagain.bzh/`) |
-| `NOTIFY_BROADCAST_SECRET` | Mot de passe long et aléatoire pour protéger l’envoi manuel via la fonction `notify-broadcast` |
 
 Les secrets `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont déjà fournis par l’hébergement des fonctions.
 
@@ -32,52 +31,14 @@ Si tu changes d’URL de projet Supabase, mets à jour l’URL dans le `cron.sch
 
 ## Déploiement des fonctions
 
-Le workflow GitHub Actions déploie `notify-pre-match` et `notify-broadcast` avec `update-results` / `update-odds`. En local :
+Le workflow GitHub Actions déploie `notify-pre-match` avec `update-results` / `update-odds`. En local :
 
 ```bash
 supabase functions deploy notify-pre-match --no-verify-jwt
-supabase functions deploy notify-broadcast --no-verify-jwt
 ```
 
 ---
 
-## Envoi manuel à tous les abonnés
+## Messages manuels à tous les abonnés
 
-### 1. Dashboard OneSignal
-
-**Messages** → **New push** → audience **Subscribed Users** (ou segment équivalent), rédige le titre / le message, envoi.
-
-### 2. API OneSignal directe (curl)
-
-Remplace `REST_API_KEY` et `APP_ID` (onglet Keys & IDs).
-
-```bash
-curl -sS -X POST "https://api.onesignal.com/notifications" \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Key REST_API_KEY" \
-  -d '{
-    "app_id": "APP_ID",
-    "target_channel": "push",
-    "included_segments": ["Subscribed Users"],
-    "headings": { "fr": "Titre", "en": "Title" },
-    "contents": { "fr": "Corps du message", "en": "Message body" },
-    "url": "https://makepronogreatagain.bzh/"
-  }'
-```
-
-Le nom exact du segment peut varier selon la langue du dashboard ; en cas d’erreur, vérifie dans OneSignal **Audience** → **Segments**.
-
-### 3. Edge Function `notify-broadcast`
-
-Après avoir défini `NOTIFY_BROADCAST_SECRET` :
-
-```bash
-curl -sS -X POST \
-  "https://TON_PROJECT.supabase.co/functions/v1/notify-broadcast" \
-  -H "Content-Type: application/json" \
-  -H "x-mpga-broadcast-secret: TON_SECRET" \
-  -d '{"heading":"Titre","message":"Corps du message","url":"https://makepronogreatagain.bzh/matches"}'
-```
-
-- `heading` est optionnel (défaut : « Make Prono Great Again »).
-- `url` est optionnel.
+Depuis **OneSignal** : **Messages** (ou **Push**) → créer un message → audience du type **Subscribed users** / abonnés web push, puis envoi. Aucune Edge Function ni secret dédié côté Supabase.

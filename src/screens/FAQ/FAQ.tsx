@@ -54,8 +54,8 @@ function FAQPage() {
         answer="Allez dans l'onglet 'Tribus' dans le menu. Dans la section 'Créer une tribu', choisissez le nom de la tribu. Un code d'accès sera alors créé, qu'il vous suffira d'envoyer aux personnes qui souhaitent faire partie de votre tribu."
       />
       <FaqEntry
-        question="Est-ce que les cotes changent ?"
-        answer="Les cotes des matches sont mises à jour régulièrement et ne bougent plus une fois le match commencé. Les cotes de vainqueur final sont figées au démarrage de la compétition."
+        question="Comment sont calculés les points ?"
+        answer="Chaque match rapporte jusqu'à 20 points répartis en 5 critères : Résultat correct V/N/D (2 pts), Gagnant correct (8 pts, hors match nul), Proximité du score (0 à 3 pts selon l'écart total de buts), Écart de buts correct (3 pts si la marge de victoire est juste), et Bonus score exact (4 pts si le score est parfait). Tous les critères sauf le bonus nécessitent d'avoir le bon résultat — sinon c'est 0 pt."
       />
       <FaqEntry
         question="Puis-je faire partie de plusieurs tribus ?"

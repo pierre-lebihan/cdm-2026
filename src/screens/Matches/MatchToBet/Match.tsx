@@ -8,6 +8,9 @@ import InformationMatch from './InformationMatch'
 import Odds from './Odds'
 import ValidIcon from './ValidIcon'
 import Flag from '../../../components/Flag'
+import PlayoffWinnerSelector from './PlayoffWinnerSelector'
+
+const PLAYOFF_PHASES = new Set(['1', '2', '3', '4', '5', '6'])
 
 const Match = ({ match }) => {
   const [bet, saveBet] = useBet(match.id)
@@ -19,27 +22,56 @@ const Match = ({ match }) => {
     }
   }, [bet])
 
+  const isPlayoff = PLAYOFF_PHASES.has(match.phase)
+  const isDraw =
+    isNumber(currentBet?.betTeamA) &&
+    currentBet?.betTeamA >= 0 &&
+    isNumber(currentBet?.betTeamB) &&
+    currentBet?.betTeamB >= 0 &&
+    currentBet?.betTeamA === currentBet?.betTeamB
+
   const isBetValid = (updatedBet) => {
     const scoreValidator = (score) => isNumber(score) && score >= 0
-    return conformsTo(updatedBet, {
+    const scoresOk = conformsTo(updatedBet, {
       betTeamA: scoreValidator,
       betTeamB: scoreValidator,
     })
+    if (!scoresOk) return false
+    // Pour un match de phase finale avec score nul, le vainqueur est obligatoire
+    if (isPlayoff && updatedBet.betTeamA === updatedBet.betTeamB) {
+      return updatedBet.betPlayoffWinner === 'A' || updatedBet.betPlayoffWinner === 'B'
+    }
+    return true
   }
 
-  const handleChange =
+  const handleScoreChange =
     (team) =>
     ({ target: { value } }) => {
       const updatedBet = {
         ...currentBet,
         [`betTeam${team}`]: Number(value),
+        // Si on change le score et que ce n'est plus un nul, on reset le playoff winner
+        betPlayoffWinner:
+          team === 'A'
+            ? Number(value) !== currentBet?.betTeamB
+              ? null
+              : currentBet?.betPlayoffWinner
+            : Number(value) !== currentBet?.betTeamA
+              ? null
+              : currentBet?.betPlayoffWinner,
       }
       setCurrentBet(updatedBet)
       saveBetIfValid(updatedBet)
     }
 
-  const handleTeamAChange = handleChange('A')
-  const handleTeamBChange = handleChange('B')
+  const handlePlayoffWinnerChange = (winner: 'A' | 'B') => {
+    const updatedBet = { ...currentBet, betPlayoffWinner: winner }
+    setCurrentBet(updatedBet)
+    saveBetIfValid(updatedBet)
+  }
+
+  const handleTeamAChange = handleScoreChange('A')
+  const handleTeamBChange = handleScoreChange('B')
 
   const saveBetIfValid = (updatedBet) => {
     if (isBetValid(updatedBet)) {
@@ -47,10 +79,14 @@ const Match = ({ match }) => {
     }
   }
 
-  const betSaved = () =>
-    isBetValid(currentBet) &&
-    currentBet.betTeamA === bet?.betTeamA &&
-    currentBet.betTeamB === bet?.betTeamB
+  const betSaved = () => {
+    if (!isBetValid(currentBet)) return false
+    return (
+      currentBet?.betTeamA === bet?.betTeamA &&
+      currentBet?.betTeamB === bet?.betTeamB &&
+      currentBet?.betPlayoffWinner === bet?.betPlayoffWinner
+    )
+  }
 
   if (!match.display) return null
 
@@ -107,6 +143,15 @@ const Match = ({ match }) => {
           </span>
         </div>
       </div>
+
+      {isPlayoff && isDraw && (
+        <PlayoffWinnerSelector
+          teamAName={match.teamAName}
+          teamBName={match.teamBName}
+          value={currentBet?.betPlayoffWinner ?? null}
+          onChange={handlePlayoffWinnerChange}
+        />
+      )}
 
       <Odds
         {...match}

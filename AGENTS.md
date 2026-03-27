@@ -115,7 +115,6 @@ populate/            # Scripts admin
 | `update-results` | Recupere les resultats via RapidAPI, met a jour `matches` | Toutes les 3 min, 13h-22h |
 | `update-odds` | Recupere les cotes via RapidAPI, met a jour `matches` | Quotidien a 1h |
 | `notify-pre-match` | Push OneSignal aux joueurs sans prono ~5 min avant coup d'envoi | Chaque minute (pg_cron) |
-| `notify-broadcast` | Push manuel a tous les abonnes (secret HTTP) | A la demande |
 
 Variables d'environnement requises : `RAPIDAPI_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -128,7 +127,7 @@ Variables d'environnement requises : `RAPIDAPI_KEY`, `SUPABASE_URL`, `SUPABASE_S
 
 ### Edge Functions / Populate
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RAPIDAPI_KEY`
-- Push : `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`, optionnel `PUBLIC_SITE_URL`, `NOTIFY_BROADCAST_SECRET` (voir `NOTIFICATIONS.md`)
+- Push (rappels auto) : `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`, optionnel `PUBLIC_SITE_URL` (voir `NOTIFICATIONS.md`). Les envois manuels à tout le monde se font depuis le dashboard OneSignal.
 
 Ne jamais commiter de fichiers `.env`, credentials, ou cles d'API.
 

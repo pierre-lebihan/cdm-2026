@@ -14,12 +14,14 @@ interface NormalizedBet {
   uid: string | null
   betTeamA: number | null
   betTeamB: number | null
+  betPlayoffWinner: 'A' | 'B' | null
   pointsWon: number | null
   updatedAt: string | null
   match_id: string | null
   user_id: string | null
   bet_team_a: number | null
   bet_team_b: number | null
+  bet_playoff_winner: string | null
   points_won: number | null
   updated_at: string | null
 }
@@ -32,6 +34,7 @@ function normalizeBet(row: BetRow | null): NormalizedBet | undefined {
     uid: row.user_id,
     betTeamA: row.bet_team_a,
     betTeamB: row.bet_team_b,
+    betPlayoffWinner: (row.bet_playoff_winner as 'A' | 'B' | null) ?? null,
     pointsWon: row.points_won,
     updatedAt: row.updated_at,
   }
@@ -72,7 +75,7 @@ export function useBetFromUser(matchId: string | undefined, uid: string | undefi
   return [bet]
 }
 
-export function useBet(matchId: string | undefined): [NormalizedBet | undefined, (betData: { betTeamA: number; betTeamB: number }) => Promise<void>] {
+export function useBet(matchId: string | undefined): [NormalizedBet | undefined, (betData: { betTeamA: number; betTeamB: number; betPlayoffWinner?: 'A' | 'B' | null }) => Promise<void>] {
   const { user } = useAuth()
   const { activeCompetitionId } = useCompetition()
   const uid = user?.id
@@ -90,7 +93,7 @@ export function useBet(matchId: string | undefined): [NormalizedBet | undefined,
   }, [matchId, uid])
 
   const setBet = useCallback(
-    async (betData: { betTeamA: number; betTeamB: number }) => {
+    async (betData: { betTeamA: number; betTeamB: number; betPlayoffWinner?: 'A' | 'B' | null }) => {
       if (!uid) return
       const id = `${matchId}_${uid}`
       const row = {
@@ -100,6 +103,7 @@ export function useBet(matchId: string | undefined): [NormalizedBet | undefined,
         competition_id: activeCompetitionId,
         bet_team_a: betData.betTeamA,
         bet_team_b: betData.betTeamB,
+        bet_playoff_winner: betData.betPlayoffWinner ?? null,
         updated_at: new Date().toISOString(),
       }
       const { data, error } = await supabase

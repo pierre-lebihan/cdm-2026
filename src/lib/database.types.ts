@@ -14,6 +14,7 @@ export type Database = {
     Tables: {
       bets: {
         Row: {
+          bet_playoff_winner: string | null
           bet_team_a: number | null
           bet_team_b: number | null
           competition_id: string | null
@@ -24,6 +25,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          bet_playoff_winner?: string | null
           bet_team_a?: number | null
           bet_team_b?: number | null
           competition_id?: string | null
@@ -34,6 +36,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          bet_playoff_winner?: string | null
           bet_team_a?: number | null
           bet_team_b?: number | null
           competition_id?: string | null
