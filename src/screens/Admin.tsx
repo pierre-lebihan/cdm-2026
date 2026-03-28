@@ -16,10 +16,12 @@ function AdminMatchRow({
   match,
   onSave,
   onClear,
+  onVisibilityChange,
 }: {
   match: NormalizedMatch
   onSave: (matchId: string, scoreA: number, scoreB: number) => Promise<void>
   onClear: (matchId: string) => Promise<void>
+  onVisibilityChange: (matchId: string, visible: boolean) => Promise<void>
 }) {
   const [scores, setScores] = useState<MatchScoreEdit>({
     scoreA: match.scores.A?.toString() ?? '',
@@ -27,6 +29,7 @@ function AdminMatchRow({
   })
   const [saving, setSaving] = useState(false)
   const [clearing, setClearing] = useState(false)
+  const [visibilityBusy, setVisibilityBusy] = useState(false)
 
   const hasScore = match.scores.A !== null && match.scores.B !== null
 
@@ -49,6 +52,12 @@ function AdminMatchRow({
     setClearing(false)
   }, [match.id, onClear])
 
+  const handleVisibilityClick = useCallback(async () => {
+    setVisibilityBusy(true)
+    await onVisibilityChange(match.id, !match.visibleToUsers)
+    setVisibilityBusy(false)
+  }, [match.id, match.visibleToUsers, onVisibilityChange])
+
   return (
     <div className={`bg-white rounded-xl p-3 shadow-card flex flex-col gap-2 ${match.finished ? 'opacity-60' : ''}`}>
       <div className="flex items-center justify-between gap-2">
@@ -63,15 +72,41 @@ function AdminMatchRow({
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <span className="text-xs text-gray-400">
           {formatPhase(match.phase)} — {match.groupName ?? ''}
         </span>
-        {match.finished && (
-          <span className="text-[0.65rem] font-semibold py-0.5 px-2 rounded-full bg-green-100 text-green-800">
-            Terminé
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {!match.visibleToUsers && (
+            <span className="text-[0.65rem] font-semibold py-0.5 px-2 rounded-full bg-amber-100 text-amber-900">
+              Masqué (joueurs)
+            </span>
+          )}
+          {match.finished && (
+            <span className="text-[0.65rem] font-semibold py-0.5 px-2 rounded-full bg-green-100 text-green-800">
+              Terminé
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center">
+        <button
+          type="button"
+          className={`text-xs font-semibold py-1.5 px-3 rounded-full border-none cursor-pointer transition-colors ${
+            match.visibleToUsers
+              ? 'bg-gray-100 text-navy hover:bg-gray-200'
+              : 'bg-indigo-100 text-indigo-900 hover:bg-indigo-200'
+          }`}
+          disabled={visibilityBusy}
+          onClick={handleVisibilityClick}
+        >
+          {visibilityBusy
+            ? '...'
+            : match.visibleToUsers
+              ? 'Masquer pour les joueurs'
+              : 'Afficher aux joueurs'}
+        </button>
       </div>
 
       <div className="flex items-center gap-2">
@@ -123,16 +158,20 @@ function formatPhase(phase: string | null): string {
   switch (phase) {
     case '0':
       return 'Groupes'
+    case '6':
+      return '8es de finale'
+    case '5':
+      return '16es de finale'
     case '4':
-      return '32èmes'
+      return 'Quarts de finale'
     case '2':
-      return '16èmes'
+      return 'Demi-finales'
     case '3':
-      return 'Quarts'
+      return '3e place'
     case '1':
-      return 'Demies'
-    default:
       return 'Finale'
+    default:
+      return phase ? `Phase ${phase}` : 'Phase ?'
   }
 }
 
@@ -189,6 +228,23 @@ const Admin = () => {
     [],
   )
 
+  const handleMatchVisibilityChange = useCallback(
+    async (matchId: string, visible: boolean) => {
+      const { error } = await supabase
+        .from('matches')
+        .update({ visible_to_users: visible })
+        .eq('id', matchId)
+
+      if (error) {
+        toast.error(`Erreur: ${error.message}`)
+        return
+      }
+      toast.success(visible ? 'Match visible pour les joueurs' : 'Match masqué pour les joueurs')
+      window.location.reload()
+    },
+    [],
+  )
+
   const handleSetPublic = useCallback(
     async (id: string) => {
       await setPublicCompetition(id)
@@ -226,7 +282,8 @@ const Admin = () => {
     <div className="max-w-[600px] mx-auto py-6 px-4 pb-12">
       <h1 className="text-xl font-extrabold text-navy mb-1">Administration</h1>
       <p className="text-sm text-gray-500 mb-5">
-        Mettre à jour les scores déclenche le recalcul automatique des points.
+        Mettre à jour les scores déclenche le recalcul automatique des points. La visibilité par match
+        contrôle l’affichage sur le site et la possibilité de pronostiquer (hors admin).
       </p>
 
       {/* Competition selector */}
@@ -290,7 +347,13 @@ const Admin = () => {
           <h2 className="text-base font-bold text-navy mb-3">{phase}</h2>
           <div className="flex flex-col gap-2">
             {phaseMatches.map((match) => (
-              <AdminMatchRow key={match.id} match={match} onSave={handleSaveScore} onClear={handleClearScore} />
+              <AdminMatchRow
+                key={match.id}
+                match={match}
+                onSave={handleSaveScore}
+                onClear={handleClearScore}
+                onVisibilityChange={handleMatchVisibilityChange}
+              />
             ))}
           </div>
         </div>

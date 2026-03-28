@@ -8,13 +8,45 @@ interface FlagProps {
   style?: CSSProperties
 }
 
-const flags = import.meta.glob('../assets/flags/*.svg', {
+const svgModules = import.meta.glob('../assets/flags/*.svg', {
   eager: true,
   import: 'default',
 }) as Record<string, string>
 
+const pngModules = import.meta.glob('../assets/flags/*.png', {
+  eager: true,
+  import: 'default',
+}) as Record<string, string>
+
+function flagKeyFromPath(path: string, extension: string): string | null {
+  const file = path.split('/').pop()
+  if (!file || !file.endsWith(extension)) {
+    return null
+  }
+  return file.slice(0, -extension.length).toLowerCase()
+}
+
+function buildFlagUrlByCode(): Record<string, string> {
+  const byCode: Record<string, string> = {}
+  for (const [path, url] of Object.entries(svgModules)) {
+    const key = flagKeyFromPath(path, '.svg')
+    if (key) {
+      byCode[key] = url
+    }
+  }
+  for (const [path, url] of Object.entries(pngModules)) {
+    const key = flagKeyFromPath(path, '.png')
+    if (key) {
+      byCode[key] = url
+    }
+  }
+  return byCode
+}
+
+const flagUrlByCode = buildFlagUrlByCode()
+
 function getFlagSrc(country: string): string | undefined {
-  return flags[`../assets/flags/${country.toLowerCase().trim()}.svg`]
+  return flagUrlByCode[country.toLowerCase().trim()]
 }
 
 const Flag = memo<FlagProps>(({ country, tooltipText, className, style }) => {

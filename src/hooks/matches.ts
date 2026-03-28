@@ -21,6 +21,7 @@ export interface NormalizedMatch {
   phase: string | null
   finished: boolean | null
   display: boolean
+  visibleToUsers: boolean
   idApiRugby: string | null
   groupName: string | null
   competitionId: string | null
@@ -45,6 +46,7 @@ function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
     phase: row.phase,
     finished: row.finished,
     display: true,
+    visibleToUsers: row.visible_to_users !== false,
     idApiRugby: row.api_id,
     groupName: row.group_name ?? null,
     competitionId: row.competition_id ?? null,

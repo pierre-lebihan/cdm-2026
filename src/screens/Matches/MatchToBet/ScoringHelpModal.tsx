@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useIsUserAdmin } from '../../../hooks/user'
 
 interface ScoringHelpModalProps {
   open: boolean
@@ -7,6 +8,8 @@ interface ScoringHelpModalProps {
 }
 
 const ScoringHelpModal = ({ open, onClose }: ScoringHelpModalProps) => {
+  const isAdmin = useIsUserAdmin()
+
   if (!open) {
     return null
   }
@@ -55,6 +58,16 @@ const ScoringHelpModal = ({ open, onClose }: ScoringHelpModalProps) => {
             </Link>
             .
           </p>
+          {isAdmin && (
+            <p className="m-0 text-xs text-amber-950 bg-amber-50 rounded-xl p-3 border border-amber-100/80 leading-relaxed">
+              <span className="font-semibold text-navy">Admin.</span> Tu peux rendre un match visible ou le masquer
+              (liste des matchs et pronostics des joueurs) depuis{' '}
+              <Link to="/admin" className="text-indigo-600 font-medium hover:underline" onClick={onClose}>
+                Administration
+              </Link>
+              , pour chaque rencontre.
+            </p>
+          )}
         </div>
       </div>
     </div>

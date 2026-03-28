@@ -71,6 +71,7 @@ Deno.serve(async (_req: Request) => {
         "id, date_time, finished, competition_id, pre_match_reminder_sent_at, team_a_name, team_b_name",
       )
       .eq("finished", false)
+      .eq("visible_to_users", true)
       .is("pre_match_reminder_sent_at", null)
       .not("date_time", "is", null)
       .gt("date_time", winStart.toISOString())

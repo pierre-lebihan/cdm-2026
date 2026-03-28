@@ -219,6 +219,7 @@ export type Database = {
           streaming: string | null
           team_a: string | null
           team_b: string | null
+          visible_to_users: boolean | null
         }
         Insert: {
           api_id?: string | null
@@ -237,6 +238,7 @@ export type Database = {
           streaming?: string | null
           team_a?: string | null
           team_b?: string | null
+          visible_to_users?: boolean | null
         }
         Update: {
           api_id?: string | null
@@ -255,6 +257,7 @@ export type Database = {
           streaming?: string | null
           team_a?: string | null
           team_b?: string | null
+          visible_to_users?: boolean | null
         }
         Relationships: [
           {
@@ -398,6 +401,7 @@ export type Database = {
           team_b_code: string | null
           team_b_name: string | null
           group_name: string | null
+          visible_to_users: boolean | null
         }
         Relationships: [
           {
