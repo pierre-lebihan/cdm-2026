@@ -91,9 +91,11 @@ DELETE FROM bets
 WHERE competition_id IN (SELECT id FROM ldc);
 
 INSERT INTO teams (id, code, group_name, name, win_odd, elimination, unveiled, competition_id)
-SELECT 'cl-tbd', 'tbd', 'Phase finale', 'À définir', NULL, false, true, ldc.id
-FROM ldc
-WHERE NOT EXISTS (SELECT 1 FROM teams WHERE id = 'cl-tbd');
+SELECT 'cl-tbd', 'tbd', 'Phase finale', 'À définir', NULL, false, true, c.id
+FROM competitions c
+WHERE c.name = 'Ligue des champions 2024-25'
+  AND NOT EXISTS (SELECT 1 FROM teams WHERE id = 'cl-tbd')
+LIMIT 1;
 
 UPDATE teams SET
   code = 'sporting',
