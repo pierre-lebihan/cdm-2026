@@ -112,12 +112,10 @@ const HomePage = () => {
         {/* Gradient sombre en bas */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
-        {/* Logo en haut à gauche */}
         <img
           src={logo}
           alt="Make Prono Great Again"
-          className="absolute top-0 left-0 z-10 drop-shadow-lg select-none"
-          style={{ width: 'min(448px, 80vw)' }}
+          className="absolute top-3 left-3 z-10 h-14 w-auto max-w-[min(140px,38vw)] object-contain drop-shadow-lg select-none sm:top-4 sm:left-4 sm:h-16 sm:max-w-[min(160px,42vw)]"
           draggable={false}
         />
 
@@ -131,21 +129,21 @@ const HomePage = () => {
           </p>
 
           {!signedIn && (
-            <>
+            <div className="flex flex-col items-center gap-3">
               <button
                 type="button"
-                className="py-3 px-8 rounded-xl bg-white text-navy font-semibold text-sm mx-auto shadow-lg hover:bg-white/90 hover:-translate-y-px transition-all"
+                className="py-3 px-8 rounded-xl bg-white text-navy font-semibold text-sm shadow-lg hover:bg-white/90 hover:-translate-y-px transition-all"
                 onClick={() => setModalOpen(true)}
               >
                 Connexion
               </button>
               <Link
                 to="/rules"
-                className="inline-block mt-4 text-xs text-white/60 hover:text-white/90 transition-colors underline underline-offset-2"
+                className="text-xs text-white/60 hover:text-white/90 transition-colors underline underline-offset-2"
               >
                 Voir les règles
               </Link>
-            </>
+            </div>
           )}
 
           {signedIn && (
