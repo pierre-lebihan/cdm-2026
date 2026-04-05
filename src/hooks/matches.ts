@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCompetition } from '../contexts/CompetitionContext'
 import type { Tables } from '../lib/database.types'
+import type { MatchBetFormat, MatchTournamentPhase } from '../lib/matchEnums'
 
 type MatchWithTeamsRow = Tables<'matches_with_teams'>
 
@@ -18,7 +19,8 @@ export interface NormalizedMatch {
   streaming: string | null
   scores: { A: number | null; B: number | null }
   odds: { PA: number | null; PB: number | null; PN: number | null }
-  phase: string | null
+  tournamentPhase: MatchTournamentPhase
+  betFormat: MatchBetFormat
   finished: boolean | null
   display: boolean
   visibleToUsers: boolean
@@ -43,7 +45,8 @@ function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
     streaming: row.streaming,
     scores: { A: row.score_a, B: row.score_b },
     odds: { PA: row.odds_a, PB: row.odds_b, PN: row.odds_draw },
-    phase: row.phase,
+    tournamentPhase: row.tournament_phase ?? 'group',
+    betFormat: row.bet_format ?? 'regulation_1x2',
     finished: row.finished,
     display: true,
     visibleToUsers: row.visible_to_users !== false,
@@ -94,7 +97,10 @@ export function useMatch(matchId: string | undefined): NormalizedMatch | null {
   return match
 }
 
-export function isMatchFinished(match: NormalizedMatch, comparingDate?: number): boolean {
+export function isMatchFinished(
+  match: NormalizedMatch,
+  comparingDate?: number,
+): boolean {
   if (!match) return false
   const timestamp = match.dateTime?.seconds ? match.dateTime.seconds * 1000 : 0
   const hasScore = match.scores?.A !== null && match.scores?.B !== null

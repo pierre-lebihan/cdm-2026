@@ -6,6 +6,17 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type MatchBetFormatEnum = 'regulation_1x2' | 'knockout_decider'
+
+export type MatchTournamentPhaseEnum =
+  | 'group'
+  | 'round_of_16'
+  | 'round_of_8'
+  | 'quarter_final'
+  | 'semi_final'
+  | 'third_place'
+  | 'final'
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '14.4'
@@ -204,6 +215,7 @@ export type Database = {
       matches: {
         Row: {
           api_id: string | null
+          bet_format: MatchBetFormatEnum
           city: string | null
           competition_id: string | null
           date_time: string | null
@@ -212,17 +224,19 @@ export type Database = {
           odds_a: number | null
           odds_b: number | null
           odds_draw: number | null
-          phase: string | null
+          playoff_winner: string | null
           pre_match_reminder_sent_at: string | null
           score_a: number | null
           score_b: number | null
           streaming: string | null
           team_a: string | null
           team_b: string | null
+          tournament_phase: MatchTournamentPhaseEnum
           visible_to_users: boolean | null
         }
         Insert: {
           api_id?: string | null
+          bet_format?: MatchBetFormatEnum
           city?: string | null
           competition_id?: string | null
           date_time?: string | null
@@ -231,17 +245,19 @@ export type Database = {
           odds_a?: number | null
           odds_b?: number | null
           odds_draw?: number | null
-          phase?: string | null
+          playoff_winner?: string | null
           pre_match_reminder_sent_at?: string | null
           score_a?: number | null
           score_b?: number | null
           streaming?: string | null
           team_a?: string | null
           team_b?: string | null
+          tournament_phase?: MatchTournamentPhaseEnum
           visible_to_users?: boolean | null
         }
         Update: {
           api_id?: string | null
+          bet_format?: MatchBetFormatEnum
           city?: string | null
           competition_id?: string | null
           date_time?: string | null
@@ -250,13 +266,14 @@ export type Database = {
           odds_a?: number | null
           odds_b?: number | null
           odds_draw?: number | null
-          phase?: string | null
+          playoff_winner?: string | null
           pre_match_reminder_sent_at?: string | null
           score_a?: number | null
           score_b?: number | null
           streaming?: string | null
           team_a?: string | null
           team_b?: string | null
+          tournament_phase?: MatchTournamentPhaseEnum
           visible_to_users?: boolean | null
         }
         Relationships: [
@@ -381,6 +398,7 @@ export type Database = {
       matches_with_teams: {
         Row: {
           api_id: string | null
+          bet_format: MatchBetFormatEnum | null
           city: string | null
           competition_id: string | null
           date_time: string | null
@@ -389,7 +407,7 @@ export type Database = {
           odds_a: number | null
           odds_b: number | null
           odds_draw: number | null
-          phase: string | null
+          playoff_winner: string | null
           pre_match_reminder_sent_at: string | null
           score_a: number | null
           score_b: number | null
@@ -401,6 +419,7 @@ export type Database = {
           team_b_code: string | null
           team_b_name: string | null
           group_name: string | null
+          tournament_phase: MatchTournamentPhaseEnum | null
           visible_to_users: boolean | null
         }
         Relationships: [
@@ -442,7 +461,8 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      match_bet_format: MatchBetFormatEnum
+      match_tournament_phase: MatchTournamentPhaseEnum
     }
     CompositeTypes: {
       [_ in never]: never

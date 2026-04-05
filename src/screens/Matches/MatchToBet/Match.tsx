@@ -10,8 +10,6 @@ import ValidIcon from './ValidIcon'
 import Flag from '../../../components/Flag'
 import PlayoffWinnerSelector from './PlayoffWinnerSelector'
 
-const PLAYOFF_PHASES = new Set(['1', '2', '3', '4', '5', '6'])
-
 const Match = ({ match }) => {
   const [bet, saveBet] = useBet(match.id)
   const [currentBet, setCurrentBet] = useState(bet)
@@ -22,8 +20,8 @@ const Match = ({ match }) => {
     }
   }, [bet])
 
-  const isPlayoff = PLAYOFF_PHASES.has(match.phase)
-  const isDraw =
+  const needsPlayoffWinnerOnDraw =
+    match.betFormat === 'knockout_decider' &&
     isNumber(currentBet?.betTeamA) &&
     currentBet?.betTeamA >= 0 &&
     isNumber(currentBet?.betTeamB) &&
@@ -37,9 +35,14 @@ const Match = ({ match }) => {
       betTeamB: scoreValidator,
     })
     if (!scoresOk) return false
-    // Pour un match de phase finale avec score nul, le vainqueur est obligatoire
-    if (isPlayoff && updatedBet.betTeamA === updatedBet.betTeamB) {
-      return updatedBet.betPlayoffWinner === 'A' || updatedBet.betPlayoffWinner === 'B'
+    if (
+      match.betFormat === 'knockout_decider' &&
+      updatedBet.betTeamA === updatedBet.betTeamB
+    ) {
+      return (
+        updatedBet.betPlayoffWinner === 'A' ||
+        updatedBet.betPlayoffWinner === 'B'
+      )
     }
     return true
   }
@@ -50,7 +53,6 @@ const Match = ({ match }) => {
       const updatedBet = {
         ...currentBet,
         [`betTeam${team}`]: Number(value),
-        // Si on change le score et que ce n'est plus un nul, on reset le playoff winner
         betPlayoffWinner:
           team === 'A'
             ? Number(value) !== currentBet?.betTeamB
@@ -98,13 +100,21 @@ const Match = ({ match }) => {
   return (
     <div className="w-full bg-white rounded-[14px] py-3.5 px-4 shadow-card border-none text-left flex flex-col gap-2.5 transition-all duration-150">
       <div className="flex justify-between items-center gap-2">
-        <InformationMatch phase={match.phase} groupName={match.groupName} />
-        <span className="text-xs font-semibold text-gray-400 shrink-0">{timeStr}</span>
+        <InformationMatch
+          tournamentPhase={match.tournamentPhase}
+          groupName={match.groupName}
+        />
+        <span className="text-xs font-semibold text-gray-400 shrink-0">
+          {timeStr}
+        </span>
       </div>
 
       <div className="flex items-center justify-between gap-2">
         <div className="flex flex-col items-center gap-1.5 w-[90px] shrink-0">
-          <Flag country={match.teamACode} className="h-9 w-9 object-contain rounded" />
+          <Flag
+            country={match.teamACode}
+            className="h-9 w-9 object-contain rounded"
+          />
           <span className="text-xs font-semibold text-navy text-center leading-tight">
             {match.teamAName ?? 'À déterminer'}
           </span>
@@ -137,14 +147,17 @@ const Match = ({ match }) => {
         </div>
 
         <div className="flex flex-col items-center gap-1.5 w-[90px] shrink-0">
-          <Flag country={match.teamBCode} className="h-9 w-9 object-contain rounded" />
+          <Flag
+            country={match.teamBCode}
+            className="h-9 w-9 object-contain rounded"
+          />
           <span className="text-xs font-semibold text-navy text-center leading-tight">
             {match.teamBName ?? 'À déterminer'}
           </span>
         </div>
       </div>
 
-      {isPlayoff && isDraw && (
+      {needsPlayoffWinnerOnDraw && (
         <PlayoffWinnerSelector
           teamAName={match.teamAName}
           teamBName={match.teamBName}
@@ -155,7 +168,7 @@ const Match = ({ match }) => {
 
       <BettingFeel
         matchId={match.id}
-        phase={match.phase}
+        betFormat={match.betFormat}
         betTeamA={currentBet?.betTeamA}
         betTeamB={currentBet?.betTeamB}
         betPlayoffWinner={currentBet?.betPlayoffWinner}

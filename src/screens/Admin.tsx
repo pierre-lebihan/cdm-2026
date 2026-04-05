@@ -7,6 +7,7 @@ import { useIsUserAdmin } from '../hooks/user'
 import { useMatches, type NormalizedMatch } from '../hooks/matches'
 import { useCompetition } from '../contexts/CompetitionContext'
 import Flag from 'components/Flag'
+import { formatTournamentPhaseLabel } from '../lib/matchEnums'
 
 type MatchScoreEdit = {
   scoreA: string
@@ -60,22 +61,34 @@ function AdminMatchRow({
   }, [match.id, match.visibleToUsers, onVisibilityChange])
 
   return (
-    <div className={`bg-white rounded-xl p-3 shadow-card flex flex-col gap-2 ${match.finished ? 'opacity-60' : ''}`}>
+    <div
+      className={`bg-white rounded-xl p-3 shadow-card flex flex-col gap-2 ${match.finished ? 'opacity-60' : ''}`}
+    >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Flag country={match.teamACode ?? ''} style={{ width: 24, height: 24 }} />
-          <span className="text-sm font-medium text-navy">{match.teamAName ?? match.teamA}</span>
+          <Flag
+            country={match.teamACode ?? ''}
+            style={{ width: 24, height: 24 }}
+          />
+          <span className="text-sm font-medium text-navy">
+            {match.teamAName ?? match.teamA}
+          </span>
         </div>
         <span className="text-xs text-gray-400">vs</span>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-navy">{match.teamBName ?? match.teamB}</span>
-          <Flag country={match.teamBCode ?? ''} style={{ width: 24, height: 24 }} />
+          <span className="text-sm font-medium text-navy">
+            {match.teamBName ?? match.teamB}
+          </span>
+          <Flag
+            country={match.teamBCode ?? ''}
+            style={{ width: 24, height: 24 }}
+          />
         </div>
       </div>
 
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <span className="text-xs text-gray-400">
-          {formatPhase(match.phase)} — {match.groupName ?? ''}
+          {formatPhaseAdmin(match)} — {match.groupName ?? ''}
         </span>
         <div className="flex items-center gap-2">
           {!match.visibleToUsers && (
@@ -97,16 +110,12 @@ function AdminMatchRow({
           className={`text-xs font-semibold py-1.5 px-3 rounded-full border-none cursor-pointer transition-colors ${
             match.visibleToUsers
               ? 'bg-gray-100 text-navy hover:bg-gray-200'
-              : 'bg-indigo-100 text-indigo-900 hover:bg-indigo-200'
+              : 'bg-amber-200 text-amber-900 hover:bg-amber-300'
           }`}
           disabled={visibilityBusy}
           onClick={handleVisibilityClick}
         >
-          {visibilityBusy
-            ? '...'
-            : match.visibleToUsers
-              ? 'Masquer pour les joueurs'
-              : 'Afficher aux joueurs'}
+          {visibilityBusy ? '...' : 'Masquer'}
         </button>
       </div>
 
@@ -155,25 +164,13 @@ function AdminMatchRow({
   )
 }
 
-function formatPhase(phase: string | null): string {
-  switch (phase) {
-    case '0':
-      return 'Groupes'
-    case '6':
-      return '8es de finale'
-    case '5':
-      return '16es de finale'
-    case '4':
-      return 'Quarts de finale'
-    case '2':
-      return 'Demi-finales'
-    case '3':
-      return '3e place'
-    case '1':
-      return 'Finale'
-    default:
-      return phase ? `Phase ${phase}` : 'Phase ?'
-  }
+function formatPhaseAdmin(match: NormalizedMatch): string {
+  const phaseLabel = formatTournamentPhaseLabel(match.tournamentPhase)
+  const betLabel =
+    match.betFormat === 'regulation_1x2'
+      ? 'Pari 1 / N / 2 (90 min)'
+      : 'Pari avec vainqueur si nul'
+  return `${phaseLabel} · ${betLabel}`
 }
 
 const Admin = () => {
@@ -189,7 +186,9 @@ const Admin = () => {
     competition: publicCompetition,
     setPublicCompetition,
   } = useCompetition()
-  const [filter, setFilter] = useState<'all' | 'pending' | 'finished'>('pending')
+  const [filter, setFilter] = useState<'all' | 'pending' | 'finished'>(
+    'pending',
+  )
 
   useEffect(() => {
     if (authLoading) return
@@ -252,7 +251,11 @@ const Admin = () => {
         toast.error(`Erreur: ${error.message}`)
         return
       }
-      toast.success(visible ? 'Match visible pour les joueurs' : 'Match masqué pour les joueurs')
+      toast.success(
+        visible
+          ? 'Match visible pour les joueurs'
+          : 'Match masqué pour les joueurs',
+      )
       bumpMatchesList()
     },
     [bumpMatchesList],
@@ -289,22 +292,22 @@ const Admin = () => {
     return true
   })
 
-  const groupedByPhase = filteredMatches.reduce<Record<string, NormalizedMatch[]>>(
-    (acc, match) => {
-      const key = formatPhase(match.phase)
-      if (!acc[key]) acc[key] = []
-      acc[key].push(match)
-      return acc
-    },
-    {},
-  )
+  const groupedByPhase = filteredMatches.reduce<
+    Record<string, NormalizedMatch[]>
+  >((acc, match) => {
+    const key = formatPhaseAdmin(match)
+    if (!acc[key]) acc[key] = []
+    acc[key].push(match)
+    return acc
+  }, {})
 
   return (
     <div className="max-w-[600px] mx-auto py-6 px-4 pb-12">
       <h1 className="text-xl font-extrabold text-navy mb-1">Administration</h1>
       <p className="text-sm text-gray-500 mb-5">
-        Mettre à jour les scores déclenche le recalcul automatique des points. La visibilité par match
-        contrôle l’affichage sur le site et la possibilité de pronostiquer (hors admin).
+        Mettre à jour les scores déclenche le recalcul automatique des points.
+        La visibilité par match contrôle l’affichage sur le site et la
+        possibilité de pronostiquer (hors admin).
       </p>
 
       {/* Competition selector */}
@@ -312,7 +315,9 @@ const Admin = () => {
         <h2 className="text-sm font-bold text-navy mb-3">Compétition</h2>
 
         <div className="flex flex-col gap-2">
-          <label className="text-xs text-gray-500">Vue admin (ce que je vois) :</label>
+          <label className="text-xs text-gray-500">
+            Vue admin (ce que je vois) :
+          </label>
           <select
             className="w-full py-2 px-3 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-indigo-500"
             value={activeCompetitionId ?? ''}
@@ -329,16 +334,19 @@ const Admin = () => {
         <div className="flex flex-col gap-2 mt-3">
           <label className="text-xs text-gray-500">
             Compétition publique (vue par les utilisateurs) :
-            <span className="font-semibold text-navy ml-1">{publicCompetition?.name ?? '—'}</span>
+            <span className="font-semibold text-navy ml-1">
+              {publicCompetition?.name ?? '—'}
+            </span>
           </label>
-          {activeCompetitionId && activeCompetitionId !== publicCompetition?.id && (
-            <button
-              className="text-xs font-semibold py-1.5 px-4 rounded-full bg-indigo-500 text-white border-none cursor-pointer hover:bg-indigo-600 transition-colors self-start"
-              onClick={() => handleSetPublic(activeCompetitionId)}
-            >
-              Rendre cette compétition publique
-            </button>
-          )}
+          {activeCompetitionId &&
+            activeCompetitionId !== publicCompetition?.id && (
+              <button
+                className="text-xs font-semibold py-1.5 px-4 rounded-full bg-indigo-500 text-white border-none cursor-pointer hover:bg-indigo-600 transition-colors self-start"
+                onClick={() => handleSetPublic(activeCompetitionId)}
+              >
+                Rendre cette compétition publique
+              </button>
+            )}
         </div>
       </div>
 

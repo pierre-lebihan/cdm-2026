@@ -11,12 +11,13 @@ import {
   type BetLike,
 } from '../../../lib/bettingOdds'
 import ScoringHelpModal from './ScoringHelpModal'
+import type { MatchBetFormat } from '../../../lib/matchEnums'
 
 const MAX_BASE_POINTS = 20
 
 interface BettingFeelProps {
   matchId: string
-  phase: string | null
+  betFormat: MatchBetFormat
   betTeamA: number | null | undefined
   betTeamB: number | null | undefined
   betPlayoffWinner: 'A' | 'B' | null | undefined
@@ -37,7 +38,7 @@ function thermoMessage(popularity: number, totalValid: number): string | null {
 
 const BettingFeel = ({
   matchId,
-  phase,
+  betFormat,
   betTeamA,
   betTeamB,
   betPlayoffWinner,
@@ -60,8 +61,13 @@ const BettingFeel = ({
   }, [uid, betTeamA, betTeamB, betPlayoffWinner])
 
   const draftKey = useMemo(() => {
-    return predictionPopularityKey(phase, betTeamA ?? null, betTeamB ?? null, betPlayoffWinner ?? null)
-  }, [phase, betTeamA, betTeamB, betPlayoffWinner])
+    return predictionPopularityKey(
+      betFormat,
+      betTeamA ?? null,
+      betTeamB ?? null,
+      betPlayoffWinner ?? null,
+    )
+  }, [betFormat, betTeamA, betTeamB, betPlayoffWinner])
 
   const betLikes: BetLike[] = useMemo(() => {
     return (betsRows ?? []).map((b) => ({
@@ -73,15 +79,15 @@ const BettingFeel = ({
   }, [betsRows])
 
   const merged = useMemo(() => {
-    return mergeBetsWithDraft(phase, betLikes, uid, draft)
-  }, [phase, betLikes, uid, draft])
+    return mergeBetsWithDraft(betFormat, betLikes, uid, draft)
+  }, [betFormat, betLikes, uid, draft])
 
   const { totalValid, sameCount, multiplier } = useMemo(() => {
     if (draftKey === null) {
       return { totalValid: 0, sameCount: 0, multiplier: 1 }
     }
-    return statsForPopularity(phase, merged, draftKey)
-  }, [phase, merged, draftKey])
+    return statsForPopularity(betFormat, merged, draftKey)
+  }, [betFormat, merged, draftKey])
 
   const popularity = totalValid > 0 ? sameCount / totalValid : 0
   const thermo = thermoMessage(popularity, totalValid)

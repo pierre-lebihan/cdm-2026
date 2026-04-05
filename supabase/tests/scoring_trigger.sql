@@ -48,12 +48,12 @@ $$ LANGUAGE plpgsql;
 -- ════════════════════════════════════════════════════════════
 DO $$
 BEGIN
-  INSERT INTO matches (id, competition_id, team_a, team_b, phase) VALUES
-    ('g-exact-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '0'),
-    ('g-diff2-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '0'),
-    ('g-margin-win-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '0'),
-    ('g-wrong-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '0'),
-    ('g-far-win-m',    'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '0');
+  INSERT INTO matches (id, competition_id, team_a, team_b, tournament_phase, bet_format) VALUES
+    ('g-exact-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2'),
+    ('g-diff2-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2'),
+    ('g-margin-win-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2'),
+    ('g-wrong-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2'),
+    ('g-far-win-m',    'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2');
 
   PERFORM _bet('g-exact-win',  'g-exact-win-m',  '00000000-0000-0000-0000-000000000001', 3, 0);
   PERFORM _bet('g-diff2-win',  'g-diff2-win-m',  '00000000-0000-0000-0000-000000000002', 2, 1);
@@ -81,10 +81,10 @@ BEGIN
 
   PERFORM _assert(_pts('g-exact-win') = 0, 'Groupe – remise a 0 apres suppression score');
 
-  INSERT INTO matches (id, competition_id, team_a, team_b, phase) VALUES
-    ('g-exact-draw-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '0'),
-    ('g-diff-draw-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '0'),
-    ('g-wrong-draw-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '0');
+  INSERT INTO matches (id, competition_id, team_a, team_b, tournament_phase, bet_format) VALUES
+    ('g-exact-draw-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2'),
+    ('g-diff-draw-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2'),
+    ('g-wrong-draw-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2');
 
   PERFORM _bet('g-exact-draw', 'g-exact-draw-m', '00000000-0000-0000-0000-000000000001', 1, 1);
   PERFORM _bet('g-diff-draw',  'g-diff-draw-m',  '00000000-0000-0000-0000-000000000002', 0, 0);
@@ -103,10 +103,10 @@ END $$;
 -- ════════════════════════════════════════════════════════════
 DO $$
 BEGIN
-  INSERT INTO matches (id, competition_id, team_a, team_b, phase) VALUES
-    ('p-exact-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4'),
-    ('p-wrong-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4'),
-    ('p-margin-win-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4');
+  INSERT INTO matches (id, competition_id, team_a, team_b, tournament_phase, bet_format) VALUES
+    ('p-exact-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider'),
+    ('p-wrong-win-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider'),
+    ('p-margin-win-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider');
 
   PERFORM _bet('p-exact-win',  'p-exact-win-m',  '00000000-0000-0000-0000-000000000001', 2, 1, 'A');
   PERFORM _bet('p-wrong-win',  'p-wrong-win-m',  '00000000-0000-0000-0000-000000000002', 1, 2, 'B');
@@ -125,11 +125,11 @@ END $$;
 -- ════════════════════════════════════════════════════════════
 DO $$
 BEGIN
-  INSERT INTO matches (id, competition_id, team_a, team_b, phase) VALUES
-    ('p-draw-good-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4'),
-    ('p-draw-bad-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4'),
-    ('p-draw-diff-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4'),
-    ('p-draw-no90-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4');
+  INSERT INTO matches (id, competition_id, team_a, team_b, tournament_phase, bet_format) VALUES
+    ('p-draw-good-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider'),
+    ('p-draw-bad-m',  'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider'),
+    ('p-draw-diff-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider'),
+    ('p-draw-no90-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider');
 
   PERFORM _bet('p-draw-good', 'p-draw-good-m', '00000000-0000-0000-0000-000000000001', 1, 1, 'A');
   PERFORM _bet('p-draw-bad',  'p-draw-bad-m',  '00000000-0000-0000-0000-000000000002', 1, 1, 'B');
@@ -150,8 +150,8 @@ END $$;
 -- ════════════════════════════════════════════════════════════
 DO $$
 BEGIN
-  INSERT INTO matches (id, competition_id, team_a, team_b, phase) VALUES
-    ('p-pw-update-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4');
+  INSERT INTO matches (id, competition_id, team_a, team_b, tournament_phase, bet_format) VALUES
+    ('p-pw-update-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider');
 
   PERFORM _bet('p-pw-update', 'p-pw-update-m', '00000000-0000-0000-0000-000000000001', 0, 0, 'A');
 
@@ -167,10 +167,10 @@ END $$;
 -- ════════════════════════════════════════════════════════════
 DO $$
 BEGIN
-  INSERT INTO matches (id, competition_id, team_a, team_b, phase) VALUES
-    ('p-draw-bet-real-win-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4'),
-    ('p-win-bet-real-draw-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4'),
-    ('p-draw-wrong-winner-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '4');
+  INSERT INTO matches (id, competition_id, team_a, team_b, tournament_phase, bet_format) VALUES
+    ('p-draw-bet-real-win-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider'),
+    ('p-win-bet-real-draw-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider'),
+    ('p-draw-wrong-winner-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'quarter_final', 'knockout_decider');
 
   PERFORM _bet('p-draw-bet-real-win', 'p-draw-bet-real-win-m', '00000000-0000-0000-0000-000000000001', 1, 1, 'A');
   UPDATE matches SET score_a = 2, score_b = 0, playoff_winner = 'A' WHERE id = 'p-draw-bet-real-win-m';
@@ -196,8 +196,8 @@ BEGIN
   m := public.prediction_popularity_multiplier(2, 2);
   PERFORM _assert(ABS(m - 1.353352832366127) < 0.0001, 'Helper mult p=1');
 
-  INSERT INTO matches (id, competition_id, team_a, team_b, phase) VALUES
-    ('mult-2p-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', '0');
+  INSERT INTO matches (id, competition_id, team_a, team_b, tournament_phase, bet_format) VALUES
+    ('mult-2p-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2');
 
   PERFORM _bet('mult-exact', 'mult-2p-m', '00000000-0000-0000-0000-000000000001', 3, 0);
   PERFORM _bet('mult-diff',  'mult-2p-m', '00000000-0000-0000-0000-000000000002', 2, 1);

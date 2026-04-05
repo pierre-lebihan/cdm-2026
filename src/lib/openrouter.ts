@@ -1,4 +1,5 @@
 import type { NormalizedMatch } from '../hooks/matches'
+import { formatTournamentPhaseLabel } from './matchEnums'
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
@@ -42,7 +43,7 @@ function buildUserPrompt(
   const matchList = matches
     .map(
       (m) =>
-        `- ID: ${m.id} | ${m.teamAName ?? '?'} vs ${m.teamBName ?? '?'} (${m.phase || 'Groupes'})`,
+        `- ID: ${m.id} | ${m.teamAName ?? '?'} vs ${m.teamBName ?? '?'} (${formatTournamentPhaseLabel(m.tournamentPhase)})`,
     )
     .join('\n')
 

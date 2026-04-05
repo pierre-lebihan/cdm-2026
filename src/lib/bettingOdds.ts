@@ -1,4 +1,5 @@
 import isNumber from 'lodash/isNumber'
+import type { MatchBetFormat } from './matchEnums'
 
 export type PlayoffSide = 'A' | 'B'
 
@@ -9,12 +10,12 @@ export interface BetLike {
   userId: string | null
 }
 
-function isGroupPhase(phase: string | null): boolean {
-  return (phase ?? '0') === '0'
+function isRegulation1x2(betFormat: MatchBetFormat): boolean {
+  return betFormat === 'regulation_1x2'
 }
 
 export function predictionPopularityKey(
-  phase: string | null,
+  betFormat: MatchBetFormat,
   betA: number | null,
   betB: number | null,
   betPw: PlayoffSide | null,
@@ -22,7 +23,7 @@ export function predictionPopularityKey(
   if (!isNumber(betA) || !isNumber(betB) || betA < 0 || betB < 0) {
     return null
   }
-  if (isGroupPhase(phase)) {
+  if (isRegulation1x2(betFormat)) {
     if (betA > betB) {
       return 'G_A'
     }
@@ -46,7 +47,10 @@ export function predictionPopularityKey(
   return 'P_B'
 }
 
-export function dynamicMultiplier(totalValid: number, sameCount: number): number {
+export function dynamicMultiplier(
+  totalValid: number,
+  sameCount: number,
+): number {
   if (totalValid < 2) {
     return 1
   }
@@ -62,7 +66,7 @@ export function dynamicMultiplier(totalValid: number, sameCount: number): number
 }
 
 export function mergeBetsWithDraft(
-  phase: string | null,
+  betFormat: MatchBetFormat,
   rows: BetLike[],
   myUserId: string | undefined,
   draft: BetLike | null,
@@ -71,7 +75,7 @@ export function mergeBetsWithDraft(
     return rows
   }
   const keyDraft = predictionPopularityKey(
-    phase,
+    betFormat,
     draft.betTeamA,
     draft.betTeamB,
     draft.betPlayoffWinner,
@@ -90,13 +94,18 @@ export function mergeBetsWithDraft(
 }
 
 export function statsForPopularity(
-  phase: string | null,
+  betFormat: MatchBetFormat,
   rows: BetLike[],
   draftKey: string | null,
 ): { totalValid: number; sameCount: number; multiplier: number } {
   const keys = rows
     .map((r) =>
-      predictionPopularityKey(phase, r.betTeamA, r.betTeamB, r.betPlayoffWinner),
+      predictionPopularityKey(
+        betFormat,
+        r.betTeamA,
+        r.betTeamB,
+        r.betPlayoffWinner,
+      ),
     )
     .filter((k): k is string => k !== null)
   const totalValid = keys.length
@@ -125,6 +134,9 @@ export function formatMultiplierLabel(mult: number): string {
   return `x${s}`
 }
 
-export function estimatedGainRange(maxBasePoints: number, mult: number): { min: number; max: number } {
+export function estimatedGainRange(
+  maxBasePoints: number,
+  mult: number,
+): { min: number; max: number } {
   return { min: 0, max: Math.round(maxBasePoints * mult) }
 }

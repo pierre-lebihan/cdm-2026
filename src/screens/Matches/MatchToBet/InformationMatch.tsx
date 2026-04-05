@@ -1,24 +1,18 @@
-const phaseConfig: Record<
-  string,
-  { label: string; color: string; multiplier: number }
-> = {
-  '0': { label: '', color: '#6366f1', multiplier: 1 },
-  '5': { label: '16es de finale', color: '#8b5cf6', multiplier: 1 },
-  '6': { label: '8es de finale', color: '#a855f7', multiplier: 2 },
-  '4': { label: 'Quarts de finale', color: '#d946ef', multiplier: 3 },
-  '2': { label: 'Demi-finales', color: '#ec4899', multiplier: 5 },
-  '3': { label: '3e place', color: '#f43f5e', multiplier: 7 },
-  '1': { label: 'Finale', color: '#eab308', multiplier: 10 },
-}
+import type { MatchTournamentPhase } from '../../../lib/matchEnums'
+import { getTournamentPhaseStyle } from '../../../lib/matchEnums'
 
 interface InformationMatchProps {
-  phase: string
+  tournamentPhase: MatchTournamentPhase
   groupName: string | null
 }
 
-const InformationMatch = ({ phase, groupName }: InformationMatchProps) => {
-  const config = phaseConfig[phase] ?? phaseConfig['0']
-  const label = phase === '0' ? `Groupe ${groupName ?? '?'}` : config.label
+const InformationMatch = ({
+  tournamentPhase,
+  groupName,
+}: InformationMatchProps) => {
+  const config = getTournamentPhaseStyle(tournamentPhase)
+  const label =
+    tournamentPhase === 'group' ? `Groupe ${groupName ?? '?'}` : config.label
 
   return (
     <span className="inline-flex items-center gap-1.5">
