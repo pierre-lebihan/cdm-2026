@@ -163,8 +163,7 @@ const HomePageGuest = () => {
       <img
         src={logo}
         alt="Make Prono Great Again"
-        className="absolute top-0 left-0 z-10 drop-shadow-lg select-none"
-        style={{ width: 'min(672px, 120vw)' }}
+        className="absolute top-3 left-3 z-10 w-auto max-w-[min(140px,34vw)] max-h-16 object-contain object-left-top drop-shadow-lg select-none sm:top-4 sm:left-4 sm:max-w-[min(165px,40vw)] sm:max-h-18"
         draggable={false}
       />
 
