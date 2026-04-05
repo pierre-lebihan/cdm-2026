@@ -9,40 +9,77 @@ export type PushNotificationUiState =
   | 'subscribed'
   | 'can_enable'
   | 'can_reenable'
+  | 'error'
+
+const PUSH_STATE_INIT_TIMEOUT_MS = 15000
+
+function promiseWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error('push_state_timeout'))
+    }, ms)
+  })
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId)
+    }
+  })
+}
 
 export async function computePushUiState(): Promise<PushNotificationUiState> {
-  if (!import.meta.env.VITE_ONESIGNAL_APP_ID) {
+  if (!import.meta.env.VITE_ONESIGNAL_APP_ID || import.meta.env.DEV) {
     return 'no_sdk'
   }
-  await initOneSignal()
-  if (!OneSignal.Notifications.isPushSupported()) {
-    return 'unsupported'
+  try {
+    await promiseWithTimeout(
+      initOneSignal(),
+      PUSH_STATE_INIT_TIMEOUT_MS,
+    )
+  } catch {
+    return 'error'
   }
-  const native = OneSignal.Notifications.permissionNative
-  if (native === 'denied') {
-    return 'denied'
+  try {
+    if (!OneSignal.Notifications.isPushSupported()) {
+      return 'unsupported'
+    }
+    const native = OneSignal.Notifications.permissionNative
+    if (native === 'denied') {
+      return 'denied'
+    }
+    const optedIn = OneSignal.User.PushSubscription.optedIn === true
+    if (optedIn && native === 'granted') {
+      return 'subscribed'
+    }
+    if (native === 'granted' && !optedIn) {
+      return 'can_reenable'
+    }
+    return 'can_enable'
+  } catch {
+    return 'error'
   }
-  const optedIn = OneSignal.User.PushSubscription.optedIn === true
-  if (optedIn && native === 'granted') {
-    return 'subscribed'
-  }
-  if (native === 'granted' && !optedIn) {
-    return 'can_reenable'
-  }
-  return 'can_enable'
 }
 
 export async function promptPushNotifications(): Promise<void> {
+  if (import.meta.env.DEV) {
+    return
+  }
   await initOneSignal()
   await OneSignal.Slidedown.promptPush()
 }
 
 export async function optInPushSubscription(): Promise<void> {
+  if (import.meta.env.DEV) {
+    return
+  }
   await initOneSignal()
   await OneSignal.User.PushSubscription.optIn()
 }
 
 export async function optOutPushSubscription(): Promise<void> {
+  if (import.meta.env.DEV) {
+    return
+  }
   await initOneSignal()
   await OneSignal.User.PushSubscription.optOut()
 }

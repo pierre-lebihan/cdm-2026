@@ -12,7 +12,7 @@ function serviceWorkerUrl(): string {
 
 export function initOneSignal(): Promise<void> {
   const appId = import.meta.env.VITE_ONESIGNAL_APP_ID
-  if (!appId) {
+  if (!appId || import.meta.env.DEV) {
     return Promise.resolve()
   }
   if (initPromise) {
@@ -20,7 +20,7 @@ export function initOneSignal(): Promise<void> {
   }
   initPromise = OneSignal.init({
     appId,
-    allowLocalhostAsSecureOrigin: import.meta.env.DEV,
+    allowLocalhostAsSecureOrigin: false,
     serviceWorkerPath: serviceWorkerUrl(),
     promptOptions: {
       slidedown: {
@@ -49,7 +49,7 @@ export function initOneSignal(): Promise<void> {
 }
 
 export async function bindOneSignalUser(userId: string | null): Promise<void> {
-  if (!import.meta.env.VITE_ONESIGNAL_APP_ID) {
+  if (!import.meta.env.VITE_ONESIGNAL_APP_ID || import.meta.env.DEV) {
     return
   }
   await initOneSignal()

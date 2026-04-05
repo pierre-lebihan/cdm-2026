@@ -5,6 +5,7 @@
 - **Installer l’app vs notifications** : sur **iPhone**, le push web ne marche en pratique qu’en **PWA** (ajout à l’écran d’accueil) — l’encart d’installation reste prioritaire ; la carte « Ne rate pas les matchs » explique cette étape sur iOS. Sur **Android / bureau**, les notifications peuvent fonctionner **sans** installation ; les deux encarts peuvent coexister (install en bas à droite, rappels matchs en bas à gauche sur grand écran).
 - Variable **`VITE_ONESIGNAL_APP_ID`** : ID d’app OneSignal (dashboard → Settings → Keys & IDs).
 - En production, ajoute la même variable dans les secrets GitHub du workflow de déploiement (`VITE_ONESIGNAL_APP_ID`).
+- **Localhost** : le SDK OneSignal **n’est pas initialisé** en `npm run dev` (`import.meta.env.DEV`) : pas d’init, pas de prompt, pas de lien utilisateur. L’écran Profil affiche un court message à la place. Tester le push **uniquement** sur le build de prod / site déployé (même `App ID` que les secrets GitHub). La **Site URL** OneSignal doit correspondre à cette URL de prod.
 - Le SDK est initialisé dans `src/lib/onesignal.ts` ; après connexion Google, l’**external_id** OneSignal = UUID Supabase (`OneSignal.login`), pour que les rappels match ciblent les bons abonnés.
 - Le service worker PWA (`sw.js` généré par Vite) charge aussi le script OneSignal via `importScripts` dans `vite.config.ts`.
 

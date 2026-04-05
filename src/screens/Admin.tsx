@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 import { useIsUserAdmin } from '../hooks/user'
 import { useMatches, type NormalizedMatch } from '../hooks/matches'
 import { useCompetition } from '../contexts/CompetitionContext'
@@ -176,9 +177,11 @@ function formatPhase(phase: string | null): string {
 }
 
 const Admin = () => {
+  const { user, profile, loading: authLoading } = useAuth()
   const isAdmin = useIsUserAdmin()
   const navigate = useNavigate()
-  const matches = useMatches()
+  const [matchesRefreshKey, setMatchesRefreshKey] = useState(0)
+  const matches = useMatches(matchesRefreshKey)
   const {
     competitions,
     activeCompetitionId,
@@ -189,10 +192,20 @@ const Admin = () => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'finished'>('pending')
 
   useEffect(() => {
+    if (authLoading) return
+    if (!user) {
+      navigate('/')
+      return
+    }
+    if (profile === null) return
     if (!isAdmin) {
       navigate('/')
     }
-  }, [isAdmin, navigate])
+  }, [authLoading, user, profile, isAdmin, navigate])
+
+  const bumpMatchesList = useCallback(() => {
+    setMatchesRefreshKey((k) => k + 1)
+  }, [])
 
   const handleSaveScore = useCallback(
     async (matchId: string, scoreA: number, scoreB: number) => {
@@ -206,9 +219,9 @@ const Admin = () => {
         return
       }
       toast.success('Score mis à jour — points recalculés')
-      window.location.reload()
+      bumpMatchesList()
     },
-    [],
+    [bumpMatchesList],
   )
 
   const handleClearScore = useCallback(
@@ -223,9 +236,9 @@ const Admin = () => {
         return
       }
       toast.success('Score vidé')
-      window.location.reload()
+      bumpMatchesList()
     },
-    [],
+    [bumpMatchesList],
   )
 
   const handleMatchVisibilityChange = useCallback(
@@ -240,9 +253,9 @@ const Admin = () => {
         return
       }
       toast.success(visible ? 'Match visible pour les joueurs' : 'Match masqué pour les joueurs')
-      window.location.reload()
+      bumpMatchesList()
     },
-    [],
+    [bumpMatchesList],
   )
 
   const handleSetPublic = useCallback(
@@ -252,6 +265,14 @@ const Admin = () => {
     },
     [setPublicCompetition],
   )
+
+  if (authLoading || (user !== null && profile === null)) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh] text-gray-400">
+        Chargement...
+      </div>
+    )
+  }
 
   if (!isAdmin) return null
   if (!matches) {

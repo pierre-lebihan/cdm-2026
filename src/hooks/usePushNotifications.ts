@@ -7,7 +7,9 @@ import {
 import { initOneSignal } from '../lib/onesignal'
 
 function usePushNotificationsEnabled(): boolean {
-  return Boolean(import.meta.env.VITE_ONESIGNAL_APP_ID)
+  return (
+    Boolean(import.meta.env.VITE_ONESIGNAL_APP_ID) && import.meta.env.PROD
+  )
 }
 
 export function usePushNotifications() {
@@ -16,14 +18,25 @@ export function usePushNotifications() {
     enabled ? 'loading' : 'no_sdk',
   )
 
-  const refresh = useCallback(async () => {
-    if (!enabled) {
-      setState('no_sdk')
-      return
-    }
-    const next = await computePushUiState()
-    setState(next)
-  }, [enabled])
+  const refresh = useCallback(
+    async (opts?: { showLoading?: boolean }) => {
+      if (!enabled) {
+        setState('no_sdk')
+        return
+      }
+      if (opts?.showLoading === true) {
+        setState('loading')
+      }
+      try {
+        const next = await computePushUiState()
+        setState(next)
+      } catch (err: unknown) {
+        console.error(err)
+        setState('error')
+      }
+    },
+    [enabled],
+  )
 
   useEffect(() => {
     if (!enabled) {

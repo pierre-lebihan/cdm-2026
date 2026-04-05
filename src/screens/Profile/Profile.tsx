@@ -56,6 +56,13 @@ const Profile = () => {
         </button>
       </div>
 
+      {import.meta.env.DEV ? (
+        <p className="mt-6 text-sm text-gray-400 m-0 text-center leading-snug">
+          Les notifications push ne sont pas disponibles sur localhost — elles
+          fonctionnent sur le site en ligne une fois déployé.
+        </p>
+      ) : null}
+
       {pushEnabled ? (
         <div className="mt-6 bg-white rounded-2xl p-6 shadow-card text-left">
           <div className="flex items-center gap-2 mb-3">
@@ -134,6 +141,25 @@ const Profile = () => {
               autoriser
               les notifications, puis reviens ici.
             </p>
+          ) : null}
+
+          {pushState === 'error' ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-gray-600 m-0 leading-snug">
+                Le service de notifications n&apos;a pas répondu à temps ou une
+                erreur est survenue. Vérifie ta connexion ou réessaie dans un
+                instant.
+              </p>
+              <button
+                type="button"
+                className="w-full sm:w-auto inline-flex justify-center py-2.5 px-5 bg-navy text-cream font-semibold rounded-lg hover:bg-navy/90 transition-colors"
+                onClick={() => {
+                  void refreshPush({ showLoading: true })
+                }}
+              >
+                Réessayer
+              </button>
+            </div>
           ) : null}
 
           {pushState === 'unsupported' ? (

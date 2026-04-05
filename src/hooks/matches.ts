@@ -53,22 +53,27 @@ function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
   }
 }
 
-export function useMatches(): NormalizedMatch[] | null {
+export function useMatches(refreshKey: number = 0): NormalizedMatch[] | null {
   const [matches, setMatches] = useState<NormalizedMatch[] | null>(null)
   const { activeCompetitionId } = useCompetition()
 
   useEffect(() => {
     if (!activeCompetitionId) return
+    let cancelled = false
     supabase
       .from('matches_with_teams')
       .select('*')
       .eq('competition_id', activeCompetitionId)
       .order('date_time', { ascending: true })
       .then(({ data }) => {
+        if (cancelled) return
         const normalized = data?.map(normalizeMatch)
         setMatches(normalized ?? null)
       })
-  }, [activeCompetitionId])
+    return () => {
+      cancelled = true
+    }
+  }, [activeCompetitionId, refreshKey])
 
   return matches
 }
