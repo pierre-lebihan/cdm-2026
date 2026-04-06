@@ -222,9 +222,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 DROP FUNCTION IF EXISTS public.prediction_popularity_key(text, integer, integer, text);
 
+DROP VIEW IF EXISTS public.matches_with_teams;
+
 ALTER TABLE public.matches DROP COLUMN phase;
 
-CREATE OR REPLACE VIEW matches_with_teams AS
+CREATE VIEW public.matches_with_teams AS
 SELECT
   m.*,
   ta.name AS team_a_name,
@@ -235,3 +237,5 @@ SELECT
 FROM matches m
 LEFT JOIN teams ta ON m.team_a = ta.id
 LEFT JOIN teams tb ON m.team_b = tb.id;
+
+ALTER VIEW public.matches_with_teams SET (security_invoker = true);
