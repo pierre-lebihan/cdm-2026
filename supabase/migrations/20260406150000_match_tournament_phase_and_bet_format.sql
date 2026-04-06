@@ -50,7 +50,7 @@ ALTER TABLE public.matches
   ALTER COLUMN tournament_phase SET DEFAULT 'group'::public.match_tournament_phase,
   ALTER COLUMN bet_format SET DEFAULT 'regulation_1x2'::public.match_bet_format;
 
-CREATE OR REPLACE FUNCTION public._prediction_popularity_key_new(
+CREATE OR REPLACE FUNCTION public.match_prediction_popularity_key(
   p_bet_format public.match_bet_format,
   bet_a INTEGER,
   bet_b INTEGER,
@@ -77,15 +77,6 @@ AS $$
     ELSE 'P_B'
   END;
 $$;
-
-DROP FUNCTION IF EXISTS public.prediction_popularity_key(text, integer, integer, text);
-
-ALTER FUNCTION public._prediction_popularity_key_new(
-  public.match_bet_format,
-  integer,
-  integer,
-  text
-) RENAME TO prediction_popularity_key;
 
 CREATE OR REPLACE FUNCTION calculate_match_scores()
 RETURNS TRIGGER AS $$
@@ -135,7 +126,7 @@ BEGIN
   SELECT COUNT(*)::INTEGER INTO total_valid
   FROM bets b
   WHERE b.match_id = NEW.id
-    AND public.prediction_popularity_key(
+    AND public.match_prediction_popularity_key(
       NEW.bet_format, b.bet_team_a, b.bet_team_b, b.bet_playoff_winner
     ) IS NOT NULL;
 
@@ -195,7 +186,7 @@ BEGIN
 
     base_points := p_resultat + p_gagnant + p_proximite + p_ecart + p_bonus;
 
-    pop_key := public.prediction_popularity_key(
+    pop_key := public.match_prediction_popularity_key(
       NEW.bet_format,
       bet_row.bet_team_a,
       bet_row.bet_team_b,
@@ -208,7 +199,7 @@ BEGIN
       SELECT COUNT(*)::INTEGER INTO same_count
       FROM bets b
       WHERE b.match_id = NEW.id
-        AND public.prediction_popularity_key(
+        AND public.match_prediction_popularity_key(
           NEW.bet_format, b.bet_team_a, b.bet_team_b, b.bet_playoff_winner
         ) = pop_key;
 
@@ -228,6 +219,8 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP FUNCTION IF EXISTS public.prediction_popularity_key(text, integer, integer, text);
 
 ALTER TABLE public.matches DROP COLUMN phase;
 
