@@ -4,12 +4,10 @@ import {
   computePushUiState,
   type PushNotificationUiState,
 } from '../lib/pushNotificationState'
-import { initOneSignal } from '../lib/onesignal'
+import { initOneSignal, isOneSignalEnabled } from '../lib/onesignal'
 
 function usePushNotificationsEnabled(): boolean {
-  return (
-    Boolean(import.meta.env.VITE_ONESIGNAL_APP_ID) && import.meta.env.PROD
-  )
+  return isOneSignalEnabled()
 }
 
 export function usePushNotifications() {

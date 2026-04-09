@@ -2,8 +2,40 @@ import OneSignal from 'react-onesignal'
 
 let initPromise: Promise<void> | null = null
 
-function shouldInitOneSignal(): boolean {
-  return Boolean(import.meta.env.VITE_ONESIGNAL_APP_ID) && import.meta.env.PROD
+function getCurrentOrigin(): string {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+  return window.location.origin
+}
+
+function getWebsiteOrigin(): string {
+  const websiteUrl = import.meta.env.VITE_WEBSITE_URL
+  if (!websiteUrl) {
+    return ''
+  }
+  try {
+    return new URL(websiteUrl).origin
+  } catch {
+    return ''
+  }
+}
+
+export function isLocalhostOrigin(): boolean {
+  if (typeof window === 'undefined') {
+    return false
+  }
+  return (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+  )
+}
+
+export function isOneSignalEnabled(): boolean {
+  if (!import.meta.env.VITE_ONESIGNAL_APP_ID) {
+    return false
+  }
+  return getCurrentOrigin() === getWebsiteOrigin()
 }
 
 function serviceWorkerUrl(): string {
@@ -24,7 +56,7 @@ function hasValidPushToken(): boolean {
 
 export function initOneSignal(): Promise<void> {
   const appId = import.meta.env.VITE_ONESIGNAL_APP_ID
-  if (!appId || !shouldInitOneSignal()) {
+  if (!appId || !isOneSignalEnabled()) {
     return Promise.resolve()
   }
   if (initPromise) {
@@ -61,7 +93,7 @@ export function initOneSignal(): Promise<void> {
 }
 
 export async function ensurePushSubscriptionReady(): Promise<void> {
-  if (!shouldInitOneSignal()) {
+  if (!isOneSignalEnabled()) {
     return
   }
   await initOneSignal()
@@ -81,7 +113,7 @@ export async function ensurePushSubscriptionReady(): Promise<void> {
 }
 
 export async function bindOneSignalUser(userId: string | null): Promise<void> {
-  if (!shouldInitOneSignal()) {
+  if (!isOneSignalEnabled()) {
     return
   }
   await initOneSignal()

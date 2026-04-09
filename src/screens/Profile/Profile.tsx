@@ -7,6 +7,7 @@ import {
   optInPushSubscription,
   optOutPushSubscription,
 } from '../../lib/pushNotificationState'
+import { isLocalhostOrigin } from '../../lib/onesignal'
 
 function getInitials(name: string): string {
   if (!name) return '?'
@@ -23,6 +24,7 @@ const Profile = () => {
   const logout = useLogout()
   const { state: pushState, refresh: refreshPush, enabled: pushEnabled } =
     usePushNotifications()
+  const showLocalhostNotice = isLocalhostOrigin()
 
   if (!user) return null
 
@@ -55,7 +57,7 @@ const Profile = () => {
         </button>
       </div>
 
-      {import.meta.env.DEV ? (
+      {showLocalhostNotice ? (
         <p className="mt-6 text-sm text-gray-400 m-0 text-center leading-snug">
           Les notifications push ne sont pas disponibles sur localhost — elles
           fonctionnent sur le site en ligne une fois déployé.

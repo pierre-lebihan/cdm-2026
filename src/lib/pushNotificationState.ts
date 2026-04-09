@@ -1,5 +1,5 @@
 import OneSignal from 'react-onesignal'
-import { initOneSignal } from './onesignal'
+import { initOneSignal, isOneSignalEnabled } from './onesignal'
 
 export type PushNotificationUiState =
   | 'loading'
@@ -36,7 +36,7 @@ function promiseWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 export async function computePushUiState(): Promise<PushNotificationUiState> {
-  if (!import.meta.env.VITE_ONESIGNAL_APP_ID || import.meta.env.DEV) {
+  if (!isOneSignalEnabled()) {
     return 'no_sdk'
   }
   try {
@@ -69,7 +69,7 @@ export async function computePushUiState(): Promise<PushNotificationUiState> {
 }
 
 export async function optInPushSubscription(): Promise<void> {
-  if (import.meta.env.DEV) {
+  if (!isOneSignalEnabled()) {
     return
   }
   await initOneSignal()
@@ -77,7 +77,7 @@ export async function optInPushSubscription(): Promise<void> {
 }
 
 export async function optOutPushSubscription(): Promise<void> {
-  if (import.meta.env.DEV) {
+  if (!isOneSignalEnabled()) {
     return
   }
   await initOneSignal()
