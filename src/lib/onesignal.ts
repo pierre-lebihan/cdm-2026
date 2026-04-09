@@ -1,4 +1,5 @@
 import OneSignal from 'react-onesignal'
+import { PWA_SERVICE_WORKER_FILENAME } from '../serviceWorkerName'
 
 let initPromise: Promise<void> | null = null
 
@@ -38,12 +39,22 @@ export function isOneSignalEnabled(): boolean {
   return getCurrentOrigin() === getWebsiteOrigin()
 }
 
-function serviceWorkerUrl(): string {
+function oneSignalServiceWorkerPath(): string {
   const base = import.meta.env.BASE_URL
-  if (base.endsWith('/')) {
-    return `${base}sw.js`
+  if (base === '/' || base === '') {
+    return PWA_SERVICE_WORKER_FILENAME
   }
-  return `${base}/sw.js`
+  const trimmed = base.endsWith('/') ? base.slice(0, -1) : base
+  const withoutLeadingSlash = trimmed.replace(/^\//, '')
+  return `${withoutLeadingSlash}/${PWA_SERVICE_WORKER_FILENAME}`
+}
+
+function oneSignalServiceWorkerScope(): string {
+  const base = import.meta.env.BASE_URL
+  if (!base || base === '/') {
+    return '/'
+  }
+  return base.endsWith('/') ? base : `${base}/`
 }
 
 function hasValidPushToken(): boolean {
@@ -65,7 +76,8 @@ export function initOneSignal(): Promise<void> {
   initPromise = OneSignal.init({
     appId,
     allowLocalhostAsSecureOrigin: false,
-    serviceWorkerPath: serviceWorkerUrl(),
+    serviceWorkerPath: oneSignalServiceWorkerPath(),
+    serviceWorkerParam: { scope: oneSignalServiceWorkerScope() },
     promptOptions: {
       slidedown: {
         prompts: [

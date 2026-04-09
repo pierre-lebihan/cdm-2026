@@ -8,7 +8,7 @@
 - En production, le workflow GitHub Actions injecte `VITE_WEBSITE_URL=https://makepronogreatagain.bzh` au build, en plus de `VITE_ONESIGNAL_APP_ID`.
 - **Localhost** : le SDK OneSignal **n’est pas initialisé** si l’origin courante ne correspond pas à `VITE_WEBSITE_URL`. L’écran Profil affiche un court message à la place. Tester le push **uniquement** sur le site déployé ou sur un environnement servi avec la même origin que la prod.
 - Le SDK est initialisé dans `src/lib/onesignal.ts` ; après connexion Google, l’**external_id** OneSignal = UUID Supabase (`OneSignal.login`), pour que les rappels match ciblent les bons abonnés.
-- Le service worker PWA (`sw.js` généré par Vite) charge aussi le script OneSignal via `importScripts` dans `vite.config.ts`.
+- Le service worker PWA est émis sous le nom **`OneSignalSDKWorker.js`** (aligné sur la config OneSignal « typical » : l’API `/sync/.../web` attend ce fichier à la racine). Le fichier généré par Vite charge OneSignal via `importScripts` dans `vite.config.ts`. **`OneSignalSDKUpdaterWorker.js`** est fourni statiquement dans `public/` pour éviter un 404 sur le second worker attendu par le même sync.
 
 ## Secrets des Edge Functions (Supabase)
 
