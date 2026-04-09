@@ -36,6 +36,10 @@ CREATE OR REPLACE FUNCTION _pts(p_id TEXT) RETURNS INTEGER AS $$
   SELECT points_won FROM bets WHERE id = p_id;
 $$ LANGUAGE sql;
 
+CREATE OR REPLACE FUNCTION _outcome(p_id TEXT) RETURNS public.bet_outcome_status AS $$
+  SELECT outcome_status FROM bets WHERE id = p_id;
+$$ LANGUAGE sql;
+
 CREATE OR REPLACE FUNCTION _assert(ok BOOLEAN, msg TEXT) RETURNS VOID AS $$
 BEGIN
   IF NOT ok THEN RAISE EXCEPTION 'ECHEC : %', msg; END IF;
@@ -69,6 +73,10 @@ BEGIN
   PERFORM _assert(_pts('g-margin-win') = 14, 'Groupe – bon vainqueur meme marge = 14');
   PERFORM _assert(_pts('g-wrong-win') = 0,   'Groupe – mauvais vainqueur = 0');
   PERFORM _assert(_pts('g-far-win') = 11,    'Groupe – diff 4 proximite=0 ecart=1 = 11');
+
+  PERFORM _assert(_outcome('g-exact-win') = 'perfect_score'::public.bet_outcome_status, 'Groupe – statut score parfait');
+  PERFORM _assert(_outcome('g-diff2-win') = 'good_result'::public.bet_outcome_status, 'Groupe – statut bon resultat (diff2)');
+  PERFORM _assert(_outcome('g-wrong-win') = 'rate'::public.bet_outcome_status, 'Groupe – statut rate');
 END $$;
 
 -- ════════════════════════════════════════════════════════════
@@ -80,6 +88,7 @@ BEGIN
   WHERE id IN ('g-exact-win-m', 'g-diff2-win-m', 'g-margin-win-m', 'g-wrong-win-m', 'g-far-win-m');
 
   PERFORM _assert(_pts('g-exact-win') = 0, 'Groupe – remise a 0 apres suppression score');
+  PERFORM _assert(_outcome('g-exact-win') IS NULL, 'Groupe – statut NULL apres suppression score');
 
   INSERT INTO matches (id, competition_id, team_a, team_b, tournament_phase, bet_format) VALUES
     ('g-exact-draw-m', 'aaaaaaaa-0000-0000-0000-000000000001', 'cl-arsenal', 'cl-psg', 'group', 'regulation_1x2'),

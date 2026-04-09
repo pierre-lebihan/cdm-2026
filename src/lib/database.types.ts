@@ -6,6 +6,8 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type BetOutcomeStatusEnum = 'rate' | 'good_result' | 'perfect_score'
+
 export type MatchBetFormatEnum = 'regulation_1x2' | 'knockout_decider'
 
 export type MatchTournamentPhaseEnum =
@@ -31,6 +33,7 @@ export type Database = {
           competition_id: string | null
           id: string
           match_id: string | null
+          outcome_status: BetOutcomeStatusEnum | null
           points_won: number | null
           updated_at: string | null
           user_id: string | null
@@ -42,6 +45,7 @@ export type Database = {
           competition_id?: string | null
           id: string
           match_id?: string | null
+          outcome_status?: BetOutcomeStatusEnum | null
           points_won?: number | null
           updated_at?: string | null
           user_id?: string | null
@@ -53,6 +57,7 @@ export type Database = {
           competition_id?: string | null
           id?: string
           match_id?: string | null
+          outcome_status?: BetOutcomeStatusEnum | null
           points_won?: number | null
           updated_at?: string | null
           user_id?: string | null
@@ -372,6 +377,7 @@ export type Database = {
           bet_team_b: number | null
           id: string | null
           match_id: string | null
+          outcome_status: BetOutcomeStatusEnum | null
           points_won: number | null
           updated_at: string | null
           user_avatar_url: string | null
@@ -461,6 +467,7 @@ export type Database = {
       }
     }
     Enums: {
+      bet_outcome_status: BetOutcomeStatusEnum
       match_bet_format: MatchBetFormatEnum
       match_tournament_phase: MatchTournamentPhaseEnum
     }

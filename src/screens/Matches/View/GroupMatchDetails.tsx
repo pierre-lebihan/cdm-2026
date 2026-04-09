@@ -4,6 +4,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext'
 import InlineAvatar from 'components/Avatar'
 import { useBetsFromGame } from 'hooks/bets'
+import {
+  betOutcomeCellClass,
+  betOutcomeTableLabel,
+  matchHasPublishedScore,
+} from '../../../lib/betOutcomeStatus'
 
 interface GroupMatchDetailsProps {
   name: string
@@ -14,7 +19,7 @@ interface GroupMatchDetailsProps {
   }>
   match: {
     id: string
-    scores: { A: number; B: number }
+    scores: { A: number | null; B: number | null }
   }
 }
 
@@ -34,6 +39,7 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
         betTeamA: b.bet_team_a,
         betTeamB: b.bet_team_b,
         pointsWon: b.points_won,
+        outcomeStatus: b.outcome_status,
       })),
     [bets],
   )
@@ -70,6 +76,7 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
 
   const ScoreA = match.scores.A
   const ScoreB = match.scores.B
+  const showOutcomeColumn = matchHasPublishedScore(ScoreA, ScoreB)
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-card mb-4">
@@ -82,6 +89,9 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
               <th className="p-2 text-left"></th>
               <th className="p-2 text-left">Nom</th>
               <th className="p-2 text-left">Prono</th>
+              {showOutcomeColumn ? (
+                <th className="p-2 text-left">Statut</th>
+              ) : null}
               <th className="p-2 text-right">Points</th>
             </tr>
           </thead>
@@ -106,6 +116,17 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
                   <td className="p-2 text-center text-sm">
                     {hasBet ? `${bet.betTeamA} : ${bet.betTeamB}` : '–'}
                   </td>
+                  {showOutcomeColumn ? (
+                    <td
+                      className={`p-2 text-left text-sm ${betOutcomeCellClass(
+                        hasBet ? bet?.outcomeStatus : null,
+                      )}`}
+                    >
+                      {hasBet
+                        ? betOutcomeTableLabel(bet?.outcomeStatus)
+                        : '–'}
+                    </td>
+                  ) : null}
                   <td className="p-2 text-right font-semibold text-sm">
                     {(bet?.pointsWon || 0).toLocaleString()} pts
                   </td>

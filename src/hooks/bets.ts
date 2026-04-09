@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useCompetition } from '../contexts/CompetitionContext'
-import type { Tables } from '../lib/database.types'
+import type { BetOutcomeStatusEnum, Tables } from '../lib/database.types'
 import type { MatchPrediction } from '../lib/openrouter'
 
 type BetRow = Tables<'bets'>
@@ -15,6 +15,7 @@ interface NormalizedBet {
   betTeamA: number | null
   betTeamB: number | null
   betPlayoffWinner: 'A' | 'B' | null
+  outcomeStatus: BetOutcomeStatusEnum | null
   pointsWon: number | null
   updatedAt: string | null
   match_id: string | null
@@ -22,6 +23,7 @@ interface NormalizedBet {
   bet_team_a: number | null
   bet_team_b: number | null
   bet_playoff_winner: string | null
+  outcome_status: BetOutcomeStatusEnum | null
   points_won: number | null
   updated_at: string | null
 }
@@ -35,6 +37,7 @@ function normalizeBet(row: BetRow | null): NormalizedBet | undefined {
     betTeamA: row.bet_team_a,
     betTeamB: row.bet_team_b,
     betPlayoffWinner: (row.bet_playoff_winner as 'A' | 'B' | null) ?? null,
+    outcomeStatus: row.outcome_status,
     pointsWon: row.points_won,
     updatedAt: row.updated_at,
   }

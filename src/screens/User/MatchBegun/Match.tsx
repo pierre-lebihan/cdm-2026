@@ -5,25 +5,7 @@ import { isNumber } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 import InformationMatch from '../../Matches/MatchToBet/InformationMatch'
 import { tournamentPhaseMultiplier } from '../../../lib/matchEnums'
-
-function getCardBgClass(
-  betTeamA: number | null | undefined,
-  betTeamB: number | null | undefined,
-  pointsWon: number | null | undefined,
-  scoreA: number | null,
-  scoreB: number | null,
-): string {
-  const hasBet = isNumber(betTeamA) && isNumber(betTeamB)
-
-  if (!hasBet) return 'bg-gray-100 border border-gray-300'
-
-  if (!pointsWon || pointsWon <= 0) return 'bg-red-50 border border-red-200'
-
-  const isExactScore = betTeamA === scoreA && betTeamB === scoreB
-  if (isExactScore) return 'bg-green-50 border border-green-200'
-
-  return 'bg-amber-50 border border-amber-200'
-}
+import { cardBgClassForUserBet } from '../../../lib/betOutcomeStatus'
 
 const Match = ({ match }) => {
   const { id } = useParams()
@@ -48,13 +30,15 @@ const Match = ({ match }) => {
 
   if (!match.display) return null
 
-  const cardBg = getCardBgClass(
-    currentBet?.betTeamA,
-    currentBet?.betTeamB,
-    currentBet?.pointsWon,
-    match.scores.A,
-    match.scores.B,
-  )
+  const cardBg = cardBgClassForUserBet({
+    hasBet: isNumber(currentBet?.betTeamA) && isNumber(currentBet?.betTeamB),
+    scoreA: match.scores.A,
+    scoreB: match.scores.B,
+    outcomeStatus: currentBet?.outcomeStatus,
+    betTeamA: currentBet?.betTeamA,
+    betTeamB: currentBet?.betTeamB,
+    pointsWon: currentBet?.pointsWon,
+  })
 
   return (
     <button
