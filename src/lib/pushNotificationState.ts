@@ -13,6 +13,14 @@ export type PushNotificationUiState =
 
 const PUSH_STATE_INIT_TIMEOUT_MS = 15000
 
+function hasValidPushToken(): boolean {
+  const token = OneSignal.User.PushSubscription.token
+  if (typeof token !== 'string') {
+    return false
+  }
+  return token.length > 0
+}
+
 function promiseWithTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined
   const timeoutPromise = new Promise<T>((_, reject) => {
@@ -48,24 +56,16 @@ export async function computePushUiState(): Promise<PushNotificationUiState> {
       return 'denied'
     }
     const optedIn = OneSignal.User.PushSubscription.optedIn === true
-    if (optedIn && native === 'granted') {
+    if (optedIn && native === 'granted' && hasValidPushToken()) {
       return 'subscribed'
     }
-    if (native === 'granted' && !optedIn) {
+    if (native === 'granted') {
       return 'can_reenable'
     }
     return 'can_enable'
   } catch {
     return 'error'
   }
-}
-
-export async function promptPushNotifications(): Promise<void> {
-  if (import.meta.env.DEV) {
-    return
-  }
-  await initOneSignal()
-  await OneSignal.Slidedown.promptPush()
 }
 
 export async function optInPushSubscription(): Promise<void> {

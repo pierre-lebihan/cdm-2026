@@ -82,7 +82,6 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
               <th className="p-2 text-left"></th>
               <th className="p-2 text-left">Nom</th>
               <th className="p-2 text-left">Prono</th>
-              <th className="p-2 text-left">Malus</th>
               <th className="p-2 text-right">Points</th>
             </tr>
           </thead>
@@ -106,17 +105,6 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
                   </td>
                   <td className="p-2 text-center text-sm">
                     {hasBet ? `${bet.betTeamA} : ${bet.betTeamB}` : '–'}
-                  </td>
-                  <td
-                    className="p-2 text-center italic text-sm"
-                    title={hasBet ? "Écarts de points par rapport au score réel" : undefined}
-                  >
-                    {hasBet && bet.pointsWon && bet.pointsWon > 0
-                      ? `- ${
-                          Math.abs(ScoreA - (bet.betTeamA ?? 0)) +
-                          Math.abs(ScoreB - (bet.betTeamB ?? 0))
-                        }`
-                      : '-'}
                   </td>
                   <td className="p-2 text-right font-semibold text-sm">
                     {(bet?.pointsWon || 0).toLocaleString()} pts

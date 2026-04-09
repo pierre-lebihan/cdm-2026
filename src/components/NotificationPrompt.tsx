@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Bell, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { usePushNotifications } from '../hooks/usePushNotifications'
-import { promptPushNotifications } from '../lib/pushNotificationState'
+import { optInPushSubscription } from '../lib/pushNotificationState'
 
 const DISMISS_KEY = 'mpgaNotificationPromptDismissed'
 const DISMISS_MS = 7 * 24 * 60 * 60 * 1000
@@ -47,7 +47,7 @@ export default function NotificationPrompt() {
 
   const handleEnable = async () => {
     try {
-      await promptPushNotifications()
+      await optInPushSubscription()
       await refresh()
     } catch (err: unknown) {
       console.error('Notification prompt', err)

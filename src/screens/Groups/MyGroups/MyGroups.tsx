@@ -1,4 +1,5 @@
 import isEmpty from 'lodash/isEmpty'
+import toast from 'react-hot-toast'
 import { useAuth } from '../../../contexts/AuthContext'
 import type { GroupWithMembers } from '../../../hooks/groups'
 
@@ -52,9 +53,18 @@ const GroupItem = ({ group }: { group: GroupWithMembers }) => {
         {group.memberIds.length} membres
       </span>
       {group.join_key && (
-        <span className="text-[0.7rem] font-mono text-indigo-500 bg-indigo-50 py-0.5 px-2 rounded-md">
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(group.join_key ?? '').then(() => {
+              toast.success('Code copié !', { duration: 2000 })
+            })
+          }}
+          className="text-[0.7rem] font-mono text-indigo-500 bg-indigo-50 py-0.5 px-2 rounded-md active:scale-95 transition-transform cursor-pointer"
+          title="Copier le code d'invitation"
+        >
           {group.join_key}
-        </span>
+        </button>
       )}
       {badgeLabel && (
         <span

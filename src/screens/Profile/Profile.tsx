@@ -6,7 +6,6 @@ import { useLogout } from '../../hooks/user'
 import {
   optInPushSubscription,
   optOutPushSubscription,
-  promptPushNotifications,
 } from '../../lib/pushNotificationState'
 
 function getInitials(name: string): string {
@@ -114,11 +113,7 @@ const Profile = () => {
                 className="w-full sm:w-auto inline-flex justify-center py-2.5 px-5 bg-navy text-cream font-semibold rounded-lg hover:bg-navy/90 transition-colors"
                 onClick={async () => {
                   try {
-                    if (pushState === 'can_enable') {
-                      await promptPushNotifications()
-                    } else {
-                      await optInPushSubscription()
-                    }
+                    await optInPushSubscription()
                     await refreshPush()
                     toast.success('Préférences enregistrées')
                   } catch (err: unknown) {
