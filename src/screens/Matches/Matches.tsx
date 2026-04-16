@@ -69,16 +69,19 @@ const Matches = () => {
   const matches = useMatches()
   const competitionData = useCompetitionData()
 
-  const upcomingMatches = useMemo(() => {
+  const visibleMatches = useMemo(() => {
     if (!matches) return []
-    return matches.filter((match) => !isMatchFinished(match, comparingDate))
-  }, [matches, comparingDate])
+    return matches.filter((match) => match.visibleToUsers)
+  }, [matches])
+
+  const upcomingMatches = useMemo(() => {
+    return visibleMatches.filter((match) => !isMatchFinished(match, comparingDate))
+  }, [visibleMatches, comparingDate])
 
   const filteredMatches = useMemo(() => {
-    if (!matches) return []
     if (selectedTab === 0) return upcomingMatches
-    return matches.filter((match) => isMatchFinished(match, comparingDate)).reverse()
-  }, [matches, selectedTab, upcomingMatches, comparingDate])
+    return visibleMatches.filter((match) => isMatchFinished(match, comparingDate)).reverse()
+  }, [visibleMatches, selectedTab, upcomingMatches, comparingDate])
 
   const hasUnbettedMatches = useMemo(() => {
     if (!bettedMatchIds) return false
