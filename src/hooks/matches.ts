@@ -21,12 +21,18 @@ export interface NormalizedMatch {
   odds: { PA: number | null; PB: number | null; PN: number | null }
   tournamentPhase: MatchTournamentPhase
   betFormat: MatchBetFormat
+  playoffWinner: 'A' | 'B' | null
   finished: boolean | null
   display: boolean
   visibleToUsers: boolean
   idApiRugby: string | null
   groupName: string | null
   competitionId: string | null
+}
+
+function normalizePlayoffWinner(value: string | null | undefined): 'A' | 'B' | null {
+  if (value === 'A' || value === 'B') return value
+  return null
 }
 
 function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
@@ -47,6 +53,7 @@ function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
     odds: { PA: row.odds_a, PB: row.odds_b, PN: row.odds_draw },
     tournamentPhase: row.tournament_phase ?? 'group',
     betFormat: row.bet_format ?? 'regulation_1x2',
+    playoffWinner: normalizePlayoffWinner(row.playoff_winner),
     finished: row.finished,
     display: true,
     visibleToUsers: row.visible_to_users !== false,

@@ -465,6 +465,10 @@ export type Database = {
         Args: { p_group_id: string; p_user_id: string }
         Returns: undefined
       }
+      admin_recalculate_all_scores: {
+        Args: Record<string, never>
+        Returns: Json
+      }
     }
     Enums: {
       bet_outcome_status: BetOutcomeStatusEnum

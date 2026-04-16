@@ -33,7 +33,7 @@ Si tu changes d’URL de projet Supabase, mets à jour l’URL dans le `cron.sch
 
 ## Déploiement des fonctions
 
-Le workflow GitHub Actions déploie `notify-pre-match` avec `update-results` / `update-odds`. En local :
+Le workflow GitHub Actions déploie `notify-pre-match` avec `update-results`. En local :
 
 ```bash
 supabase functions deploy notify-pre-match --no-verify-jwt

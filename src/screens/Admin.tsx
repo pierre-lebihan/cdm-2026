@@ -189,6 +189,7 @@ const Admin = () => {
   const [filter, setFilter] = useState<'all' | 'pending' | 'finished'>(
     'pending',
   )
+  const [recalculating, setRecalculating] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -269,6 +270,29 @@ const Admin = () => {
     [setPublicCompetition],
   )
 
+  const handleRecalculateAllScores = useCallback(async () => {
+    const confirmed = window.confirm(
+      'ATTENTION : cela va remettre à zéro tous les scores puis recalculer TOUS les paris de TOUTES les compétitions avec la formule actuelle (base × cote × multiplicateur de phase).\n\nLes classements vont changer. Continuer ?',
+    )
+    if (!confirmed) return
+
+    setRecalculating(true)
+    const { data, error } = await supabase.rpc('admin_recalculate_all_scores')
+    setRecalculating(false)
+
+    if (error) {
+      toast.error(`Erreur: ${error.message}`)
+      return
+    }
+
+    const matchesProcessed = (data as { matches_processed?: number } | null)?.matches_processed ?? 0
+    const betsProcessed = (data as { bets_processed?: number } | null)?.bets_processed ?? 0
+    toast.success(
+      `Recalcul terminé : ${matchesProcessed} match(s), ${betsProcessed} pari(s)`,
+    )
+    bumpMatchesList()
+  }, [bumpMatchesList])
+
   if (authLoading || (user !== null && profile === null)) {
     return (
       <div className="flex items-center justify-center min-h-[40vh] text-gray-400">
@@ -309,6 +333,25 @@ const Admin = () => {
         La visibilité par match contrôle l’affichage sur le site et la
         possibilité de pronostiquer (hors admin).
       </p>
+
+      <div className="bg-white rounded-xl p-4 shadow-card mb-6 border border-red-100">
+        <h2 className="text-sm font-bold text-navy mb-1">Recalcul des scores</h2>
+        <p className="text-xs text-gray-500 mb-3">
+          Remet à zéro tous les <span className="font-semibold">competition_profiles</span> puis recalcule tous les paris avec la formule actuelle. À utiliser après une modification de l'algorithme.
+        </p>
+        <button
+          type="button"
+          className={`text-xs font-semibold py-2 px-4 rounded-full border-none transition-colors ${
+            recalculating
+              ? 'bg-gray-200 text-gray-400 cursor-wait'
+              : 'bg-red-500 text-white cursor-pointer hover:bg-red-600'
+          }`}
+          disabled={recalculating}
+          onClick={handleRecalculateAllScores}
+        >
+          {recalculating ? 'Recalcul en cours...' : 'Recalculer tous les scores'}
+        </button>
+      </div>
 
       {/* Competition selector */}
       <div className="bg-white rounded-xl p-4 shadow-card mb-6">

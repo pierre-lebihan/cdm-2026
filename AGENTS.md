@@ -34,7 +34,7 @@ src/
 └── main.tsx         # Point d'entree
 
 supabase/
-├── functions/       # Edge Functions (update-results, update-odds)
+├── functions/       # Edge Functions (update-results, notify-pre-match)
 └── migrations/      # Migrations SQL (schema, RLS, triggers, vues, cron)
 
 populate/            # Scripts admin
@@ -113,8 +113,9 @@ populate/            # Scripts admin
 | Fonction | Role | Cron |
 |----------|------|------|
 | `update-results` | Recupere les resultats via RapidAPI, met a jour `matches` | Toutes les 3 min, 13h-22h |
-| `update-odds` | Recupere les cotes via RapidAPI, met a jour `matches` | Quotidien a 1h |
 | `notify-pre-match` | Push OneSignal aux joueurs sans prono ~5 min avant coup d'envoi | Chaque minute (pg_cron) |
+
+Les cotes (`odds_a`, `odds_b`, `odds_draw`) ne viennent plus d'un bookmaker : elles sont recalculées automatiquement par un trigger DB à chaque INSERT/UPDATE/DELETE sur `bets` (tant que le match n'a pas démarré), selon la popularité des pronostics.
 
 Variables d'environnement requises : `RAPIDAPI_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 
@@ -146,7 +147,7 @@ Ne jamais commiter de fichiers `.env`, credentials, ou cles d'API.
 
 Push sur `main` declenche le workflow `.github/workflows/deploy.yml` :
 1. `supabase db push` (migrations)
-2. Deploy des Edge Functions (`update-results`, `update-odds`)
+2. Deploy des Edge Functions (`update-results`, `notify-pre-match`)
 3. Build frontend + deploy sur GitHub Pages
 
 ## Points d'attention

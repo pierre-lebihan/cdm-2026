@@ -1,3 +1,4 @@
+import { useCallback, useMemo, useState } from 'react'
 import { useBet } from '../../../hooks/bets'
 import Flag from '../../../components/Flag'
 import PointsWon from './PointsWon'
@@ -6,6 +7,8 @@ import { useNavigate } from 'react-router-dom'
 import InformationMatch from '../MatchToBet/InformationMatch'
 import { tournamentPhaseMultiplier } from '../../../lib/matchEnums'
 import { cardBgClassForUserBet } from '../../../lib/betOutcomeStatus'
+import { computeScoringBreakdown, formatOdds } from '../../../lib/scoring'
+import ScoreBreakdownModal from './ScoreBreakdownModal'
 
 const Match = ({
   match,
@@ -16,6 +19,7 @@ const Match = ({
 }) => {
   const [currentBet] = useBet(match.id)
   const navigate = useNavigate()
+  const [breakdownOpen, setBreakdownOpen] = useState(false)
 
   const myOdd =
     !isNumber(currentBet?.betTeamA) || !isNumber(currentBet?.betTeamB)
@@ -32,6 +36,33 @@ const Match = ({
       : match.scores.A < match.scores.B
         ? match.odds.PB
         : match.odds.PN
+
+  const breakdown = useMemo(
+    () =>
+      computeScoringBreakdown({
+        scoreA: match.scores.A,
+        scoreB: match.scores.B,
+        playoffWinner: match.playoffWinner,
+        betTeamA: currentBet?.betTeamA,
+        betTeamB: currentBet?.betTeamB,
+        betPlayoffWinner: currentBet?.betPlayoffWinner,
+        betFormat: match.betFormat,
+        tournamentPhase: match.tournamentPhase,
+        oddsA: match.odds.PA,
+        oddsB: match.odds.PB,
+        oddsDraw: match.odds.PN,
+      }),
+    [match, currentBet],
+  )
+
+  const handleScoreClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setBreakdownOpen(true)
+  }, [])
+
+  const handleCloseBreakdown = useCallback(() => {
+    setBreakdownOpen(false)
+  }, [])
 
   if (!match.display) return null
 
@@ -70,9 +101,14 @@ const Match = ({
         </div>
 
         <div className="shrink-0">
-          <span className="inline-block text-xl font-extrabold text-navy bg-gray-100 py-1.5 px-3.5 rounded-[10px]">
+          <button
+            type="button"
+            onClick={handleScoreClick}
+            className="inline-block text-xl font-extrabold text-navy bg-gray-100 py-1.5 px-3.5 rounded-[10px] border-none cursor-pointer hover:bg-gray-200 transition-colors"
+            title="Voir le détail du calcul"
+          >
             {match.scores.A} – {match.scores.B}
-          </span>
+          </button>
         </div>
 
         <div className="flex flex-col items-center gap-1.5 w-[90px] shrink-0">
@@ -91,13 +127,13 @@ const Match = ({
           <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
             Ma cote
           </span>
-          <span className="text-xs font-bold text-navy">{myOdd ?? '–'}</span>
+          <span className="text-xs font-bold text-navy">{formatOdds(myOdd)}</span>
         </div>
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
             Cote gagnante
           </span>
-          <span className="text-xs font-bold text-navy">{winningOdd}</span>
+          <span className="text-xs font-bold text-navy">{formatOdds(winningOdd)}</span>
         </div>
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
@@ -117,6 +153,21 @@ const Match = ({
         </div>
         <PointsWon {...match} {...currentBet} />
       </div>
+
+      <ScoreBreakdownModal
+        open={breakdownOpen}
+        onClose={handleCloseBreakdown}
+        breakdown={breakdown}
+        tournamentPhase={match.tournamentPhase}
+        teamAName={match.teamAName}
+        teamBName={match.teamBName}
+        scoreA={match.scores.A}
+        scoreB={match.scores.B}
+        betTeamA={currentBet?.betTeamA}
+        betTeamB={currentBet?.betTeamB}
+        pointsWon={currentBet?.pointsWon}
+        title="Détail de mes points"
+      />
     </div>
   )
 }
