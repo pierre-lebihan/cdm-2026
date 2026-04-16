@@ -190,6 +190,7 @@ const Admin = () => {
     'pending',
   )
   const [recalculating, setRecalculating] = useState(false)
+  const [refreshingOdds, setRefreshingOdds] = useState(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -293,6 +294,27 @@ const Admin = () => {
     bumpMatchesList()
   }, [bumpMatchesList])
 
+  const handleRecalculateAllOdds = useCallback(async () => {
+    const confirmed = window.confirm(
+      'Cela va recalculer les cotes (popularité) de tous les matchs non démarrés à partir des paris actuels.\n\nLes prochains paris mettront à jour ces cotes automatiquement. Continuer ?',
+    )
+    if (!confirmed) return
+
+    setRefreshingOdds(true)
+    const { data, error } = await supabase.rpc('admin_recalculate_all_odds')
+    setRefreshingOdds(false)
+
+    if (error) {
+      toast.error(`Erreur: ${error.message}`)
+      return
+    }
+
+    const refreshed =
+      (data as { matches_refreshed?: number } | null)?.matches_refreshed ?? 0
+    toast.success(`Cotes recalculées : ${refreshed} match(s)`)
+    bumpMatchesList()
+  }, [bumpMatchesList])
+
   if (authLoading || (user !== null && profile === null)) {
     return (
       <div className="flex items-center justify-center min-h-[40vh] text-gray-400">
@@ -335,22 +357,41 @@ const Admin = () => {
       </p>
 
       <div className="bg-white rounded-xl p-4 shadow-card mb-6 border border-red-100">
-        <h2 className="text-sm font-bold text-navy mb-1">Recalcul des scores</h2>
+        <h2 className="text-sm font-bold text-navy mb-1">Outils de recalcul</h2>
         <p className="text-xs text-gray-500 mb-3">
-          Remet à zéro tous les <span className="font-semibold">competition_profiles</span> puis recalcule tous les paris avec la formule actuelle. À utiliser après une modification de l'algorithme.
+          <span className="font-semibold">Scores</span> : remet à zéro tous les
+          classements puis recalcule tous les paris avec la formule actuelle
+          (base × cote × multiplicateur de phase).
+          <br />
+          <span className="font-semibold">Cotes</span> : recalcule les cotes
+          de popularité de tous les matchs non démarrés.
         </p>
-        <button
-          type="button"
-          className={`text-xs font-semibold py-2 px-4 rounded-full border-none transition-colors ${
-            recalculating
-              ? 'bg-gray-200 text-gray-400 cursor-wait'
-              : 'bg-red-500 text-white cursor-pointer hover:bg-red-600'
-          }`}
-          disabled={recalculating}
-          onClick={handleRecalculateAllScores}
-        >
-          {recalculating ? 'Recalcul en cours...' : 'Recalculer tous les scores'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={`text-xs font-semibold py-2 px-4 rounded-full border-none transition-colors ${
+              recalculating
+                ? 'bg-gray-200 text-gray-400 cursor-wait'
+                : 'bg-red-500 text-white cursor-pointer hover:bg-red-600'
+            }`}
+            disabled={recalculating}
+            onClick={handleRecalculateAllScores}
+          >
+            {recalculating ? 'Recalcul en cours...' : 'Recalculer tous les scores'}
+          </button>
+          <button
+            type="button"
+            className={`text-xs font-semibold py-2 px-4 rounded-full border-none transition-colors ${
+              refreshingOdds
+                ? 'bg-gray-200 text-gray-400 cursor-wait'
+                : 'bg-indigo-500 text-white cursor-pointer hover:bg-indigo-600'
+            }`}
+            disabled={refreshingOdds}
+            onClick={handleRecalculateAllOdds}
+          >
+            {refreshingOdds ? 'Recalcul des cotes...' : 'Recalculer les cotes'}
+          </button>
+        </div>
       </div>
 
       {/* Competition selector */}

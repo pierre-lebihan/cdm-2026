@@ -469,6 +469,10 @@ export type Database = {
         Args: Record<string, never>
         Returns: Json
       }
+      admin_recalculate_all_odds: {
+        Args: Record<string, never>
+        Returns: Json
+      }
     }
     Enums: {
       bet_outcome_status: BetOutcomeStatusEnum
