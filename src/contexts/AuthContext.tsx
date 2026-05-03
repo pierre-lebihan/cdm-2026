@@ -19,6 +19,7 @@ interface AuthContextValue {
   profile: Profile | null
   loading: boolean
   signInWithGoogle: () => Promise<void>
+  signInWithEmail: (email: string) => Promise<void>
   signOut: () => Promise<void>
   updateProfile: (updates: Partial<Profile>) => void
 }
@@ -123,6 +124,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  async function signInWithEmail(email: string) {
+    const redirectUrl = import.meta.env.DEV
+      ? window.location.origin
+      : 'https://makepronogreatagain.bzh/'
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: redirectUrl,
+        shouldCreateUser: true,
+      },
+    })
+
+    if (error) throw error
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
     setProfile(null)
@@ -136,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       loading,
       signInWithGoogle,
+      signInWithEmail,
       signOut,
       updateProfile,
     }),

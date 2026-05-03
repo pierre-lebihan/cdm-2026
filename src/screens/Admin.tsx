@@ -115,7 +115,7 @@ function AdminMatchRow({
           disabled={visibilityBusy}
           onClick={handleVisibilityClick}
         >
-          {visibilityBusy ? '...' : 'Masquer'}
+          {visibilityBusy ? '...' : match.visibleToUsers ? 'Masquer' : 'Rendre visible'}
         </button>
       </div>
 

@@ -7,6 +7,11 @@ export function useGoogleLogin(): () => Promise<void> {
   return signInWithGoogle
 }
 
+export function useEmailLogin(): (email: string) => Promise<void> {
+  const { signInWithEmail } = useAuth()
+  return signInWithEmail
+}
+
 export function useLogout(): () => Promise<void> {
   const { signOut } = useAuth()
   const navigate = useNavigate()

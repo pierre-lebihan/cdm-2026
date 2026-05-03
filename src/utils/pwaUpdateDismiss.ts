@@ -1,33 +1,21 @@
-const PWA_UPDATE_TOAST_ID = 'pwa-update-available'
+const DISMISS_KEY = 'pwa-update-dismissed'
 
-const DISMISS_KEY = 'pwa-update-dismissed-version'
-
-function getCurrentSwVersion(): string | null {
-  if (typeof navigator === 'undefined') return null
-  // Use the SW script URL as a stable identifier for the pending SW
-  return navigator.serviceWorker?.controller?.scriptURL ?? null
-}
-
-export function getPwaUpdateToastId(): string {
-  return PWA_UPDATE_TOAST_ID
-}
-
-export function shouldSkipPwaUpdateToast(): boolean {
+/**
+ * Retourne true si l'utilisateur a déjà cliqué "Plus tard" pour cette mise à jour.
+ * Le flag est effacé dès qu'un nouveau SW commence à s'installer (updatefound),
+ * ce qui garantit que le popup réapparaîtra pour une vraie nouvelle version.
+ */
+export function isDismissed(): boolean {
   if (typeof window === 'undefined') return false
-  const dismissed = localStorage.getItem(DISMISS_KEY)
-  if (!dismissed) return false
-  const current = getCurrentSwVersion()
-  // If we can't identify the version, rely on the stored flag
-  if (!current) return dismissed === '1'
-  // Only skip if this exact SW version was already dismissed
-  return dismissed === current
+  return localStorage.getItem(DISMISS_KEY) === '1'
 }
 
-export function rememberPwaUpdateDismissed(): void {
-  const current = getCurrentSwVersion()
-  localStorage.setItem(DISMISS_KEY, current ?? '1')
+/** Mémorise que l'utilisateur a cliqué "Plus tard". */
+export function setDismissed(): void {
+  localStorage.setItem(DISMISS_KEY, '1')
 }
 
-export function clearPwaUpdateDismiss(): void {
+/** Efface le flag de dismiss (appelé quand un nouveau SW commence à s'installer). */
+export function clearDismissed(): void {
   localStorage.removeItem(DISMISS_KEY)
 }

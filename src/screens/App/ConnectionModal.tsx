@@ -1,4 +1,5 @@
-import { useGoogleLogin } from '../../hooks/user'
+import { useState } from 'react'
+import { useEmailLogin, useGoogleLogin } from '../../hooks/user'
 import { useCompetitionDisplayName } from '../../hooks/competition'
 
 const GoogleIcon = () => (
@@ -24,7 +25,32 @@ const GoogleIcon = () => (
 
 const ConnectionModal = () => {
   const authenticateWithGoogle = useGoogleLogin()
+  const authenticateWithEmail = useEmailLogin()
   const competitionLabel = useCompetitionDisplayName()
+
+  const [email, setEmail] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleEmailSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!email || submitting) return
+    setError(null)
+    setSubmitting(true)
+    try {
+      await authenticateWithEmail(email.trim())
+      setSent(true)
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Impossible d'envoyer le lien de connexion.",
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <div className="py-8 px-7 text-center flex flex-col gap-3">
@@ -45,6 +71,52 @@ const ConnectionModal = () => {
         <span>Continuer avec Google</span>
       </button>
 
+      <div className="flex items-center gap-3 my-2 text-xs text-gray-400">
+        <div className="flex-1 h-px bg-gray-200" />
+        <span>ou</span>
+        <div className="flex-1 h-px bg-gray-200" />
+      </div>
+
+      {sent ? (
+        <div className="text-sm text-navy-dark bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+          Un lien de connexion vient d'être envoyé à <strong>{email}</strong>.
+          Cliquez dessus pour vous connecter.
+        </div>
+      ) : (
+        <form
+          onSubmit={handleEmailSubmit}
+          className="flex flex-col gap-2 text-left"
+        >
+          <label
+            htmlFor="email-login"
+            className="text-xs font-semibold text-navy"
+          >
+            Email
+          </label>
+          <input
+            id="email-login"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="vous@exemple.com"
+            className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 text-sm focus:outline-none focus:border-navy"
+          />
+          {error && (
+            <p className="text-xs text-red-500" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={submitting || !email}
+            className="mt-1 py-3 px-6 rounded-xl bg-navy text-white text-sm font-semibold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? 'Envoi…' : 'Recevoir un lien magique'}
+          </button>
+        </form>
+      )}
     </div>
   )
 }
