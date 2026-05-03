@@ -1,0 +1,39 @@
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { margin: 0; padding: 0; background-color: #f9f6ed; font-family: Inter, Roboto, system-ui, sans-serif; }
+    .container { max-width: 480px; margin: 0 auto; padding: 40px 24px; }
+    .header { text-align: center; margin-bottom: 32px; }
+    .header h1 { color: #19194B; font-size: 22px; font-weight: 700; margin: 0 0 4px 0; }
+    .header p { color: #2a2a6b; font-size: 14px; margin: 0; }
+    .card { background: #ffffff; border-radius: 12px; padding: 32px 24px; box-shadow: 0 2px 8px rgba(25, 25, 75, 0.08); }
+    .card h2 { color: #19194B; font-size: 18px; font-weight: 600; margin: 0 0 12px 0; }
+    .card p { color: #4a4a68; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0; }
+    .btn { display: inline-block; background-color: #19194B; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 15px; font-weight: 600; }
+    .btn:hover { background-color: #2a2a6b; }
+    .footer { text-align: center; margin-top: 32px; color: #9a9ab0; font-size: 12px; line-height: 1.5; }
+    .footer a { color: #2a2a6b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚽ Make Prono Great Again</h1>
+      <p>Pronostics entre amis</p>
+    </div>
+    <div class="card">
+      <h2>Ton lien magique est prêt !</h2>
+      <p>Clique sur le bouton ci-dessous pour te connecter. Ce lien est valable 1 heure et ne peut être utilisé qu'une seule fois.</p>
+      <div style="text-align: center;">
+        <a class="btn" href="{{ .ConfirmationURL }}">Se connecter 🏆</a>
+      </div>
+    </div>
+    <div class="footer">
+      <p>Si tu n'as pas demandé ce lien, ignore cet email.<br />
+      <a href="https://makepronogreatagain.bzh">makepronogreatagain.bzh</a></p>
+    </div>
+  </div>
+</body>
+</html>
