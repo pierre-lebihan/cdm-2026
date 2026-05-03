@@ -2,14 +2,10 @@
 
 Templates HTML pour les emails d'authentification, aux couleurs de Make Prono Great Again (navy #19194B + cream #f9f6ed).
 
-## Comment appliquer
+## Deploiement automatique
 
-Dashboard Supabase : **Authentication** > **Emails** (sous Notifications)
-
-Pour chaque template ci-dessous :
-1. Copier le **subject** dans le champ "Subject"
-2. Copier le contenu HTML du fichier dans le champ "Body"
-3. Sauvegarder
+Les templates sont deployes automatiquement a chaque push sur `main` via le workflow CI.
+Le script `supabase/deploy-email-templates.sh` lit les fichiers HTML et les envoie a l'API Management Supabase.
 
 ## Templates
 
@@ -21,6 +17,14 @@ Pour chaque template ci-dessous :
 | Reset Password | `reset-password.html` | `Réinitialisation de ton mot de passe` |
 | Change Email | `change-email.html` | `Confirme ta nouvelle adresse email` |
 
+## Modifier un template
+
+1. Editer le fichier HTML correspondant
+2. Push sur `main`
+3. Le CI deploie automatiquement les templates via `supabase/deploy-email-templates.sh`
+
 ## Variables Supabase
 
-Les templates utilisent `{{ .ConfirmationURL }}` — c'est la variable Supabase standard injectee automatiquement.
+- `{{ .ConfirmationURL }}` — lien de confirmation/connexion
+- `{{ .Token }}` — code OTP
+- `{{ .SiteURL }}` — URL du site
