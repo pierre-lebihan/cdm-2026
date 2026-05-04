@@ -77,6 +77,19 @@ Pour rendre un utilisateur admin :
 UPDATE profiles SET role = 'admin' WHERE id = '<user-uuid>';
 ```
 
+### 5. Scores live via Gemini
+
+La fonction Supabase `update-results` utilise Gemini avec Google Search pour récupérer les scores des matchs en cours. Elle s'exécute toutes les 5 minutes via `pg_cron`, ne contacte Gemini que si un match visible a démarré depuis moins de 4 heures et n'est pas marqué comme terminé, puis met à jour `matches.score_a`, `matches.score_b`, `matches.finished`, `matches.playoff_winner` et l'audit JSON `matches.score_payload`.
+
+Créer une clé dans [Google AI Studio](https://aistudio.google.com/app/apikey), puis l'enregistrer comme secret Supabase :
+
+```bash
+supabase secrets set GEMINI_API_KEY=<votre-cle>
+supabase secrets set GEMINI_MODEL=gemini-3-flash-preview
+```
+
+`GEMINI_MODEL` est optionnel. Le modèle par défaut est `gemini-3-flash-preview`, utilisé parce que Gemini 3 permet de combiner Google Search et sortie JSON structurée.
+
 ---
 
 ## Installation locale
@@ -124,7 +137,12 @@ Le projet est configuré pour se déployer automatiquement sur GitHub Pages via 
 3. Ajouter les secrets du repo (`Settings > Secrets > Actions`) :
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_ACCESS_TOKEN`
+   - `SUPABASE_DB_PASSWORD`
+   - `SUPABASE_PROJECT_ID`
 4. Pusher sur `main` → déploiement automatique
+
+Les secrets Edge Functions (`GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ONESIGNAL_*`) se configurent côté Supabase avec `supabase secrets set ...`, pas dans le bundle frontend.
 
 ---
 

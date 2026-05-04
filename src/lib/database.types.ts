@@ -233,6 +233,9 @@ export type Database = {
           pre_match_reminder_sent_at: string | null
           score_a: number | null
           score_b: number | null
+          score_checked_at: string | null
+          score_payload: Json | null
+          score_provider: string | null
           streaming: string | null
           team_a: string | null
           team_b: string | null
@@ -254,6 +257,9 @@ export type Database = {
           pre_match_reminder_sent_at?: string | null
           score_a?: number | null
           score_b?: number | null
+          score_checked_at?: string | null
+          score_payload?: Json | null
+          score_provider?: string | null
           streaming?: string | null
           team_a?: string | null
           team_b?: string | null
@@ -275,6 +281,9 @@ export type Database = {
           pre_match_reminder_sent_at?: string | null
           score_a?: number | null
           score_b?: number | null
+          score_checked_at?: string | null
+          score_payload?: Json | null
+          score_provider?: string | null
           streaming?: string | null
           team_a?: string | null
           team_b?: string | null

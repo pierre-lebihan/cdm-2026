@@ -1,65 +1,166 @@
-import { useEffect, useState } from 'react'
+import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { toast } from 'react-hot-toast'
-import { clearDismissed, isDismissed, setDismissed } from 'utils/pwaUpdateDismiss'
+import { getLatestAppBuildId } from 'utils/appVersion'
+import { isDismissed, setDismissed } from 'utils/pwaUpdateDismiss'
 
 const TOAST_ID = 'pwa-update-available'
+const UPDATE_CHECK_INTERVAL = 60 * 60 * 1000
+
+type AvailableBuildIdSetter = Dispatch<SetStateAction<string | null>>
+
+let registeredServiceWorker: ServiceWorkerRegistration | null = null
+let updatePollingId: number | null = null
+
+function logRegisterError(error: unknown): void {
+  console.error("Erreur d'enregistrement du Service Worker", error)
+}
+
+function logUpdateError(error: unknown): void {
+  console.error('Erreur de vérification du Service Worker', error)
+}
+
+function pollServiceWorkerUpdate(): void {
+  if (!registeredServiceWorker) {
+    return
+  }
+
+  registeredServiceWorker.update().catch(logUpdateError)
+}
+
+function startUpdatePolling(registration?: ServiceWorkerRegistration): void {
+  if (!registration) {
+    return
+  }
+
+  registeredServiceWorker = registration
+  if (updatePollingId !== null) {
+    return
+  }
+
+  updatePollingId = window.setInterval(
+    pollServiceWorkerUpdate,
+    UPDATE_CHECK_INTERVAL,
+  )
+}
+
+function getServiceWorkerFromEvent(event: Event): ServiceWorker | null {
+  if (!(event.target instanceof ServiceWorker)) {
+    return null
+  }
+
+  return event.target
+}
+
+async function showUpdateIfAppVersionChanged(
+  setAvailableBuildId: AvailableBuildIdSetter,
+): Promise<void> {
+  const latestBuildId = await getLatestAppBuildId()
+  if (!latestBuildId) {
+    setAvailableBuildId(null)
+    return
+  }
+  if (latestBuildId === __APP_BUILD_ID__) {
+    setAvailableBuildId(null)
+    return
+  }
+  if (isDismissed(latestBuildId)) {
+    setAvailableBuildId(null)
+    return
+  }
+
+  setAvailableBuildId(latestBuildId)
+}
+
+class NativeUpdateListener {
+  private registration: ServiceWorkerRegistration | null = null
+  private running = true
+  private setAvailableBuildId: AvailableBuildIdSetter
+
+  constructor(setAvailableBuildId: AvailableBuildIdSetter) {
+    this.setAvailableBuildId = setAvailableBuildId
+  }
+
+  start = (): void => {
+    if (!('serviceWorker' in navigator)) {
+      return
+    }
+
+    navigator.serviceWorker.ready.then(this.attach).catch(logRegisterError)
+  }
+
+  stop = (): void => {
+    this.running = false
+    if (!this.registration) {
+      return
+    }
+
+    this.registration.removeEventListener('updatefound', this.handleUpdateFound)
+  }
+
+  private attach = (registration: ServiceWorkerRegistration): void => {
+    if (!this.running) {
+      return
+    }
+
+    this.registration = registration
+    registration.addEventListener('updatefound', this.handleUpdateFound)
+  }
+
+  private handleUpdateFound = (): void => {
+    const worker = this.registration?.installing
+    if (!worker) {
+      return
+    }
+
+    worker.addEventListener('statechange', this.handleStateChange)
+  }
+
+  private handleStateChange = (event: Event): void => {
+    if (!this.running) {
+      return
+    }
+
+    const worker = getServiceWorkerFromEvent(event)
+    if (!worker) {
+      return
+    }
+    if (worker.state !== 'installed') {
+      return
+    }
+    if (navigator.serviceWorker.controller === null) {
+      return
+    }
+
+    showUpdateIfAppVersionChanged(this.setAvailableBuildId).catch(
+      logUpdateError,
+    )
+  }
+}
 
 export const PwaUpdatePrompt = () => {
-  const [needRefresh, setNeedRefresh] = useState(false)
+  const [availableBuildId, setAvailableBuildId] = useState<string | null>(null)
 
-  // Garde useRegisterSW uniquement pour l'enregistrement du SW et le polling horaire.
-  // On ignore délibérément son propre état needRefresh : workbox-window déclenche
-  // l'event "waiting" même pour un SW déjà en attente au chargement de la page,
-  // ce qui causerait le popup à s'afficher en permanence.
   const { updateServiceWorker } = useRegisterSW({
-    onRegistered(r) {
-      if (r) {
-        setInterval(() => {
-          r.update()
-        }, 60 * 60 * 1000)
-      }
-    },
-    onRegisterError(error) {
-      console.error("Erreur d'enregistrement du Service Worker", error)
-    },
+    onRegistered: startUpdatePolling,
+    onRegisterError: logRegisterError,
   })
 
-  // Détection native : uniquement via updatefound → statechange === 'installed'
-  // Le popup ne s'affiche que si un nouveau SW vient de terminer son installation
-  // ET qu'il existe déjà un SW actif (= vraie mise à jour, pas première installation).
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return
+    const listener = new NativeUpdateListener(setAvailableBuildId)
+    listener.start()
 
-    navigator.serviceWorker.ready.then((reg) => {
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing
-        if (!newWorker) return
-
-        // Une nouvelle installation commence → effacer tout dismiss précédent
-        clearDismissed()
-
-        newWorker.addEventListener('statechange', () => {
-          if (
-            newWorker.state === 'installed' &&
-            navigator.serviceWorker.controller !== null
-          ) {
-            // Nouveau SW installé et en attente, avec un controller existant
-            // = vraie mise à jour (pas une première installation)
-            setNeedRefresh(true)
-          }
-        })
-      })
-    })
+    return listener.stop
   }, [])
 
   useEffect(() => {
-    if (!needRefresh) {
+    if (!availableBuildId) {
       toast.dismiss(TOAST_ID)
       return
     }
 
-    if (isDismissed()) {
+    if (isDismissed(availableBuildId)) {
+      toast.dismiss(TOAST_ID)
       return
     }
 
@@ -84,8 +185,8 @@ export const PwaUpdatePrompt = () => {
               type="button"
               className="px-3 py-1.5 text-sm font-medium text-navy bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
               onClick={() => {
-                setDismissed()
-                setNeedRefresh(false)
+                setDismissed(availableBuildId)
+                setAvailableBuildId(null)
                 toast.dismiss(t.id)
               }}
             >
@@ -104,7 +205,7 @@ export const PwaUpdatePrompt = () => {
     return () => {
       toast.dismiss(TOAST_ID)
     }
-  }, [needRefresh, updateServiceWorker])
+  }, [availableBuildId, updateServiceWorker])
 
   return null
 }

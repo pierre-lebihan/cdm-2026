@@ -1,16 +1,45 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 import { PWA_SERVICE_WORKER_FILENAME } from './src/serviceWorkerName'
 
+const APP_VERSION_FILENAME = 'app-version.json'
+const appBuildId = getAppBuildId()
+
+function getAppBuildId(): string {
+  if (process.env.GITHUB_SHA) {
+    return process.env.GITHUB_SHA
+  }
+  return new Date().toISOString()
+}
+
+function appVersionPlugin(): Plugin {
+  return {
+    name: 'app-version',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: APP_VERSION_FILENAME,
+        source: JSON.stringify({ buildId: appBuildId }),
+      })
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     react(),
+    appVersionPlugin(),
     VitePWA({
       filename: PWA_SERVICE_WORKER_FILENAME,
       registerType: 'prompt',
-      includeAssets: ['icon-192x192.png', 'icon-256x256.png', 'icon-384x384.png', 'icon-512x512.png'],
+      includeAssets: [
+        'icon-192x192.png',
+        'icon-256x256.png',
+        'icon-384x384.png',
+        'icon-512x512.png',
+      ],
       manifest: {
         short_name: 'Make Prono Great Again',
         name: 'Make Prono Great Again',
@@ -18,39 +47,39 @@ export default defineConfig({
           {
             src: 'icon-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'icon-256x256.png',
             sizes: '256x256',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'icon-384x384.png',
             sizes: '384x384',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
-          }
+            purpose: 'any maskable',
+          },
         ],
         theme_color: '#19194b',
         background_color: '#bcffff',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
-        start_url: '/'
+        start_url: '/',
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
         importScripts: [
           'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js',
         ],
-      }
-    })
+      },
+    }),
   ],
   base: '/',
   resolve: {
@@ -59,6 +88,9 @@ export default defineConfig({
       hooks: path.resolve(__dirname, 'src/hooks'),
       utils: path.resolve(__dirname, 'src/utils'),
     },
+  },
+  define: {
+    __APP_BUILD_ID__: JSON.stringify(appBuildId),
   },
   esbuild: {
     include: /\.[jt]sx?$/,
