@@ -14,6 +14,22 @@ type MatchScoreEdit = {
   scoreB: string
 }
 
+function jsonNumberField(value: unknown, key: string): number {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return 0
+  }
+
+  const entries = Object.entries(value)
+  for (let i = 0; i < entries.length; i += 1) {
+    const entry = entries[i]
+    if (entry[0] === key && typeof entry[1] === 'number') {
+      return entry[1]
+    }
+  }
+
+  return 0
+}
+
 function AdminMatchRow({
   match,
   onSave,
@@ -286,8 +302,8 @@ const Admin = () => {
       return
     }
 
-    const matchesProcessed = (data as { matches_processed?: number } | null)?.matches_processed ?? 0
-    const betsProcessed = (data as { bets_processed?: number } | null)?.bets_processed ?? 0
+    const matchesProcessed = jsonNumberField(data, 'matches_processed')
+    const betsProcessed = jsonNumberField(data, 'bets_processed')
     toast.success(
       `Recalcul terminé : ${matchesProcessed} match(s), ${betsProcessed} pari(s)`,
     )
@@ -309,9 +325,14 @@ const Admin = () => {
       return
     }
 
-    const refreshed =
-      (data as { matches_refreshed?: number } | null)?.matches_refreshed ?? 0
-    toast.success(`Cotes recalculées : ${refreshed} match(s)`)
+    const refreshed = jsonNumberField(data, 'matches_refreshed')
+    const winnerTeamsRefreshed = jsonNumberField(
+      data,
+      'winner_teams_refreshed',
+    )
+    toast.success(
+      `Cotes recalculées : ${refreshed} match(s), ${winnerTeamsRefreshed} équipe(s)`,
+    )
     bumpMatchesList()
   }, [bumpMatchesList])
 
@@ -364,7 +385,8 @@ const Admin = () => {
           (base × cote × multiplicateur de phase).
           <br />
           <span className="font-semibold">Cotes</span> : recalcule les cotes
-          de popularité de tous les matchs non démarrés.
+          de popularité de tous les matchs non démarrés et les cotes de
+          vainqueur final.
         </p>
         <div className="flex flex-wrap gap-2">
           <button

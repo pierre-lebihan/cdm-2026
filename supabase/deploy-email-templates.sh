@@ -5,7 +5,6 @@ set -euo pipefail
 : "${SUPABASE_PROJECT_ID:?Missing SUPABASE_PROJECT_ID}"
 
 TEMPLATES_DIR="$(cd "$(dirname "$0")/email-templates" && pwd)"
-SESSION_TIMEBOX_SECONDS=$((90 * 24 * 60 * 60))
 
 read_template() {
   local file="$TEMPLATES_DIR/$1"
@@ -33,9 +32,7 @@ PAYLOAD=$(jq -n \
   --arg recovery_content "$RECOVERY" \
   --arg email_change_subject "Confirme ta nouvelle adresse email" \
   --arg email_change_content "$EMAIL_CHANGE" \
-  --argjson sessions_timebox "$SESSION_TIMEBOX_SECONDS" \
   '{
-    sessions_timebox: $sessions_timebox,
     mailer_subjects_magic_link: $magic_link_subject,
     mailer_templates_magic_link_content: $magic_link_content,
     mailer_subjects_confirmation: $confirmation_subject,

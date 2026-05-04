@@ -5,7 +5,6 @@ import PointsWon from './PointsWon'
 import { isNumber } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 import InformationMatch from '../../Matches/MatchToBet/InformationMatch'
-import { tournamentPhaseMultiplier } from '../../../lib/matchEnums'
 import { cardBgClassForUserBet } from '../../../lib/betOutcomeStatus'
 import { computeScoringBreakdown, formatOdds } from '../../../lib/scoring'
 import ScoreBreakdownModal from '../../Matches/MatchBegun/ScoreBreakdownModal'
@@ -129,14 +128,6 @@ const Match = ({ match }) => {
             Cote gagnante
           </span>
           <span className="text-xs font-bold text-navy">{formatOdds(winningOdd)}</span>
-        </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
-            Multiplicateur
-          </span>
-          <span className="text-xs font-bold text-navy">
-            x{tournamentPhaseMultiplier(match.tournamentPhase)}
-          </span>
         </div>
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
