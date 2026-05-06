@@ -35,13 +35,18 @@ export default defineConfig({
       filename: PWA_SERVICE_WORKER_FILENAME,
       registerType: 'prompt',
       includeAssets: [
+        'favicon.svg',
+        'favicon-16x16.png',
+        'favicon-32x32.png',
+        'apple-touch-icon.png',
         'icon-192x192.png',
         'icon-256x256.png',
         'icon-384x384.png',
         'icon-512x512.png',
       ],
       manifest: {
-        short_name: 'Make Prono Great Again',
+        lang: 'fr',
+        short_name: 'Make Prono',
         name: 'Make Prono Great Again',
         icons: [
           {
@@ -67,7 +72,7 @@ export default defineConfig({
           },
         ],
         theme_color: '#19194b',
-        background_color: '#bcffff',
+        background_color: '#f9f6ed',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',

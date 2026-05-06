@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>Make Prono Great Again</title>
+  <rect width="512" height="512" fill="#19194B"/>
+  <path d="M104 354c34 56 88 88 152 88s118-32 152-88" fill="none" stroke="#E4223A" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="256" cy="236" r="146" fill="#F9F6ED"/>
+  <path d="M256 132l61 44-23 72h-76l-23-72z" fill="#19194B"/>
+  <path d="M256 132v-42M317 176l44-48M294 248l46 66M218 248l-46 66M195 176l-44-48" fill="none" stroke="#19194B" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M169 304l51 51 123-132" fill="none" stroke="#E4223A" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
