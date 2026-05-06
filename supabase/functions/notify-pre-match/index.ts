@@ -62,7 +62,7 @@ Deno.serve(async (_req: Request) => {
   const supabase = createClient(supabaseUrl, serviceKey);
   const now = new Date();
   const winStart = new Date(now.getTime() + 4 * 60 * 1000);
-  const winEnd = new Date(now.getTime() + 5 * 60 * 1000);
+  const winEnd = new Date(now.getTime() + 9 * 60 * 1000);
 
   try {
     const { data: rows, error: qErr } = await supabase
