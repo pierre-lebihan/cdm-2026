@@ -81,8 +81,8 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
 
   const setPublicCompetition = useCallback(
     async (id: string) => {
-      // Deactivate all, then activate the chosen one
-      await supabase.from('competitions').update({ active: false }).neq('id', '')
+      // Deactivate all others, then activate the chosen one
+      await supabase.from('competitions').update({ active: false }).neq('id', id)
       await supabase.from('competitions').update({ active: true }).eq('id', id)
       setCompetitions((prev) =>
         prev.map((c) => ({ ...c, active: c.id === id })),
