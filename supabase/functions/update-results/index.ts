@@ -625,8 +625,15 @@ async function handleRequest(_req: Request): Promise<Response> {
   try {
     const matches = await findMatchesToUpdate(supabase)
     if (matches.length === 0) {
+      console.log('[update-results] no matches in lookback window')
       return jsonResponse({ message: 'No matches to update' }, 200)
     }
+
+    console.log(
+      `[update-results] checking ${matches.length} match(es): ${matches
+        .map((m) => `${m.id} (${m.teamAName ?? '?'} vs ${m.teamBName ?? '?'})`)
+        .join(', ')}`,
+    )
 
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
     if (!geminiApiKey) {
@@ -637,15 +644,21 @@ async function handleRequest(_req: Request): Promise<Response> {
     const results: Record<string, unknown>[] = []
 
     for (const match of matches) {
+      const label = `${match.teamAName ?? '?'} vs ${match.teamBName ?? '?'}`
       try {
         const lookup = await fetchGeminiScore(geminiApiKey, model, match)
         const result = await updateMatchScore(supabase, match, lookup, model)
+        console.log(
+          `[update-results] ${match.id} ${label} → status=${lookup.result.status} score=${lookup.result.scoreA}-${lookup.result.scoreB} finished=${result.finished} confidence=${lookup.result.confidence}`,
+        )
         results.push(result)
       } catch (error) {
+        const message = errorMessage(error)
+        console.error(`[update-results] ${match.id} ${label} → error: ${message}`)
         results.push({
           match: match.id,
           success: false,
-          error: errorMessage(error),
+          error: message,
         })
       }
     }
