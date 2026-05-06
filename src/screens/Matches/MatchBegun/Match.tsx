@@ -100,14 +100,20 @@ const Match = ({
         </div>
 
         <div className="shrink-0">
-          <button
-            type="button"
-            onClick={handleScoreClick}
-            className="inline-block text-xl font-extrabold text-navy bg-gray-100 py-1.5 px-3.5 rounded-[10px] border-none cursor-pointer hover:bg-gray-200 transition-colors"
-            title="Voir le détail du calcul"
-          >
-            {match.scores.A} – {match.scores.B}
-          </button>
+          {clickable ? (
+            <button
+              type="button"
+              onClick={handleScoreClick}
+              className="inline-block text-xl font-extrabold text-navy bg-gray-100 py-1.5 px-3.5 rounded-[10px] border-none cursor-pointer hover:bg-gray-200 transition-colors"
+              title="Voir le détail du calcul"
+            >
+              {match.scores.A} – {match.scores.B}
+            </button>
+          ) : (
+            <span className="inline-block text-xl font-extrabold text-navy bg-gray-100 py-1.5 px-3.5 rounded-[10px]">
+              {match.scores.A} – {match.scores.B}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-1.5 w-[90px] shrink-0">
@@ -145,20 +151,22 @@ const Match = ({
         <PointsWon {...match} {...currentBet} />
       </div>
 
-      <ScoreBreakdownModal
-        open={breakdownOpen}
-        onClose={handleCloseBreakdown}
-        breakdown={breakdown}
-        tournamentPhase={match.tournamentPhase}
-        teamAName={match.teamAName}
-        teamBName={match.teamBName}
-        scoreA={match.scores.A}
-        scoreB={match.scores.B}
-        betTeamA={currentBet?.betTeamA}
-        betTeamB={currentBet?.betTeamB}
-        pointsWon={currentBet?.pointsWon}
-        title="Détail de mes points"
-      />
+      {clickable && (
+        <ScoreBreakdownModal
+          open={breakdownOpen}
+          onClose={handleCloseBreakdown}
+          breakdown={breakdown}
+          tournamentPhase={match.tournamentPhase}
+          teamAName={match.teamAName}
+          teamBName={match.teamBName}
+          scoreA={match.scores.A}
+          scoreB={match.scores.B}
+          betTeamA={currentBet?.betTeamA}
+          betTeamB={currentBet?.betTeamB}
+          pointsWon={currentBet?.pointsWon}
+          title="Détail de mes points"
+        />
+      )}
     </div>
   )
 }

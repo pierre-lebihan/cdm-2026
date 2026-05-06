@@ -4,11 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext'
 import InlineAvatar from 'components/Avatar'
 import { useBetsFromGame } from 'hooks/bets'
-import {
-  betOutcomeCellClass,
-  betOutcomeTableLabel,
-  matchHasPublishedScore,
-} from '../../../lib/betOutcomeStatus'
 
 interface GroupMatchDetailsProps {
   name: string
@@ -74,10 +69,6 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
 
   if (!bets) return null
 
-  const ScoreA = match.scores.A
-  const ScoreB = match.scores.B
-  const showOutcomeColumn = matchHasPublishedScore(ScoreA, ScoreB)
-
   return (
     <div className="bg-white rounded-2xl p-5 shadow-card mb-4">
       <h3 className="text-center text-lg font-bold text-navy mb-3">{name}</h3>
@@ -89,9 +80,6 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
               <th className="p-2 text-left"></th>
               <th className="p-2 text-left">Nom</th>
               <th className="p-2 text-left">Prono</th>
-              {showOutcomeColumn ? (
-                <th className="p-2 text-left">Statut</th>
-              ) : null}
               <th className="p-2 text-right">Points</th>
             </tr>
           </thead>
@@ -116,17 +104,6 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
                   <td className="p-2 text-center text-sm">
                     {hasBet ? `${bet.betTeamA} : ${bet.betTeamB}` : '–'}
                   </td>
-                  {showOutcomeColumn ? (
-                    <td
-                      className={`p-2 text-left text-sm ${betOutcomeCellClass(
-                        hasBet ? bet?.outcomeStatus : null,
-                      )}`}
-                    >
-                      {hasBet
-                        ? betOutcomeTableLabel(bet?.outcomeStatus)
-                        : '–'}
-                    </td>
-                  ) : null}
                   <td className="p-2 text-right font-semibold text-sm">
                     {(bet?.pointsWon || 0).toLocaleString()} pts
                   </td>

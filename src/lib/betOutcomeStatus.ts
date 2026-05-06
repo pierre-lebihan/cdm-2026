@@ -10,32 +10,6 @@ export function matchHasPublishedScore(
   return scoreA !== null && scoreA !== undefined && scoreB !== null && scoreB !== undefined
 }
 
-export function betOutcomeCellClass(status: BetOutcomeStatus | null | undefined): string {
-  if (status === 'perfect_score') {
-    return 'text-green-700 font-semibold'
-  }
-  if (status === 'good_result') {
-    return 'text-amber-800 font-medium'
-  }
-  if (status === 'rate') {
-    return 'text-red-700 font-medium'
-  }
-  return 'text-gray-400'
-}
-
-export function betOutcomeTableLabel(status: BetOutcomeStatus | null | undefined): string {
-  if (status === 'perfect_score') {
-    return 'Score parfait'
-  }
-  if (status === 'good_result') {
-    return 'Bon résultat'
-  }
-  if (status === 'rate') {
-    return 'Raté'
-  }
-  return '–'
-}
-
 export function betOutcomeTooltipSelf(
   status: BetOutcomeStatus | null | undefined,
 ): string | null {

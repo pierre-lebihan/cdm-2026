@@ -1,11 +1,14 @@
 import isEmpty from 'lodash/isEmpty'
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useGroupsForUserMember } from '../../../hooks/groups'
 import GroupMatchDetails from './GroupMatchDetails'
 import { useAllOpponents } from '../../../hooks/opponents'
 import { useMatch } from 'hooks/matches'
+import { useBet } from '../../../hooks/bets'
 import MatchBegun from '../MatchBegun/Match'
+import ScoreBreakdownPanel from '../MatchBegun/ScoreBreakdownPanel'
+import { computeScoringBreakdown } from '../../../lib/scoring'
 
 const Details = () => {
   const { id } = useParams()
@@ -14,6 +17,7 @@ const Details = () => {
   const groups = useGroupsForUserMember()
   const match = useMatch(id)
   const allOpponents = useAllOpponents()
+  const [currentBet] = useBet(match?.id)
   const hasLoaded = useRef(false)
 
   useEffect(() => {
@@ -24,6 +28,23 @@ const Details = () => {
       navigate('/matches')
     }
   }, [match, navigate])
+
+  const breakdown = useMemo(() => {
+    if (!match) return null
+    return computeScoringBreakdown({
+      scoreA: match.scores.A,
+      scoreB: match.scores.B,
+      playoffWinner: match.playoffWinner,
+      betTeamA: currentBet?.betTeamA,
+      betTeamB: currentBet?.betTeamB,
+      betPlayoffWinner: currentBet?.betPlayoffWinner,
+      betFormat: match.betFormat,
+      tournamentPhase: match.tournamentPhase,
+      oddsA: match.odds.PA,
+      oddsB: match.odds.PB,
+      oddsDraw: match.odds.PN,
+    })
+  }, [match, currentBet])
 
   if (!match) {
     return (
@@ -45,6 +66,23 @@ const Details = () => {
     <div className="min-h-screen max-w-[600px] mx-auto py-4 px-4 pb-10">
       <div className="mb-4">
         <MatchBegun match={match} clickable={false} />
+      </div>
+
+      <div className="bg-white rounded-2xl p-5 shadow-card mb-4">
+        <h3 className="text-center text-lg font-bold text-navy mb-3">
+          Détail de mes points
+        </h3>
+        <ScoreBreakdownPanel
+          breakdown={breakdown}
+          tournamentPhase={match.tournamentPhase}
+          teamAName={match.teamAName}
+          teamBName={match.teamBName}
+          scoreA={match.scores.A}
+          scoreB={match.scores.B}
+          betTeamA={currentBet?.betTeamA}
+          betTeamB={currentBet?.betTeamB}
+          pointsWon={currentBet?.pointsWon}
+        />
       </div>
 
       {isEmpty(groups) ? (
