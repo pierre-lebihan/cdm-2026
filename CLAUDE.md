@@ -80,10 +80,10 @@ Two bet formats exist (`src/lib/matchEnums.ts`):
 
 | Function | Schedule | Role |
 |---|---|---|
-| `update-results` | Every 3 min, 13h–22h | Fetches results from RapidAPI, updates `matches` |
+| `update-results` | Every 5 min | Fetches results through Gemini + Google Search, updates `matches` |
 | `notify-pre-match` | Every minute (pg_cron) | Sends OneSignal push to users without a bet ~5 min before kickoff |
 
-Edge Functions use the `service_role` key (bypasses RLS). Required secrets: `RAPIDAPI_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`.
+Edge Functions use the `service_role` key (bypasses RLS). Required secrets: `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`. `GEMINI_MODEL` is optional.
 
 ### PWA / Service Worker
 
@@ -96,7 +96,7 @@ OneSignal is **only initialized** when `window.location.origin` matches `VITE_WE
 ### File Organization
 - **No barrel `index.tsx` re-exports**: imports must point directly to the file (e.g. `import App from './App/App'`, not `import App from './App'`)
 - **No single-file folders**: promote the file to its parent directory
-- `src/components/` — flat shared components (Avatar, Flag, Placeholder, etc.)
+- `src/components/` — flat shared components (Avatar, Flag, install/update/push prompts, etc.)
 - `src/screens/` — flat files for simple pages; subfolders only for complex screens with sub-components
 - `src/hooks/` — flat files, all data hooks
 - `src/lib/` — Supabase client, generated DB types, pure business logic

@@ -17,5 +17,5 @@
     "resolveJsonModule": true,
     "allowJs": true
   },
-  "include": ["src", "vite-env.d.ts"]
+  "include": ["src"]
 }

@@ -25,7 +25,7 @@ Application PWA de pronostics entre amis pour la Coupe du Monde 2026. Les utilis
 ```
 src/
 ├── assets/          # Images, drapeaux SVG
-├── components/      # Composants partages (Avatar, Flag, Placeholder, Reversible, InstallPrompt)
+├── components/      # Composants partages (Avatar, Flag, InstallPrompt, prompts PWA/push)
 ├── contexts/        # AuthContext (session, profil, auth Google)
 ├── hooks/           # Hooks de donnees (useMatches, useBet, useTeams, useGroups, etc.)
 ├── lib/             # Client Supabase (supabase.ts) + types DB generes (database.types.ts)
@@ -112,12 +112,12 @@ populate/            # Scripts admin
 
 | Fonction | Role | Cron |
 |----------|------|------|
-| `update-results` | Recupere les resultats via RapidAPI, met a jour `matches` | Toutes les 3 min, 13h-22h |
+| `update-results` | Recupere les resultats via Gemini + Google Search, met a jour `matches` | Toutes les 5 min |
 | `notify-pre-match` | Push OneSignal aux joueurs sans prono ~5 min avant coup d'envoi | Chaque minute (pg_cron) |
 
 Les cotes (`odds_a`, `odds_b`, `odds_draw`) ne viennent plus d'un bookmaker : elles sont recalculées automatiquement par un trigger DB à chaque INSERT/UPDATE/DELETE sur `bets` (tant que le match n'a pas démarré), selon la popularité des pronostics.
 
-Variables d'environnement requises : `RAPIDAPI_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+Variables d'environnement requises : `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Variables d'environnement
 
@@ -127,7 +127,7 @@ Variables d'environnement requises : `RAPIDAPI_KEY`, `SUPABASE_URL`, `SUPABASE_S
 - `VITE_ONESIGNAL_APP_ID` — App ID OneSignal (push web ; voir `NOTIFICATIONS.md`)
 
 ### Edge Functions / Populate
-- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RAPIDAPI_KEY`
+- `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, optionnel `GEMINI_MODEL`
 - Push (rappels auto) : `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`, optionnel `PUBLIC_SITE_URL` (voir `NOTIFICATIONS.md`). Les envois manuels à tout le monde se font depuis le dashboard OneSignal.
 
 Ne jamais commiter de fichiers `.env`, credentials, ou cles d'API.

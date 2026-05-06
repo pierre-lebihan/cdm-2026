@@ -9,11 +9,6 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
- 
-  - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/functions" # Location of package manifests
-    schedule:
-      interval: "weekly"
 
   - package-ecosystem: "npm" # See documentation for possible values
     directory: "/populate" # Location of package manifests
@@ -25,4 +20,3 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-  

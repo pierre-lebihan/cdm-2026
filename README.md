@@ -8,7 +8,7 @@ Application de pronostics entre amis pour la Coupe du Monde 2026.
 
 ## Prérequis
 
-- Node.js >= 20
+- Node.js >= 24
 - Un compte [Supabase](https://supabase.com) (plan gratuit suffisant pour le PoC)
 
 ---
@@ -37,8 +37,8 @@ Notez l'**URL du projet** et la **clé anon (publique)** depuis `Settings > API`
 
 3. **Redirect URL** (si GitHub Pages) :
    - Dans `Authentication > URL Configuration`, ajouter votre domaine dans **Redirect URLs** :
-     - `https://<username>.github.io/euro-2024/`
-     - `http://localhost:3000/euro-2024/` (pour le dev local)
+     - `https://makepronogreatagain.bzh/`
+     - `http://localhost:3000/` (pour le dev local)
 
 ### 3. Créer le schéma de base de données
 
@@ -97,7 +97,7 @@ supabase secrets set GEMINI_MODEL=gemini-3-flash-preview
 ```bash
 # Cloner le projet
 git clone <url-du-repo>
-cd euro-2024
+cd cdm-2026
 
 # Copier le fichier d'environnement
 cp .env.example .env
@@ -113,7 +113,7 @@ npm install
 npm run dev
 ```
 
-L'app tourne sur [http://localhost:3000/euro-2024/](http://localhost:3000/euro-2024/).
+L'app tourne sur [http://localhost:3000/](http://localhost:3000/).
 
 ---
 
@@ -151,7 +151,7 @@ Les secrets Edge Functions (`GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ONES
 ```
 src/
 ├── assets/          # Images, icônes, drapeaux
-├── components/      # Composants partagés (Avatar, Flag, Placeholder)
+├── components/      # Composants partagés (Avatar, Flag, prompts PWA/push)
 ├── contexts/        # AuthContext (Supabase Auth)
 ├── hooks/           # Hooks de données TypeScript (bets, matches, teams, groups)
 ├── lib/             # Client Supabase + types DB générés
@@ -176,8 +176,8 @@ src/
 ## Ce qui reste à faire (hors PoC)
 
 - ~~**Row Level Security**~~ : ✅ RLS policies configurées
-- **Edge Functions** : Migrer les Cloud Functions (cron scores, cotes, notifications)
-- **Notifications push** : Remplacer Firebase Cloud Messaging
+- ~~**Edge Functions**~~ : ✅ résultats Gemini et rappels OneSignal déployés
+- ~~**Notifications push**~~ : ✅ OneSignal web push configuré
 - **Populate scripts** : Scripts dans `populate/` (service role) — alignés sur `competition_profiles`
 - **Tests** : Réécrire les tests unitaires
 - **Code splitting** : Optimiser le bundle size (actuellement ~1MB)
@@ -186,5 +186,5 @@ src/
 
 ## Dossiers annexes
 
-- `supabase/functions/` : Edge Functions (cron résultats / cotes).
+- `supabase/functions/` : Edge Functions (scores Gemini / rappels OneSignal).
 - `populate/` : scripts admin (service role) pour classements et contrôles.
