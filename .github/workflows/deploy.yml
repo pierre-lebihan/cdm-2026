@@ -29,6 +29,19 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
+      - name: Repair orphan remote migration entries
+        run: |
+          set -uo pipefail
+          # Orphan entries in remote schema_migrations applied out-of-band
+          # (e.g. via Studio) block `db push`. Mark them reverted so push proceeds.
+          # Idempotent: repairing an already-reverted entry is a no-op.
+          for v in 20260506193851; do
+            supabase migration repair --status reverted "$v" || true
+          done
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
       - run: supabase db push --include-all
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
