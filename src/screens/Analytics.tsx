@@ -69,40 +69,40 @@ const Analytics = () => {
 
   if (user && groups.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-60px)] p-6 text-center text-navy">
-        Tu n'es membre d'aucune tribu : rejoins-en une pour voir les analytics.
+      <div className="max-w-[600px] mx-auto py-6 px-4 text-center pt-[60px]">
+        <p className="text-gray-500 text-[0.9rem]">
+          Pour voir les analytics, il faut d'abord rejoindre une tribu.
+        </p>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-60px)]">
-      <div className="flex items-center gap-3 p-3 bg-cream-dark border-b border-navy/10">
-        <label htmlFor="tribu-select" className="text-navy font-medium">
-          Tribu :
-        </label>
-        <select
-          id="tribu-select"
-          value={selectedTribu}
-          onChange={(e) => setSelectedTribu(e.target.value)}
-          className="px-3 py-1.5 rounded border border-navy/20 bg-white text-navy"
-        >
-          {groups.map((g) => (
-            <option key={g.id} value={g.name}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+    <div className="min-h-screen">
+      <div className="sticky top-14 z-10 flex gap-1 justify-center py-3 px-4 bg-cream/[0.85] backdrop-blur-sm flex-wrap">
+        {groups.map((g) => (
+          <button
+            key={g.id}
+            className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              selectedTribu === g.name
+                ? 'bg-indigo-100 text-indigo-700 font-semibold'
+                : 'text-gray-500 hover:text-navy'
+            }`}
+            onClick={() => setSelectedTribu(g.name)}
+          >
+            {g.name}
+          </button>
+        ))}
       </div>
 
       {error && (
-        <div className="flex-1 flex items-center justify-center p-6 text-center text-navy">
+        <div className="flex items-center justify-center p-6 text-center text-navy">
           {error}
         </div>
       )}
 
       {!error && loading && (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center justify-center py-10">
           <div className="animate-spin text-4xl text-navy">⏳</div>
         </div>
       )}
@@ -112,7 +112,7 @@ const Analytics = () => {
           src={iframeSrc}
           width="100%"
           height="100%"
-          style={{ border: 'none', flex: 1, minHeight: 'calc(100vh - 120px)' }}
+          style={{ border: 'none', minHeight: 'calc(100vh - 120px)' }}
           allowTransparency
         />
       )}
