@@ -2,52 +2,65 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
-const DASHBOARD_URL =
-  'https://metabase.plb-n8n.cloud/public/dashboard/0220c51e-e6c9-46a6-b5ff-56ac19859ad3'
-
 const Analytics = () => {
   const { user } = useAuth()
   const [iframeSrc, setIframeSrc] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function loadGroupsAndSetUrl() {
+    async function loadEmbedUrl() {
       if (!user) {
-        setIframeSrc(`${DASHBOARD_URL}#bordered=false&titled=true&theme=light`)
+        setIframeSrc(null)
         return
       }
 
-      // Fetch user's groups
-      const { data: members } = await supabase
-        .from('group_members')
-        .select('group_id')
-        .eq('user_id', user.id)
-        .eq('status', 'member')
+      setError(null)
+      const { data, error: invokeErr } = await supabase.functions.invoke(
+        'metabase-embed',
+      )
 
-      const groupIds = members?.map((m) => m.group_id) || []
-
-      let params = new URLSearchParams()
-
-      if (groupIds.length > 0) {
-        const { data: groups } = await supabase
-          .from('groups')
-          .select('name')
-          .in('id', groupIds)
-
-        if (groups) {
-          groups.forEach((g) => params.append('tribu', g.name)) // "tribu" doit correspondre au nom interne du filtre dans Metabase
+      if (invokeErr || !data?.url) {
+        let serverDetail: string | null = null
+        const ctxResponse = invokeErr?.context?.response
+        if (ctxResponse && typeof ctxResponse.text === 'function') {
+          try {
+            const body = await ctxResponse.text()
+            try {
+              const parsed = JSON.parse(body)
+              serverDetail = parsed?.error || body
+            } catch {
+              serverDetail = body
+            }
+          } catch {
+            serverDetail = null
+          }
         }
+        console.error('metabase-embed invoke failed', {
+          invokeErr,
+          data,
+          serverDetail,
+        })
+        const detail =
+          serverDetail || data?.error || invokeErr?.message || 'Erreur inconnue'
+        setError(
+          `Impossible de charger le dashboard analytics : ${detail}`,
+        )
+        return
       }
 
-      const queryString = params.toString()
-      const url = `${DASHBOARD_URL}${
-        queryString ? `?${queryString}` : ''
-      }#bordered=false&titled=true&theme=light`
-      
-      setIframeSrc(url)
+      setIframeSrc(data.url)
     }
 
-    loadGroupsAndSetUrl()
+    loadEmbedUrl()
   }, [user])
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-60px)] p-6 text-center text-navy">
+        {error}
+      </div>
+    )
+  }
 
   if (!iframeSrc) {
     return (
