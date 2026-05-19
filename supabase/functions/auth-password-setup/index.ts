@@ -10,6 +10,8 @@ const CORS_HEADERS: Record<string, string> = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const DEFAULT_SITE_URL = 'https://makepronogreatagain.bzh'
+const MIN_DISPLAY_NAME_LENGTH = 2
+const MAX_DISPLAY_NAME_LENGTH = 20
 
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -22,8 +24,19 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }
 
+function normalizeDisplayName(displayName: string): string {
+  return displayName.trim()
+}
+
 function isValidEmail(email: string): boolean {
   return EMAIL_PATTERN.test(email)
+}
+
+function isValidDisplayName(displayName: string): boolean {
+  return (
+    displayName.length >= MIN_DISPLAY_NAME_LENGTH &&
+    displayName.length <= MAX_DISPLAY_NAME_LENGTH
+  )
 }
 
 function getRequestEmail(body: unknown): string {
@@ -36,6 +49,18 @@ function getRequestEmail(body: unknown): string {
   }
 
   return normalizeEmail(body.email)
+}
+
+function getRequestDisplayName(body: unknown): string {
+  if (!body || typeof body !== 'object') {
+    return ''
+  }
+
+  if (!('displayName' in body) || typeof body.displayName !== 'string') {
+    return ''
+  }
+
+  return normalizeDisplayName(body.displayName)
 }
 
 function getSiteUrl(): string {
@@ -75,8 +100,13 @@ Deno.serve(async (req: Request) => {
   }
 
   const email = getRequestEmail(body)
+  const displayName = getRequestDisplayName(body)
   if (!isValidEmail(email)) {
     return jsonResponse({ error: 'Invalid email' }, 400)
+  }
+
+  if (!isValidDisplayName(displayName)) {
+    return jsonResponse({ error: 'Invalid display name' }, 400)
   }
 
   const supabase = createClient(supabaseUrl, serviceKey)
@@ -95,7 +125,13 @@ Deno.serve(async (req: Request) => {
 
   const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
     email,
-    { redirectTo: getPasswordSetupRedirectUrl() },
+    {
+      data: {
+        display_name: displayName,
+        full_name: displayName,
+      },
+      redirectTo: getPasswordSetupRedirectUrl(),
+    },
   )
 
   if (inviteError) {

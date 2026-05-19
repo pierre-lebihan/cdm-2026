@@ -14,6 +14,7 @@ export function useEmailExists(): (email: string) => Promise<boolean> {
 
 export function useCreatePasswordSetupAccount(): (
   email: string,
+  displayName: string,
 ) => Promise<void> {
   const { createPasswordSetupAccount } = useAuth()
   return createPasswordSetupAccount

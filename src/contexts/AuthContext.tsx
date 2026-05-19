@@ -25,7 +25,10 @@ interface AuthContextValue {
   loading: boolean
   signInWithGoogle: () => Promise<void>
   emailExists: (email: string) => Promise<boolean>
-  createPasswordSetupAccount: (email: string) => Promise<void>
+  createPasswordSetupAccount: (
+    email: string,
+    displayName: string,
+  ) => Promise<void>
   signInWithPassword: (email: string, password: string) => Promise<void>
   sendPasswordReset: (email: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>
@@ -38,6 +41,18 @@ const PRODUCTION_SITE_URL = 'https://makepronogreatagain.bzh/'
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
+}
+
+function normalizeDisplayName(displayName: string): string {
+  return displayName.trim()
+}
+
+function getUserDisplayName(user: User, fallback: string): string {
+  return (
+    user.user_metadata?.display_name ||
+    user.user_metadata?.full_name ||
+    fallback
+  )
 }
 
 function getRedirectUrl(path: string): string {
@@ -55,6 +70,10 @@ function getFriendlyPasswordSetupError(message: string): string {
 
   if (message === 'Invalid email') {
     return 'Entre une adresse email valide.'
+  }
+
+  if (message === 'Invalid display name') {
+    return 'Le nom doit contenir entre 2 et 20 caractères.'
   }
 
   return message
@@ -159,7 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error && error.code === 'PGRST116') {
       const newProfile = {
         id: user.id,
-        display_name: user.user_metadata?.full_name || user.email || '',
+        display_name: getUserDisplayName(user, user.email || ''),
         avatar_url: user.user_metadata?.avatar_url || null,
         email: user.email || null,
         nb_connections: 1,
@@ -175,19 +194,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data) {
+      const displayName = getUserDisplayName(user, data.display_name || '')
       await supabase
         .from('profiles')
         .update({
           last_connection: new Date().toISOString(),
           nb_connections: (data.nb_connections || 0) + 1,
           avatar_url: user.user_metadata?.avatar_url || data.avatar_url,
-          display_name: user.user_metadata?.full_name || data.display_name,
+          display_name: displayName,
         })
         .eq('id', user.id)
       setProfile({
         ...data,
         avatar_url: user.user_metadata?.avatar_url || data.avatar_url,
-        display_name: user.user_metadata?.full_name || data.display_name,
+        display_name: displayName,
       })
     }
   }
@@ -215,12 +235,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data === true
   }
 
-  async function createPasswordSetupAccount(email: string) {
+  async function createPasswordSetupAccount(
+    email: string,
+    displayName: string,
+  ) {
     const { data, error } =
       await supabase.functions.invoke<PasswordSetupResponse>(
         'auth-password-setup',
         {
-          body: { email: normalizeEmail(email) },
+          body: {
+            email: normalizeEmail(email),
+            displayName: normalizeDisplayName(displayName),
+          },
         },
       )
 

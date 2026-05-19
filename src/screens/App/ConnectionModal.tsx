@@ -9,9 +9,11 @@ import {
 } from '../../hooks/user'
 import { useCompetitionDisplayName } from '../../hooks/competition'
 
-type ConnectionStep = 'email' | 'password' | 'created'
+type ConnectionStep = 'email' | 'display_name' | 'password' | 'created'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const MIN_DISPLAY_NAME_LENGTH = 2
+const MAX_DISPLAY_NAME_LENGTH = 20
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -42,6 +44,24 @@ function isValidEmail(email: string): boolean {
   return EMAIL_PATTERN.test(email)
 }
 
+function normalizeDisplayName(displayName: string): string {
+  return displayName.trim()
+}
+
+function getDisplayNameValidationError(displayName: string): string | null {
+  const normalizedDisplayName = normalizeDisplayName(displayName)
+
+  if (normalizedDisplayName.length < MIN_DISPLAY_NAME_LENGTH) {
+    return 'Le nom doit contenir au moins 2 caractères.'
+  }
+
+  if (normalizedDisplayName.length > MAX_DISPLAY_NAME_LENGTH) {
+    return 'Le nom doit contenir 20 caractères maximum.'
+  }
+
+  return null
+}
+
 function getEmailSubmitError(err: unknown): string {
   if (err instanceof Error) {
     return err.message
@@ -68,6 +88,7 @@ const ConnectionModal = () => {
 
   const [step, setStep] = useState<ConnectionStep>('email')
   const [email, setEmail] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [passwordSubmitting, setPasswordSubmitting] = useState(false)
@@ -93,9 +114,32 @@ const ConnectionModal = () => {
       if (exists) {
         setStep('password')
       } else {
-        await createPasswordSetupAccount(nextEmail)
-        setStep('created')
+        setStep('display_name')
       }
+    } catch (err) {
+      setError(getEmailSubmitError(err))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleDisplayNameSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (submitting) return
+
+    const validationError = getDisplayNameValidationError(displayName)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    const nextDisplayName = normalizeDisplayName(displayName)
+    setDisplayName(nextDisplayName)
+    setError(null)
+    setSubmitting(true)
+    try {
+      await createPasswordSetupAccount(email, nextDisplayName)
+      setStep('created')
     } catch (err) {
       setError(getEmailSubmitError(err))
     } finally {
@@ -140,6 +184,7 @@ const ConnectionModal = () => {
   function handleBackToEmail() {
     setStep('email')
     setPassword('')
+    setDisplayName('')
     setResetSent(false)
     setError(null)
   }
@@ -262,6 +307,54 @@ const ConnectionModal = () => {
           >
             <RotateCcw size={14} />
             <span>{resetSubmitting ? 'Envoi…' : 'Mot de passe oublié'}</span>
+          </button>
+        </form>
+      ) : null}
+
+      {step === 'display_name' ? (
+        <form
+          onSubmit={handleDisplayNameSubmit}
+          className="flex flex-col gap-2 text-left"
+        >
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-navy"
+            onClick={handleBackToEmail}
+          >
+            <ArrowLeft size={14} />
+            <span>{email}</span>
+          </button>
+          <label
+            htmlFor="display-name-signup"
+            className="text-xs font-semibold text-navy"
+          >
+            Nom affiché
+          </label>
+          <input
+            id="display-name-signup"
+            type="text"
+            required
+            minLength={MIN_DISPLAY_NAME_LENGTH}
+            maxLength={MAX_DISPLAY_NAME_LENGTH}
+            autoComplete="nickname"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Ton pseudo"
+            className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 text-sm focus:outline-none focus:border-navy"
+          />
+          <p className="text-xs text-gray-400 m-0">Entre 2 et 20 caractères.</p>
+          {error ? (
+            <p className="text-xs text-red-500 m-0" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            disabled={submitting || !displayName}
+            className="mt-1 inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-navy text-white text-sm font-semibold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Mail size={16} />
+            <span>{submitting ? 'Création…' : 'Créer le compte'}</span>
           </button>
         </form>
       ) : null}
