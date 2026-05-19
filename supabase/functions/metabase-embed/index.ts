@@ -71,6 +71,22 @@ Deno.serve(async (req: Request) => {
   }
   const userId = userData.user.id
 
+  let requestedTribu: string | null = null
+  if (req.method === "POST") {
+    try {
+      const body = await req.json()
+      if (typeof body?.tribu === "string" && body.tribu.trim().length > 0) {
+        requestedTribu = body.tribu.trim()
+      }
+    } catch {
+      requestedTribu = null
+    }
+  }
+
+  if (!requestedTribu) {
+    return jsonResponse({ error: "Missing 'tribu' in request body" }, 400)
+  }
+
   const adminClient = createClient(supabaseUrl, serviceKey)
 
   const { data: members, error: membersErr } = await adminClient
@@ -87,23 +103,28 @@ Deno.serve(async (req: Request) => {
     m.group_id ? [m.group_id] : [],
   )
 
-  let groupNames: string[] = []
-  if (groupIds.length > 0) {
-    const { data: groups, error: groupsErr } = await adminClient
-      .from("groups")
-      .select("name")
-      .in("id", groupIds)
+  if (groupIds.length === 0) {
+    return jsonResponse({ error: "User is not member of any tribu" }, 403)
+  }
 
-    if (groupsErr) {
-      return jsonResponse({ error: groupsErr.message }, 500)
-    }
+  const { data: groups, error: groupsErr } = await adminClient
+    .from("groups")
+    .select("name")
+    .in("id", groupIds)
 
-    groupNames = (groups ?? []).flatMap((g) => (g.name ? [g.name] : []))
+  if (groupsErr) {
+    return jsonResponse({ error: groupsErr.message }, 500)
+  }
+
+  const allowedNames = (groups ?? []).flatMap((g) => (g.name ? [g.name] : []))
+
+  if (!allowedNames.includes(requestedTribu)) {
+    return jsonResponse({ error: "User is not member of requested tribu" }, 403)
   }
 
   const payload = {
     resource: { dashboard: dashboardId },
-    params: { tribu: groupNames },
+    params: { tribu: requestedTribu },
     exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
   }
 

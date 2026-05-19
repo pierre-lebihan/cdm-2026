@@ -46,7 +46,7 @@ const Ranking = () => {
   const tabs = [
     { label: 'Général', key: 'general' },
     ...groups.map((g) => ({
-      label: g.name.length > 10 ? `${g.name.slice(0, 8)}…` : g.name,
+      label: g.name,
       key: g.id,
     })),
   ]
