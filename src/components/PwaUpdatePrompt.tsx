@@ -1,13 +1,20 @@
+import { RefreshCw } from 'lucide-react'
 import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
-import { toast } from 'react-hot-toast'
 import { getLatestAppBuildId } from 'utils/appVersion'
-import { isDismissed, setDismissed } from 'utils/pwaUpdateDismiss'
 
-const TOAST_ID = 'pwa-update-available'
-const UPDATE_CHECK_INTERVAL = 60 * 60 * 1000
+const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000
+const RELOAD_FALLBACK_DELAY = 1500
 
 type AvailableBuildIdSetter = Dispatch<SetStateAction<string | null>>
+type ReloadingSetter = Dispatch<SetStateAction<boolean>>
+type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>
+
+interface MandatoryUpdateOverlayProps {
+  isReloading: boolean
+  setReloading: ReloadingSetter
+  updateServiceWorker: UpdateServiceWorker
+}
 
 let registeredServiceWorker: ServiceWorkerRegistration | null = null
 let updatePollingId: number | null = null
@@ -18,6 +25,29 @@ function logRegisterError(error: unknown): void {
 
 function logUpdateError(error: unknown): void {
   console.error('Erreur de vérification du Service Worker', error)
+}
+
+function reloadWindow(): void {
+  window.location.reload()
+}
+
+function scheduleReloadFallback(): void {
+  window.setTimeout(reloadWindow, RELOAD_FALLBACK_DELAY)
+}
+
+function handleMandatoryReloadError(error: unknown): void {
+  console.error("Erreur d'activation de la mise à jour", error)
+  reloadWindow()
+}
+
+function forceUpdateAndReload(
+  updateServiceWorker: UpdateServiceWorker,
+  setReloading: ReloadingSetter,
+): void {
+  setReloading(true)
+  pollServiceWorkerUpdate()
+  updateServiceWorker(true).catch(handleMandatoryReloadError)
+  scheduleReloadFallback()
 }
 
 function pollServiceWorkerUpdate(): void {
@@ -57,19 +87,60 @@ async function showUpdateIfAppVersionChanged(
 ): Promise<void> {
   const latestBuildId = await getLatestAppBuildId()
   if (!latestBuildId) {
-    setAvailableBuildId(null)
     return
   }
   if (latestBuildId === __APP_BUILD_ID__) {
     setAvailableBuildId(null)
     return
   }
-  if (isDismissed(latestBuildId)) {
-    setAvailableBuildId(null)
-    return
+
+  pollServiceWorkerUpdate()
+  setAvailableBuildId(latestBuildId)
+}
+
+function lockPageScroll(): () => void {
+  const initialOverflow = document.body.style.overflow
+  document.body.style.overflow = 'hidden'
+
+  return () => {
+    document.body.style.overflow = initialOverflow
+  }
+}
+
+class AppVersionPoller {
+  private pollingId: number | null = null
+  private setAvailableBuildId: AvailableBuildIdSetter
+
+  constructor(setAvailableBuildId: AvailableBuildIdSetter) {
+    this.setAvailableBuildId = setAvailableBuildId
   }
 
-  setAvailableBuildId(latestBuildId)
+  start = (): void => {
+    this.checkVersion()
+    if (this.pollingId !== null) {
+      return
+    }
+
+    this.pollingId = window.setInterval(
+      this.checkVersion,
+      UPDATE_CHECK_INTERVAL,
+    )
+  }
+
+  stop = (): void => {
+    if (this.pollingId === null) {
+      return
+    }
+
+    window.clearInterval(this.pollingId)
+    this.pollingId = null
+  }
+
+  private checkVersion = (): void => {
+    showUpdateIfAppVersionChanged(this.setAvailableBuildId).catch(
+      logUpdateError,
+    )
+  }
 }
 
 class NativeUpdateListener {
@@ -138,8 +209,50 @@ class NativeUpdateListener {
   }
 }
 
+function MandatoryUpdateOverlay({
+  isReloading,
+  setReloading,
+  updateServiceWorker,
+}: MandatoryUpdateOverlayProps) {
+  return (
+    <div
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-navy/75 px-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pwa-update-title"
+    >
+      <div className="w-full max-w-sm rounded-lg border border-white/40 bg-cream p-6 text-center text-navy shadow-card">
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-navy text-cream">
+          <RefreshCw
+            size={24}
+            className={isReloading ? 'animate-spin' : undefined}
+          />
+        </div>
+        <h2 id="pwa-update-title" className="text-xl font-extrabold">
+          Mise à jour obligatoire
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-navy-light">
+          Une nouvelle version est disponible. Recharge l&apos;application pour
+          continuer à pronostiquer.
+        </p>
+        <button
+          type="button"
+          className="mt-5 w-full rounded-lg bg-navy px-4 py-3 font-semibold text-cream shadow-card transition-colors hover:bg-navy/90 disabled:cursor-wait disabled:opacity-80"
+          onClick={() => {
+            forceUpdateAndReload(updateServiceWorker, setReloading)
+          }}
+          disabled={isReloading}
+        >
+          {isReloading ? 'Rechargement...' : 'Recharger maintenant'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export const PwaUpdatePrompt = () => {
   const [availableBuildId, setAvailableBuildId] = useState<string | null>(null)
+  const [isReloading, setReloading] = useState(false)
 
   const { updateServiceWorker } = useRegisterSW({
     onRegistered: startUpdatePolling,
@@ -155,59 +268,30 @@ export const PwaUpdatePrompt = () => {
 
   useEffect(() => {
     if (!availableBuildId) {
-      toast.dismiss(TOAST_ID)
       return
     }
 
-    if (isDismissed(availableBuildId)) {
-      toast.dismiss(TOAST_ID)
-      return
-    }
+    return lockPageScroll()
+  }, [availableBuildId])
 
-    toast(
-      (t) => (
-        <div className="flex flex-col gap-3">
-          <span className="font-semibold text-navy">
-            Une nouvelle version de l'application est disponible !
-          </span>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              className="px-3 py-1.5 text-sm font-medium text-white bg-navy rounded-md hover:bg-navy/90 transition-colors"
-              onClick={() => {
-                toast.dismiss(t.id)
-                updateServiceWorker(true)
-              }}
-            >
-              Mettre à jour
-            </button>
-            <button
-              type="button"
-              className="px-3 py-1.5 text-sm font-medium text-navy bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-              onClick={() => {
-                setDismissed(availableBuildId)
-                setAvailableBuildId(null)
-                toast.dismiss(t.id)
-              }}
-            >
-              Plus tard
-            </button>
-          </div>
-        </div>
-      ),
-      {
-        id: TOAST_ID,
-        duration: Infinity,
-        position: 'bottom-center',
-      },
-    )
+  useEffect(() => {
+    const poller = new AppVersionPoller(setAvailableBuildId)
+    poller.start()
 
-    return () => {
-      toast.dismiss(TOAST_ID)
-    }
-  }, [availableBuildId, updateServiceWorker])
+    return poller.stop
+  }, [])
 
-  return null
+  if (!availableBuildId) {
+    return null
+  }
+
+  return (
+    <MandatoryUpdateOverlay
+      isReloading={isReloading}
+      setReloading={setReloading}
+      updateServiceWorker={updateServiceWorker}
+    />
+  )
 }
 
 export default PwaUpdatePrompt
