@@ -38,6 +38,8 @@ Notez l'**URL du projet** et la **clé anon (publique)** depuis `Settings > API`
 3. **Redirect URL** (si GitHub Pages) :
    - Dans `Authentication > URL Configuration`, ajouter votre domaine dans **Redirect URLs** :
      - `https://makepronogreatagain.bzh/`
+     - `https://makepronogreatagain.bzh/auth/set-password`
+     - `https://makepronogreatagain.bzh/auth/reset-password`
      - `http://localhost:3000/` (pour le dev local)
 
 ### 3. Créer le schéma de base de données

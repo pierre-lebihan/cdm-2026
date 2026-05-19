@@ -10,6 +10,7 @@ const CORS_HEADERS: Record<string, string> = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const DEFAULT_SITE_URL = 'https://makepronogreatagain.bzh'
+const AUTH_SITE_URL_ENV = 'AUTH_SITE_URL'
 const MIN_DISPLAY_NAME_LENGTH = 2
 const MAX_DISPLAY_NAME_LENGTH = 20
 
@@ -64,7 +65,7 @@ function getRequestDisplayName(body: unknown): string {
 }
 
 function getSiteUrl(): string {
-  const configuredUrl = Deno.env.get('PUBLIC_SITE_URL')
+  const configuredUrl = Deno.env.get(AUTH_SITE_URL_ENV)
   if (configuredUrl) {
     return configuredUrl
   }

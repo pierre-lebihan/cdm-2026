@@ -5,6 +5,8 @@ set -euo pipefail
 : "${SUPABASE_PROJECT_ID:?Missing SUPABASE_PROJECT_ID}"
 
 TEMPLATES_DIR="$(cd "$(dirname "$0")/email-templates" && pwd)"
+AUTH_SITE_URL="${AUTH_SITE_URL:-https://makepronogreatagain.bzh}"
+AUTH_REDIRECT_URLS="${AUTH_REDIRECT_URLS:-https://makepronogreatagain.bzh/,https://makepronogreatagain.bzh/auth/set-password,https://makepronogreatagain.bzh/auth/reset-password,http://localhost:3000/,http://localhost:3000/auth/set-password,http://localhost:3000/auth/reset-password,http://localhost:3001/,http://localhost:3001/auth/set-password,http://localhost:3001/auth/reset-password}"
 
 read_template() {
   local file="$TEMPLATES_DIR/$1"
@@ -22,6 +24,8 @@ RECOVERY=$(read_template "reset-password.html")
 EMAIL_CHANGE=$(read_template "change-email.html")
 
 PAYLOAD=$(jq -n \
+  --arg site_url "$AUTH_SITE_URL" \
+  --arg uri_allow_list "$AUTH_REDIRECT_URLS" \
   --arg magic_link_subject "⚽ Ton lien magique — Make Prono Great Again" \
   --arg magic_link_content "$MAGIC_LINK" \
   --arg confirmation_subject "⚽ Bienvenue sur Make Prono Great Again !" \
@@ -33,6 +37,8 @@ PAYLOAD=$(jq -n \
   --arg email_change_subject "Confirme ta nouvelle adresse email" \
   --arg email_change_content "$EMAIL_CHANGE" \
   '{
+    site_url: $site_url,
+    uri_allow_list: $uri_allow_list,
     mailer_subjects_magic_link: $magic_link_subject,
     mailer_templates_magic_link_content: $magic_link_content,
     mailer_subjects_confirmation: $confirmation_subject,
