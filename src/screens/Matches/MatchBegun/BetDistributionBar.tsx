@@ -18,7 +18,6 @@ interface BetItem {
 
 interface SegmentData {
   key: string
-  label: string
   color: string
   count: number
   pct: number
@@ -64,31 +63,11 @@ function buildSegments(
 ): SegmentData[] {
   const isKnockout = betFormat === 'knockout_decider'
   const all = [
-    {
-      key: '1',
-      label: '1',
-      color: 'bg-emerald-500',
-      count: dist.countA,
-      odd: odds.PA,
-    },
+    { key: '1', color: 'bg-emerald-500', count: dist.countA, odd: odds.PA },
     ...(isKnockout
       ? []
-      : [
-          {
-            key: 'N',
-            label: 'N',
-            color: 'bg-gray-400',
-            count: dist.countN,
-            odd: odds.PN,
-          },
-        ]),
-    {
-      key: '2',
-      label: '2',
-      color: 'bg-orange-500',
-      count: dist.countB,
-      odd: odds.PB,
-    },
+      : [{ key: 'N', color: 'bg-slate-400', count: dist.countN, odd: odds.PN }]),
+    { key: '2', color: 'bg-orange-400', count: dist.countB, odd: odds.PB },
   ]
   return all
     .filter((s) => s.count > 0)
@@ -97,6 +76,8 @@ function buildSegments(
       pct: s.count / dist.total,
     }))
 }
+
+const MIN_FLEX = 0.08
 
 const BetDistributionBar = ({
   matchId,
@@ -126,34 +107,27 @@ const BetDistributionBar = ({
 
   return (
     <div
-      className="w-full pt-2"
+      className="w-full"
       onClick={(e) => {
         e.stopPropagation()
         setShowOdds((prev) => !prev)
       }}
       role="button"
     >
-      <div className="flex w-full h-2.5 rounded-full overflow-hidden gap-[2px]">
+      <div className="flex w-full h-7 rounded-lg overflow-hidden gap-[1.5px]">
         {segments.map((seg) => (
           <div
             key={seg.key}
-            className={`${seg.color} transition-all duration-300 first:rounded-l-full last:rounded-r-full`}
-            style={{ flex: Math.max(seg.pct, 0.06) }}
-          />
-        ))}
-      </div>
-      <div className="flex w-full mt-1">
-        {segments.map((seg) => (
-          <div
-            key={seg.key}
-            className="text-center"
-            style={{ flex: Math.max(seg.pct, 0.06) }}
+            className={`${seg.color} flex items-center justify-center transition-all duration-300`}
+            style={{ flex: Math.max(seg.pct, MIN_FLEX) }}
           >
-            <span className="text-[10px] font-semibold text-gray-500">
-              {showOdds
-                ? `${seg.label} · x${formatOdds(seg.odd)}`
-                : `${seg.label} · ${pctLabel(seg.count, dist.total)}`}
-            </span>
+            {seg.pct >= 0.12 && (
+              <span className="text-[11px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+                {showOdds
+                  ? `x${formatOdds(seg.odd)}`
+                  : pctLabel(seg.count, dist.total)}
+              </span>
+            )}
           </div>
         ))}
       </div>
