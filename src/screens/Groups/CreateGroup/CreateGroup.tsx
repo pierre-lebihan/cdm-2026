@@ -6,9 +6,13 @@ const CreateGroup = ({ onSuccess }: { onSuccess: () => void }) => {
   const createGroup = useCreateGroup()
 
   const errorMessage =
-    name.length > 0 && name.length < 5 ? '5 caractères minimum' : undefined
+    name.length > 0 && name.length < 2
+      ? '2 caractères minimum'
+      : name.length > 20
+        ? '20 caractères maximum'
+        : undefined
 
-  const isFormValid = name.length >= 5 && !errorMessage
+  const isFormValid = name.length >= 2 && name.length <= 20
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-card">
@@ -30,6 +34,7 @@ const CreateGroup = ({ onSuccess }: { onSuccess: () => void }) => {
             className="w-full py-2.5 px-3.5 border-[1.5px] border-gray-200 rounded-[10px] text-sm outline-none transition-colors bg-white focus:border-indigo-500 placeholder:text-gray-300"
             placeholder="Ex : Les intouchables"
             value={name}
+            maxLength={20}
             onChange={(e) => setName(e.target.value)}
           />
           {errorMessage && (
