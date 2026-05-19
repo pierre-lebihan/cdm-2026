@@ -1,25 +1,39 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { useGroupsForUserMember } from '../hooks/groups'
+import { useGroupsForUserMember, type GroupWithMembers } from '../hooks/groups'
+
+function getSelectedGroup(
+  groups: GroupWithMembers[],
+  selectedGroupId: string,
+): GroupWithMembers | null {
+  for (const group of groups) {
+    if (group.id === selectedGroupId) {
+      return group
+    }
+  }
+
+  return null
+}
 
 const Analytics = () => {
   const { user } = useAuth()
   const groups = useGroupsForUserMember()
-  const [selectedTribu, setSelectedTribu] = useState<string>('')
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [iframeSrc, setIframeSrc] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
 
   useEffect(() => {
-    if (!selectedTribu && groups.length > 0) {
-      setSelectedTribu(groups[0].name)
+    const selectedGroup = getSelectedGroup(groups, selectedGroupId)
+    if (!selectedGroup && groups.length > 0) {
+      setSelectedGroupId(groups[0].id)
     }
-  }, [groups, selectedTribu])
+  }, [groups, selectedGroupId])
 
   useEffect(() => {
     async function loadEmbedUrl() {
-      if (!user || !selectedTribu) {
+      if (!user || !selectedGroupId) {
         setIframeSrc(null)
         return
       }
@@ -28,7 +42,7 @@ const Analytics = () => {
       setLoading(true)
       const { data, error: invokeErr } = await supabase.functions.invoke(
         'metabase-embed',
-        { body: { tribu: selectedTribu } },
+        { body: { tribuId: selectedGroupId } },
       )
 
       if (invokeErr || !data?.url) {
@@ -65,7 +79,7 @@ const Analytics = () => {
     }
 
     loadEmbedUrl()
-  }, [user, selectedTribu])
+  }, [user, selectedGroupId])
 
   if (user && groups.length === 0) {
     return (
@@ -84,11 +98,11 @@ const Analytics = () => {
           <button
             key={g.id}
             className={`py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-              selectedTribu === g.name
+              selectedGroupId === g.id
                 ? 'bg-indigo-100 text-indigo-700 font-semibold'
                 : 'text-gray-500 hover:text-navy'
             }`}
-            onClick={() => setSelectedTribu(g.name)}
+            onClick={() => setSelectedGroupId(g.id)}
           >
             {g.name}
           </button>

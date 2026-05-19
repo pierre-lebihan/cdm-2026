@@ -7,9 +7,29 @@ export function useGoogleLogin(): () => Promise<void> {
   return signInWithGoogle
 }
 
-export function useEmailLogin(): (email: string) => Promise<void> {
-  const { signInWithEmail } = useAuth()
-  return signInWithEmail
+export function useEmailExists(): (email: string) => Promise<boolean> {
+  const { emailExists } = useAuth()
+  return emailExists
+}
+
+export function useCreatePasswordSetupAccount(): (
+  email: string,
+) => Promise<void> {
+  const { createPasswordSetupAccount } = useAuth()
+  return createPasswordSetupAccount
+}
+
+export function usePasswordLogin(): (
+  email: string,
+  password: string,
+) => Promise<void> {
+  const { signInWithPassword } = useAuth()
+  return signInWithPassword
+}
+
+export function usePasswordReset(): (email: string) => Promise<void> {
+  const { sendPasswordReset } = useAuth()
+  return sendPasswordReset
 }
 
 export function useLogout(): () => Promise<void> {
@@ -37,7 +57,9 @@ export function useIsUserAdmin(): boolean {
   return profile?.role === 'admin'
 }
 
-export function useUpdateProfile(): (updates: Partial<Tables<'profiles'>>) => void {
+export function useUpdateProfile(): (
+  updates: Partial<Tables<'profiles'>>,
+) => void {
   const { updateProfile } = useAuth()
   return updateProfile
 }

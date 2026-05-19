@@ -470,6 +470,10 @@ export type Database = {
       }
     }
     Functions: {
+      auth_email_exists: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       validate_group_apply: {
         Args: { p_group_id: string; p_user_id: string }
         Returns: undefined

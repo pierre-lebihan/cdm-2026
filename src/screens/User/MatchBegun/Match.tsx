@@ -1,4 +1,3 @@
-import { useCallback, useMemo, useState } from 'react'
 import { useBetFromUser } from '../../../hooks/bets'
 import Flag from '../../../components/Flag'
 import PointsWon from './PointsWon'
@@ -6,57 +5,12 @@ import { isNumber } from 'lodash'
 import { useNavigate, useParams } from 'react-router-dom'
 import InformationMatch from '../../Matches/MatchToBet/InformationMatch'
 import { cardBgClassForUserBet } from '../../../lib/betOutcomeStatus'
-import { computeScoringBreakdown, formatOdds } from '../../../lib/scoring'
-import ScoreBreakdownModal from '../../Matches/MatchBegun/ScoreBreakdownModal'
+import BetDistributionBar from '../../Matches/MatchBegun/BetDistributionBar'
 
 const Match = ({ match }) => {
   const { id } = useParams()
   const [currentBet] = useBetFromUser(match.id, id)
   const navigate = useNavigate()
-  const [breakdownOpen, setBreakdownOpen] = useState(false)
-
-  const myOdd =
-    !isNumber(currentBet?.betTeamA) || !isNumber(currentBet?.betTeamB)
-      ? null
-      : currentBet?.betTeamA > currentBet?.betTeamB
-        ? match.odds.PA
-        : currentBet?.betTeamA < currentBet?.betTeamB
-          ? match.odds.PB
-          : match.odds.PN
-
-  const winningOdd =
-    match.scores.A > match.scores.B
-      ? match.odds.PA
-      : match.scores.A < match.scores.B
-        ? match.odds.PB
-        : match.odds.PN
-
-  const breakdown = useMemo(
-    () =>
-      computeScoringBreakdown({
-        scoreA: match.scores.A,
-        scoreB: match.scores.B,
-        playoffWinner: match.playoffWinner,
-        betTeamA: currentBet?.betTeamA,
-        betTeamB: currentBet?.betTeamB,
-        betPlayoffWinner: currentBet?.betPlayoffWinner,
-        betFormat: match.betFormat,
-        tournamentPhase: match.tournamentPhase,
-        oddsA: match.odds.PA,
-        oddsB: match.odds.PB,
-        oddsDraw: match.odds.PN,
-      }),
-    [match, currentBet],
-  )
-
-  const handleScoreClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    setBreakdownOpen(true)
-  }, [])
-
-  const handleCloseBreakdown = useCallback(() => {
-    setBreakdownOpen(false)
-  }, [])
 
   if (!match.display) return null
 
@@ -94,16 +48,9 @@ const Match = ({ match }) => {
           </span>
         </div>
 
-        <div className="shrink-0">
-          <button
-            type="button"
-            onClick={handleScoreClick}
-            className="inline-block text-xl font-extrabold text-navy bg-gray-100 py-1.5 px-3.5 rounded-[10px] border-none cursor-pointer hover:bg-gray-200 transition-colors"
-            title="Voir le détail du calcul"
-          >
-            {match.scores.A} – {match.scores.B}
-          </button>
-        </div>
+        <span className="inline-block text-xl font-extrabold text-navy bg-gray-100 py-1.5 px-3.5 rounded-[10px]">
+          {match.scores.A} – {match.scores.B}
+        </span>
 
         <div className="flex flex-col items-center gap-1.5 w-[90px] shrink-0">
           <Flag
@@ -116,19 +63,7 @@ const Match = ({ match }) => {
         </div>
       </div>
 
-      <div className="flex justify-between items-center gap-1 pt-2 border-t border-gray-100">
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
-            Sa cote
-          </span>
-          <span className="text-xs font-bold text-navy">{formatOdds(myOdd)}</span>
-        </div>
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
-            Cote gagnante
-          </span>
-          <span className="text-xs font-bold text-navy">{formatOdds(winningOdd)}</span>
-        </div>
+      <div className="flex justify-between items-center gap-2 pt-2 border-t border-gray-100">
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
             Son prono
@@ -140,19 +75,10 @@ const Match = ({ match }) => {
         <PointsWon {...match} {...currentBet} />
       </div>
 
-      <ScoreBreakdownModal
-        open={breakdownOpen}
-        onClose={handleCloseBreakdown}
-        breakdown={breakdown}
-        tournamentPhase={match.tournamentPhase}
-        teamAName={match.teamAName}
-        teamBName={match.teamBName}
-        scoreA={match.scores.A}
-        scoreB={match.scores.B}
-        betTeamA={currentBet?.betTeamA}
-        betTeamB={currentBet?.betTeamB}
-        pointsWon={currentBet?.pointsWon}
-        title="Détail de ses points"
+      <BetDistributionBar
+        matchId={match.id}
+        betFormat={match.betFormat}
+        odds={match.odds}
       />
     </div>
   )

@@ -11,6 +11,43 @@ const CORS_HEADERS: Record<string, string> = {
 
 const TOKEN_TTL_SECONDS = 60 * 60
 
+function collectGroupIds(
+  members: Array<{ group_id: string | null }>,
+): string[] {
+  const groupIds: string[] = []
+
+  for (const member of members) {
+    if (member.group_id) {
+      groupIds.push(member.group_id)
+    }
+  }
+
+  return groupIds
+}
+
+function normalizeTribuName(name: string): string {
+  return name.trim()
+}
+
+function findAllowedTribuName(
+  groups: Array<{ name: string | null }>,
+  requestedTribu: string,
+): string | null {
+  const normalizedRequestedTribu = normalizeTribuName(requestedTribu)
+
+  for (const group of groups) {
+    if (!group.name) {
+      continue
+    }
+
+    if (normalizeTribuName(group.name) === normalizedRequestedTribu) {
+      return group.name
+    }
+  }
+
+  return null
+}
+
 async function buildSigningKey(secret: string): Promise<CryptoKey> {
   return await crypto.subtle.importKey(
     "raw",
@@ -48,12 +85,18 @@ Deno.serve(async (req: Request) => {
     !metabaseSecret ||
     !dashboardIdRaw
   ) {
-    return jsonResponse({ error: "Missing required environment variables" }, 500)
+    return jsonResponse(
+      { error: "Missing required environment variables" },
+      500,
+    )
   }
 
   const dashboardId = Number(dashboardIdRaw)
   if (!Number.isInteger(dashboardId)) {
-    return jsonResponse({ error: "METABASE_DASHBOARD_ID must be an integer" }, 500)
+    return jsonResponse(
+      { error: "METABASE_DASHBOARD_ID must be an integer" },
+      500,
+    )
   }
 
   const authHeader = req.headers.get("Authorization")
@@ -71,60 +114,109 @@ Deno.serve(async (req: Request) => {
   }
   const userId = userData.user.id
 
+  let requestedGroupId: string | null = null
   let requestedTribu: string | null = null
   if (req.method === "POST") {
     try {
       const body = await req.json()
+      if (typeof body?.tribuId === "string" && body.tribuId.trim().length > 0) {
+        requestedGroupId = body.tribuId.trim()
+      }
       if (typeof body?.tribu === "string" && body.tribu.trim().length > 0) {
-        requestedTribu = body.tribu.trim()
+        requestedTribu = body.tribu
       }
     } catch {
+      requestedGroupId = null
       requestedTribu = null
     }
   }
 
-  if (!requestedTribu) {
-    return jsonResponse({ error: "Missing 'tribu' in request body" }, 400)
+  if (!requestedGroupId && !requestedTribu) {
+    return jsonResponse({ error: "Missing 'tribuId' in request body" }, 400)
   }
 
   const adminClient = createClient(supabaseUrl, serviceKey)
+  let allowedTribuName: string | null = null
 
-  const { data: members, error: membersErr } = await adminClient
-    .from("group_members")
-    .select("group_id")
-    .eq("user_id", userId)
-    .eq("status", "member")
+  if (requestedGroupId) {
+    const { data: membership, error: membershipErr } = await adminClient
+      .from("group_members")
+      .select("group_id")
+      .eq("group_id", requestedGroupId)
+      .eq("user_id", userId)
+      .eq("status", "member")
+      .maybeSingle()
 
-  if (membersErr) {
-    return jsonResponse({ error: membersErr.message }, 500)
+    if (membershipErr) {
+      return jsonResponse({ error: membershipErr.message }, 500)
+    }
+
+    if (!membership) {
+      return jsonResponse(
+        { error: "User is not member of requested tribu" },
+        403,
+      )
+    }
+
+    const { data: group, error: groupErr } = await adminClient
+      .from("groups")
+      .select("name")
+      .eq("id", requestedGroupId)
+      .maybeSingle()
+
+    if (groupErr) {
+      return jsonResponse({ error: groupErr.message }, 500)
+    }
+
+    if (!group?.name) {
+      return jsonResponse({ error: "Requested tribu not found" }, 404)
+    }
+
+    allowedTribuName = group.name
   }
 
-  const groupIds = (members ?? []).flatMap((m) =>
-    m.group_id ? [m.group_id] : [],
-  )
+  if (!allowedTribuName) {
+    if (!requestedTribu) {
+      return jsonResponse({ error: "Requested tribu not found" }, 404)
+    }
 
-  if (groupIds.length === 0) {
-    return jsonResponse({ error: "User is not member of any tribu" }, 403)
-  }
+    const { data: members, error: membersErr } = await adminClient
+      .from("group_members")
+      .select("group_id")
+      .eq("user_id", userId)
+      .eq("status", "member")
 
-  const { data: groups, error: groupsErr } = await adminClient
-    .from("groups")
-    .select("name")
-    .in("id", groupIds)
+    if (membersErr) {
+      return jsonResponse({ error: membersErr.message }, 500)
+    }
 
-  if (groupsErr) {
-    return jsonResponse({ error: groupsErr.message }, 500)
-  }
+    const groupIds = collectGroupIds(members ?? [])
 
-  const allowedNames = (groups ?? []).flatMap((g) => (g.name ? [g.name] : []))
+    if (groupIds.length === 0) {
+      return jsonResponse({ error: "User is not member of any tribu" }, 403)
+    }
 
-  if (!allowedNames.includes(requestedTribu)) {
-    return jsonResponse({ error: "User is not member of requested tribu" }, 403)
+    const { data: groups, error: groupsErr } = await adminClient
+      .from("groups")
+      .select("name")
+      .in("id", groupIds)
+
+    if (groupsErr) {
+      return jsonResponse({ error: groupsErr.message }, 500)
+    }
+
+    allowedTribuName = findAllowedTribuName(groups ?? [], requestedTribu)
+    if (!allowedTribuName) {
+      return jsonResponse(
+        { error: "User is not member of requested tribu" },
+        403,
+      )
+    }
   }
 
   const payload = {
     resource: { dashboard: dashboardId },
-    params: { tribu: requestedTribu },
+    params: { tribu: allowedTribuName },
     exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
   }
 
@@ -132,8 +224,7 @@ Deno.serve(async (req: Request) => {
   const token = await create({ alg: "HS256", typ: "JWT" }, payload, key)
 
   const baseUrl = metabaseSiteUrl.replace(/\/$/, "")
-  const url =
-    `${baseUrl}/embed/dashboard/${token}#bordered=false&titled=true&theme=light`
+  const url = `${baseUrl}/embed/dashboard/${token}#bordered=false&titled=true&theme=light`
 
   return jsonResponse({ url, expiresIn: TOKEN_TTL_SECONDS }, 200)
 })

@@ -124,12 +124,15 @@ export function useBet(matchId: string | undefined): [NormalizedBet | undefined,
         .select()
         .single()
 
+      const toastId = `bet-${matchId}`
       if (error) {
         console.error('Erreur upsert bet:', error)
-        toast.error('Erreur lors de la sauvegarde du pronostic')
+        toast.error('Erreur lors de la sauvegarde du pronostic', {
+          id: toastId,
+        })
       } else if (data) {
         setBetState(data)
-        toast.success('Pronostic sauvegardé')
+        toast.success('Pronostic sauvegardé', { id: toastId })
       }
     },
     [matchId, uid, activeCompetitionId],

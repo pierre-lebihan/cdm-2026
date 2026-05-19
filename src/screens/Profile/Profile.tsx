@@ -1,5 +1,6 @@
-import { Bell } from 'lucide-react'
+import { Bell, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
+import PasswordForm from 'components/PasswordForm'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePushNotifications } from '../../hooks/usePushNotifications'
 import { useLogout } from '../../hooks/user'
@@ -20,17 +21,26 @@ function getInitials(name: string): string {
 }
 
 const Profile = () => {
-  const { user, profile } = useAuth()
+  const { user, profile, updatePassword } = useAuth()
   const logout = useLogout()
-  const { state: pushState, refresh: refreshPush, enabled: pushEnabled } =
-    usePushNotifications()
+  const {
+    state: pushState,
+    refresh: refreshPush,
+    enabled: pushEnabled,
+  } = usePushNotifications()
   const showLocalhostNotice = isLocalhostOrigin()
 
   if (!user) return null
 
-  const displayName = profile?.display_name || user?.user_metadata?.full_name || ''
+  const displayName =
+    profile?.display_name || user?.user_metadata?.full_name || ''
   const photoURL = profile?.avatar_url || user?.user_metadata?.avatar_url || ''
   const email = user?.email || ''
+
+  async function handlePasswordSubmit(password: string) {
+    await updatePassword(password)
+    toast.success('Mot de passe mis à jour')
+  }
 
   return (
     <div className="max-w-[500px] mx-auto py-8 px-4">
@@ -63,6 +73,25 @@ const Profile = () => {
           fonctionnent sur le site en ligne une fois déployé.
         </p>
       ) : null}
+
+      <div className="mt-6 bg-white rounded-2xl p-6 shadow-card text-left">
+        <div className="flex items-center gap-2 mb-3">
+          <KeyRound
+            className="text-navy shrink-0"
+            size={20}
+            strokeWidth={2.25}
+          />
+          <h3 className="text-base font-bold text-navy m-0">Mot de passe</h3>
+        </div>
+        <p className="text-sm text-gray-500 m-0 mb-4 leading-snug">
+          Ajoute ou remplace le mot de passe utilisé avec ton email.
+        </p>
+        <PasswordForm
+          submitLabel="Mettre à jour"
+          submittingLabel="Mise à jour…"
+          onSubmit={handlePasswordSubmit}
+        />
+      </div>
 
       {pushEnabled ? (
         <div className="mt-6 bg-white rounded-2xl p-6 shadow-card text-left">
@@ -135,8 +164,7 @@ const Profile = () => {
             <p className="text-sm text-amber-800 bg-amber-50 rounded-lg p-3 m-0 leading-snug">
               Le navigateur a refusé les notifications. Ouvre les réglages du
               site (icône cadenas ou menu du site dans la barre d’adresse) pour
-              autoriser
-              les notifications, puis reviens ici.
+              autoriser les notifications, puis reviens ici.
             </p>
           ) : null}
 

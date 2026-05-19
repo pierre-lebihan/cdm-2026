@@ -1,6 +1,6 @@
 import conformsTo from 'lodash/conformsTo'
 import isNumber from 'lodash/isNumber'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useBet } from '../../../hooks/bets'
@@ -10,15 +10,27 @@ import ValidIcon from './ValidIcon'
 import Flag from '../../../components/Flag'
 import PlayoffWinnerSelector from './PlayoffWinnerSelector'
 
+const MAX_SCORE = 10
+const SAVE_DEBOUNCE_MS = 800
+
 const Match = ({ match }) => {
   const [bet, saveBet] = useBet(match.id)
   const [currentBet, setCurrentBet] = useState(bet)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (bet !== undefined) {
       setCurrentBet(bet)
     }
   }, [bet])
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current)
+      }
+    }
+  }, [])
 
   const needsPlayoffWinnerOnDraw =
     match.betFormat === 'knockout_decider' &&
@@ -29,7 +41,8 @@ const Match = ({ match }) => {
     currentBet?.betTeamA === currentBet?.betTeamB
 
   const isBetValid = (updatedBet) => {
-    const scoreValidator = (score) => isNumber(score) && score >= 0
+    const scoreValidator = (score) =>
+      isNumber(score) && score >= 0 && score <= MAX_SCORE
     const scoresOk = conformsTo(updatedBet, {
       betTeamA: scoreValidator,
       betTeamB: scoreValidator,
@@ -47,39 +60,71 @@ const Match = ({ match }) => {
     return true
   }
 
-  const handleScoreChange =
-    (team) =>
-    ({ target: { value } }) => {
-      const updatedBet = {
-        ...currentBet,
-        [`betTeam${team}`]: Number(value),
-        betPlayoffWinner:
-          team === 'A'
-            ? Number(value) !== currentBet?.betTeamB
-              ? null
-              : currentBet?.betPlayoffWinner
-            : Number(value) !== currentBet?.betTeamA
-              ? null
-              : currentBet?.betPlayoffWinner,
-      }
-      setCurrentBet(updatedBet)
-      saveBetIfValid(updatedBet)
-    }
-
-  const handlePlayoffWinnerChange = (winner: 'A' | 'B') => {
-    const updatedBet = { ...currentBet, betPlayoffWinner: winner }
-    setCurrentBet(updatedBet)
-    saveBetIfValid(updatedBet)
-  }
-
-  const handleTeamAChange = handleScoreChange('A')
-  const handleTeamBChange = handleScoreChange('B')
-
   const saveBetIfValid = (updatedBet) => {
     if (isBetValid(updatedBet)) {
       saveBet(updatedBet)
     }
   }
+
+  const debouncedSaveBetIfValid = (updatedBet) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+    }
+    if (!isBetValid(updatedBet)) return
+    saveTimerRef.current = setTimeout(() => {
+      saveBet(updatedBet)
+    }, SAVE_DEBOUNCE_MS)
+  }
+
+  const updateScore = (team, newScore) => {
+    const score = Math.min(Math.max(newScore, 0), MAX_SCORE)
+    if (score === currentBet?.[`betTeam${team}`]) return
+    const otherTeamScore =
+      team === 'A' ? currentBet?.betTeamB : currentBet?.betTeamA
+    const updatedBet = {
+      ...currentBet,
+      [`betTeam${team}`]: score,
+      betPlayoffWinner:
+        score !== otherTeamScore ? null : currentBet?.betPlayoffWinner,
+    }
+    setCurrentBet(updatedBet)
+    debouncedSaveBetIfValid(updatedBet)
+  }
+
+  const handleScoreChange = (team) => ({ target: { value } }) => {
+    const parsed = Number(value)
+    if (isNaN(parsed)) return
+    updateScore(team, parsed)
+  }
+
+  const handleKeyDown = (team) => (e) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+    e.preventDefault()
+    const currentScore = currentBet?.[`betTeam${team}`]
+    const base =
+      typeof currentScore === 'number' && currentScore >= 0
+        ? currentScore
+        : -1
+    if (e.key === 'ArrowUp') {
+      updateScore(team, base + 1)
+    }
+    if (e.key === 'ArrowDown') {
+      updateScore(team, base - 1)
+    }
+  }
+
+  const handlePlayoffWinnerChange = (winner: 'A' | 'B') => {
+    const updatedBet = { ...currentBet, betPlayoffWinner: winner }
+    setCurrentBet(updatedBet)
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+      saveTimerRef.current = null
+    }
+    saveBetIfValid(updatedBet)
+  }
+
+  const handleTeamAChange = handleScoreChange('A')
+  const handleTeamBChange = handleScoreChange('B')
 
   const betSaved = () => {
     if (!isBetValid(currentBet)) return false
@@ -127,12 +172,14 @@ const Match = ({ match }) => {
             className="w-11 h-11 rounded-[10px] border-[1.5px] border-gray-200 text-center text-xl font-bold text-navy bg-gray-50 outline-none transition-colors focus:border-indigo-500 focus:bg-white placeholder:text-gray-300"
             inputMode="numeric"
             pattern="[0-9]*"
+            maxLength={2}
             value={
               currentBet?.betTeamA !== undefined && currentBet?.betTeamA >= 0
                 ? currentBet?.betTeamA
                 : ''
             }
             onChange={handleTeamAChange}
+            onKeyDown={handleKeyDown('A')}
           />
           <ValidIcon valid={betSaved()} />
           <input
@@ -141,8 +188,10 @@ const Match = ({ match }) => {
             className="w-11 h-11 rounded-[10px] border-[1.5px] border-gray-200 text-center text-xl font-bold text-navy bg-gray-50 outline-none transition-colors focus:border-indigo-500 focus:bg-white placeholder:text-gray-300"
             inputMode="numeric"
             pattern="[0-9]*"
+            maxLength={2}
             value={currentBet?.betTeamB >= 0 ? currentBet?.betTeamB : ''}
             onChange={handleTeamBChange}
+            onKeyDown={handleKeyDown('B')}
           />
         </div>
 

@@ -16,6 +16,7 @@ import NotificationPrompt from 'components/NotificationPrompt'
 import { OneSignalSubscriber } from 'components/OneSignalSubscriber'
 
 const AnalyticsPage = lazy(() => import('../Analytics'))
+const AuthPasswordPage = lazy(() => import('../AuthPasswordPage'))
 const FAQPage = lazy(() => import('../FAQ/FAQ'))
 const GroupsPage = lazy(() => import('../Groups/Groups'))
 const Profile = lazy(() => import('../Profile/Profile'))
@@ -36,26 +37,56 @@ const App = () => {
     <>
       {!hideHeader && (
         <header className="fixed top-0 left-0 right-0 z-[1100] h-14 flex items-center justify-between px-4 bg-cream/[0.88] backdrop-blur-sm border-b border-black/[0.06]">
-          <button type="button" aria-label="Menu" onClick={() => setMenuOpen(!menuOpen)} className="p-2 -ml-2 rounded-full text-navy hover:bg-navy/[0.06] transition-colors">
+          <button
+            type="button"
+            aria-label="Menu"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 -ml-2 rounded-full text-navy hover:bg-navy/[0.06] transition-colors"
+          >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <Link to="/" className="text-[1.05rem] font-extrabold text-navy tracking-tight hover:opacity-80 active:scale-95 transition-all inline-block" title="Retour à l'accueil">Make Prono Great Again</Link>
+          <Link
+            to="/"
+            className="text-[1.05rem] font-extrabold text-navy tracking-tight hover:opacity-80 active:scale-95 transition-all inline-block"
+            title="Retour à l'accueil"
+          >
+            Make Prono Great Again
+          </Link>
           <div className="shrink-0">
             <ConnectionWidget />
           </div>
         </header>
       )}
 
-      {!hideHeader && <NavigationMenu menuOpen={menuOpen} closeMenu={() => setMenuOpen(false)} />}
+      {!hideHeader && (
+        <NavigationMenu
+          menuOpen={menuOpen}
+          closeMenu={() => setMenuOpen(false)}
+        />
+      )}
 
       <main className={hideHeader ? '' : 'pt-14 min-h-[calc(100vh-56px)]'}>
-        <Suspense fallback={<div className="flex items-center justify-center min-h-[40vh] text-gray-400">Chargement...</div>}>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center min-h-[40vh] text-gray-400">
+              Chargement...
+            </div>
+          }
+        >
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/rules" element={<RulesPage />} />
             <Route path="/rules/algorithm" element={<AlgorithmPage />} />
             <Route path="/faq" element={<FAQPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route
+              path="/auth/set-password"
+              element={<AuthPasswordPage mode="setup" />}
+            />
+            <Route
+              path="/auth/reset-password"
+              element={<AuthPasswordPage mode="reset" />}
+            />
 
             {signedIn && (
               <>

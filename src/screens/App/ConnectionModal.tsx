@@ -1,6 +1,17 @@
+import { ArrowLeft, ArrowRight, KeyRound, Mail, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
-import { useEmailLogin, useGoogleLogin } from '../../hooks/user'
+import {
+  useCreatePasswordSetupAccount,
+  useEmailExists,
+  useGoogleLogin,
+  usePasswordLogin,
+  usePasswordReset,
+} from '../../hooks/user'
 import { useCompetitionDisplayName } from '../../hooks/competition'
+
+type ConnectionStep = 'email' | 'password' | 'created'
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -23,33 +34,114 @@ const GoogleIcon = () => (
   </svg>
 )
 
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+function isValidEmail(email: string): boolean {
+  return EMAIL_PATTERN.test(email)
+}
+
+function getEmailSubmitError(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message
+  }
+
+  return "Impossible de vérifier l'adresse email."
+}
+
+function getLoginError(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message
+  }
+
+  return 'Email ou mot de passe incorrect.'
+}
+
 const ConnectionModal = () => {
   const authenticateWithGoogle = useGoogleLogin()
-  const authenticateWithEmail = useEmailLogin()
+  const checkEmailExists = useEmailExists()
+  const createPasswordSetupAccount = useCreatePasswordSetupAccount()
+  const authenticateWithPassword = usePasswordLogin()
+  const sendPasswordReset = usePasswordReset()
   const competitionLabel = useCompetitionDisplayName()
 
+  const [step, setStep] = useState<ConnectionStep>('email')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false)
+  const [resetSubmitting, setResetSubmitting] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function handleEmailSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!email || submitting) return
+    if (submitting) return
+
+    const nextEmail = normalizeEmail(email)
+    if (!isValidEmail(nextEmail)) {
+      setError('Entre une adresse email valide.')
+      return
+    }
+
+    setEmail(nextEmail)
     setError(null)
     setSubmitting(true)
     try {
-      await authenticateWithEmail(email.trim())
-      setSent(true)
+      const exists = await checkEmailExists(nextEmail)
+      if (exists) {
+        setStep('password')
+      } else {
+        await createPasswordSetupAccount(nextEmail)
+        setStep('created')
+      }
+    } catch (err) {
+      setError(getEmailSubmitError(err))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handlePasswordSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (!password || passwordSubmitting) return
+
+    setError(null)
+    setPasswordSubmitting(true)
+    try {
+      await authenticateWithPassword(email, password)
+    } catch (err) {
+      setError(getLoginError(err))
+    } finally {
+      setPasswordSubmitting(false)
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!email || resetSubmitting) return
+
+    setError(null)
+    setResetSubmitting(true)
+    try {
+      await sendPasswordReset(email)
+      setResetSent(true)
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Impossible d'envoyer le lien de connexion.",
+          : "Impossible d'envoyer l'email de réinitialisation.",
       )
     } finally {
-      setSubmitting(false)
+      setResetSubmitting(false)
     }
+  }
+
+  function handleBackToEmail() {
+    setStep('email')
+    setPassword('')
+    setResetSent(false)
+    setError(null)
   }
 
   return (
@@ -77,12 +169,7 @@ const ConnectionModal = () => {
         <div className="flex-1 h-px bg-gray-200" />
       </div>
 
-      {sent ? (
-        <div className="text-sm text-navy-dark bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-          Un lien de connexion vient d'être envoyé à <strong>{email}</strong>.
-          Cliquez dessus pour vous connecter.
-        </div>
-      ) : (
+      {step === 'email' ? (
         <form
           onSubmit={handleEmailSubmit}
           className="flex flex-col gap-2 text-left"
@@ -103,20 +190,96 @@ const ConnectionModal = () => {
             placeholder="vous@exemple.com"
             className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 text-sm focus:outline-none focus:border-navy"
           />
-          {error && (
-            <p className="text-xs text-red-500" role="alert">
+          {error ? (
+            <p className="text-xs text-red-500 m-0" role="alert">
               {error}
             </p>
-          )}
+          ) : null}
           <button
             type="submit"
             disabled={submitting || !email}
-            className="mt-1 py-3 px-6 rounded-xl bg-navy text-white text-sm font-semibold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-1 inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-navy text-white text-sm font-semibold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Envoi…' : 'Recevoir un lien magique'}
+            <Mail size={16} />
+            <span>{submitting ? 'Vérification…' : 'Continuer'}</span>
+            {!submitting ? <ArrowRight size={16} /> : null}
           </button>
         </form>
-      )}
+      ) : null}
+
+      {step === 'password' ? (
+        <form
+          onSubmit={handlePasswordSubmit}
+          className="flex flex-col gap-2 text-left"
+        >
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-navy"
+            onClick={handleBackToEmail}
+          >
+            <ArrowLeft size={14} />
+            <span>{email}</span>
+          </button>
+          <label
+            htmlFor="password-login"
+            className="text-xs font-semibold text-navy"
+          >
+            Mot de passe
+          </label>
+          <input
+            id="password-login"
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 text-sm focus:outline-none focus:border-navy"
+          />
+          {resetSent ? (
+            <div className="text-sm text-navy-dark bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+              Un email de réinitialisation vient d&apos;être envoyé à{' '}
+              <strong>{email}</strong>.
+            </div>
+          ) : null}
+          {error ? (
+            <p className="text-xs text-red-500 m-0" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            disabled={passwordSubmitting || !password}
+            className="mt-1 inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-navy text-white text-sm font-semibold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <KeyRound size={16} />
+            <span>{passwordSubmitting ? 'Connexion…' : 'Se connecter'}</span>
+          </button>
+          <button
+            type="button"
+            disabled={resetSubmitting}
+            className="inline-flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold text-navy hover:bg-navy/[0.06] disabled:opacity-50"
+            onClick={handleForgotPassword}
+          >
+            <RotateCcw size={14} />
+            <span>{resetSubmitting ? 'Envoi…' : 'Mot de passe oublié'}</span>
+          </button>
+        </form>
+      ) : null}
+
+      {step === 'created' ? (
+        <div className="text-sm text-navy-dark bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+          Un compte vient d&apos;être créé pour <strong>{email}</strong>. Clique
+          sur le lien reçu par email pour configurer ton mot de passe.
+          <button
+            type="button"
+            className="mt-3 inline-flex items-center justify-center gap-1 text-xs font-semibold text-navy hover:underline"
+            onClick={handleBackToEmail}
+          >
+            <ArrowLeft size={14} />
+            <span>Utiliser une autre adresse</span>
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }
