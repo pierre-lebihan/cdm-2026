@@ -1,5 +1,12 @@
 import { isPast } from 'date-fns'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { createPortal } from 'react-dom'
 import {
   useCompetitionData,
@@ -12,9 +19,94 @@ import baniere from '../../assets/visuels/baniere.jpeg'
 import logo from '../../assets/icons/logo.png'
 import ConnectionModal from '../App/ConnectionModal'
 
-// Dimensions originales de la bannière
-const IMG_W = 1191
-const IMG_H = 850
+type HeroSlide = {
+  imagePosition: number
+}
+
+const HERO_SLIDE_INTERVAL_MS = 5000
+const HERO_SLIDE_STORAGE_KEY = 'mpga-home-hero-start-index'
+
+const HERO_SLIDES: HeroSlide[] = [
+  { imagePosition: 21 },
+  { imagePosition: 50 },
+  { imagePosition: 83 },
+]
+
+let cachedHeroStartIndex: number | undefined
+
+const getNextHeroSlideIndex = (index: number) => {
+  if (index >= HERO_SLIDES.length - 1) {
+    return 0
+  }
+
+  return index + 1
+}
+
+const getFallbackHeroSlideIndex = () => {
+  return Math.floor(Date.now() / 1000) % HERO_SLIDES.length
+}
+
+const getStoredHeroSlideIndex = () => {
+  if (typeof window === 'undefined') {
+    return getFallbackHeroSlideIndex()
+  }
+
+  try {
+    const rawIndex = window.localStorage.getItem(HERO_SLIDE_STORAGE_KEY)
+    const storedIndex = Number(rawIndex)
+
+    if (
+      Number.isInteger(storedIndex) &&
+      storedIndex >= 0 &&
+      storedIndex < HERO_SLIDES.length
+    ) {
+      return storedIndex
+    }
+  } catch {
+    return getFallbackHeroSlideIndex()
+  }
+
+  return getFallbackHeroSlideIndex()
+}
+
+const saveHeroSlideIndex = (index: number) => {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(HERO_SLIDE_STORAGE_KEY, index.toString())
+  } catch {
+    return
+  }
+}
+
+const getInitialHeroSlideIndex = () => {
+  if (cachedHeroStartIndex !== undefined) {
+    return cachedHeroStartIndex
+  }
+
+  cachedHeroStartIndex = getStoredHeroSlideIndex()
+  saveHeroSlideIndex(getNextHeroSlideIndex(cachedHeroStartIndex))
+
+  return cachedHeroStartIndex
+}
+
+const getHeroSlidePosition = (index: number) => {
+  const slide = HERO_SLIDES[index]
+
+  if (!slide) {
+    return HERO_SLIDES[0].imagePosition
+  }
+
+  return slide.imagePosition
+}
+
+const advanceHeroSlide = (
+  setHeroSlideIndex: Dispatch<SetStateAction<number>>,
+) => {
+  setHeroSlideIndex(getNextHeroSlideIndex)
+}
 
 // ─── Page connecté : ancienne homepage ───────────────────────────────────────
 
@@ -99,10 +191,11 @@ const HomePageConnected = () => {
 const HomePageGuest = () => {
   const competitionTitle = useCompetitionDisplayName()
 
-  // Modale de connexion
   const [modalOpen, setModalOpen] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const signedIn = useIsUserConnected()
+  const [heroSlideIndex, setHeroSlideIndex] = useState(getInitialHeroSlideIndex)
+  const heroSlidePosition = getHeroSlidePosition(heroSlideIndex)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -115,46 +208,35 @@ const HomePageGuest = () => {
     if (signedIn && modalOpen) setModalOpen(false)
   }, [signedIn, modalOpen])
 
-  // Swipe horizontal pour déplacer l'image de fond
-  const heroRef = useRef<HTMLDivElement>(null)
-  const [imgX, setImgX] = useState(50)
-  const touchStartX = useRef(0)
-  const touchStartImgX = useRef(50)
+  useEffect(() => {
+    const intervalId = window.setInterval(
+      advanceHeroSlide,
+      HERO_SLIDE_INTERVAL_MS,
+      setHeroSlideIndex,
+    )
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartImgX.current = imgX
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const hero = heroRef.current
-    if (!hero) return
-    const { width: cw, height: ch } = hero.getBoundingClientRect()
-    const containerRatio = cw / ch
-    const imgRatio = IMG_W / IMG_H
-    const renderedW = containerRatio < imgRatio ? ch * imgRatio : cw
-    const overflow = Math.max(0, renderedW - cw)
-    if (overflow === 0) return
-
-    const delta = e.touches[0].clientX - touchStartX.current
-    const currentOffset = (touchStartImgX.current / 100) * overflow
-    const newOffset = Math.max(0, Math.min(overflow, currentOffset - delta))
-    setImgX((newOffset / overflow) * 100)
-  }
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [])
 
   return (
     <div
-      ref={heroRef}
       className="relative w-full overflow-hidden"
       style={{ height: '100dvh' }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
     >
       <img
         src={baniere}
         alt="Make Prono Great Again"
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ objectPosition: `${imgX}% 50%` }}
+        className="absolute inset-0 h-full w-full object-cover transition-[object-position] duration-700 ease-in-out sm:hidden"
+        style={{ objectPosition: `${heroSlidePosition}% 50%` }}
+        draggable={false}
+      />
+
+      <img
+        src={baniere}
+        alt="Make Prono Great Again"
+        className="absolute inset-0 hidden h-full w-full object-cover object-center sm:block"
         draggable={false}
       />
 
@@ -172,7 +254,8 @@ const HomePageGuest = () => {
           {competitionTitle}
         </h1>
         <p className="text-sm text-white/75 mb-7 leading-relaxed max-w-[340px] mx-auto">
-          Pronostiquez les résultats des matches, marquez des points et affrontez vos amis dans votre tribu !
+          Pronostiquez les résultats des matches, marquez des points et
+          affrontez vos amis dans votre tribu !
         </p>
 
         <div className="flex flex-col items-center gap-3">
@@ -197,7 +280,9 @@ const HomePageGuest = () => {
           ref={dialogRef}
           className="fixed inset-0 m-auto w-[90vw] max-w-sm rounded-2xl bg-white p-0 shadow-xl backdrop:bg-black/40"
           onClose={() => setModalOpen(false)}
-          onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false) }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setModalOpen(false)
+          }}
         >
           <ConnectionModal />
         </dialog>,
