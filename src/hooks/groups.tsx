@@ -186,6 +186,23 @@ async function fetchGroupsForUser(
   return normalizeGroupsWithMembers(groupsWithMembers)
 }
 
+export function useRenameGroup() {
+  return useCallback(async (groupId: string, name: string) => {
+    const { error } = await supabase
+      .from('groups')
+      .update({ name })
+      .eq('id', groupId)
+
+    if (error) {
+      toast.error('Erreur lors du renommage de la tribu')
+      return false
+    }
+
+    toast.success('Tribu renommée')
+    return true
+  }, [])
+}
+
 export function useValidApply(groupId: string, userId: string) {
   return useCallback(async () => {
     const { error } = await supabase.rpc('validate_group_apply', {
