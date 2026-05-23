@@ -6,6 +6,7 @@ import { useCompetitionData } from '../../hooks/competition'
 import { useMatches, isMatchFinished, type NormalizedMatch } from '../../hooks/matches'
 import MatchBegun from './MatchBegun/Match'
 import InlineAvatar from 'components/Avatar'
+import Loader from 'components/Loader'
 import { useOpponent } from 'hooks/opponents'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
@@ -93,7 +94,7 @@ const User = () => {
 
 const UserSuspense = (props: Record<string, unknown>) => {
   return (
-    <Suspense fallback="Loading matches...">
+    <Suspense fallback={<Loader />}>
       <User {...props} />
     </Suspense>
   )

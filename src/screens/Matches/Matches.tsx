@@ -10,6 +10,7 @@ import { useIsUserAdmin, useIsUserConnected } from '../../hooks/user'
 import MatchToBet from './MatchToBet/Match'
 import MatchBegun from './MatchBegun/Match'
 import AiBetModal from './AiBetModal'
+import Loader from '../../components/Loader'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 function groupMatchesByDate(matches: NormalizedMatch[]) {
@@ -147,7 +148,7 @@ const Matches = () => {
 
 const MatchesSuspense = (props: Record<string, unknown>) => {
   return (
-    <Suspense fallback="Loading matches...">
+    <Suspense fallback={<Loader />}>
       <Matches {...props} />
     </Suspense>
   )

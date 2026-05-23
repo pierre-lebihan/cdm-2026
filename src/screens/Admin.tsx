@@ -7,6 +7,7 @@ import { useIsUserAdmin } from '../hooks/user'
 import { useMatches, type NormalizedMatch } from '../hooks/matches'
 import { useCompetition } from '../contexts/CompetitionContext'
 import Flag from 'components/Flag'
+import Loader from 'components/Loader'
 import { formatTournamentPhaseLabel } from '../lib/matchEnums'
 
 type MatchScoreEdit = {
@@ -337,20 +338,12 @@ const Admin = () => {
   }, [bumpMatchesList])
 
   if (authLoading || (user !== null && profile === null)) {
-    return (
-      <div className="flex items-center justify-center min-h-[40vh] text-gray-400">
-        Chargement...
-      </div>
-    )
+    return <Loader />
   }
 
   if (!isAdmin) return null
   if (!matches) {
-    return (
-      <div className="flex items-center justify-center min-h-[40vh] text-gray-400">
-        Chargement...
-      </div>
-    )
+    return <Loader />
   }
 
   const filteredMatches = matches.filter((m) => {

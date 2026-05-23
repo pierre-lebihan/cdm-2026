@@ -3,6 +3,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useGroupsForUserMember } from '../../hooks/groups'
 import GroupRanking from './GroupRanking/GroupRanking'
+import Loader from '../../components/Loader'
 import { useAllOpponents } from '../../hooks/opponents'
 
 const Ranking = () => {
@@ -85,7 +86,7 @@ const Ranking = () => {
 
 const RankingWithSuspense = (props: Record<string, unknown>) => {
   return (
-    <Suspense fallback="Loading...">
+    <Suspense fallback={<Loader />}>
       <Ranking {...props} />
     </Suspense>
   )
