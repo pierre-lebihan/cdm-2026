@@ -22,15 +22,28 @@ export function syncCrispUser(opts: {
   }
 }
 
+const CRISP_HIDE_STYLE_ID = 'crisp-hide-style'
+
 export function setCrispChatVisible(visible: boolean) {
   if (typeof document === 'undefined') {
     return
   }
 
-  const el = document.getElementById('crisp-chatbox')
-  if (!el) {
+  const existing = document.getElementById(CRISP_HIDE_STYLE_ID)
+
+  if (visible) {
+    if (existing) {
+      existing.remove()
+    }
     return
   }
 
-  el.style.display = visible ? '' : 'none'
+  if (existing) {
+    return
+  }
+
+  const style = document.createElement('style')
+  style.id = CRISP_HIDE_STYLE_ID
+  style.textContent = '#crisp-chatbox { display: none !important; }'
+  document.head.appendChild(style)
 }
