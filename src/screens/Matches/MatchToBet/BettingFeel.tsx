@@ -1,4 +1,4 @@
-import { HelpCircle, Scale, Shield, Target, UsersRound } from 'lucide-react'
+import { Scale, Shield, Target, UsersRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import {
@@ -8,7 +8,6 @@ import {
   statsForPopularity,
   type BetLike,
 } from '../../../lib/bettingOdds'
-import ScoringHelpModal from './ScoringHelpModal'
 import {
   tournamentPhaseMultiplier,
   type MatchBetFormat,
@@ -218,34 +217,10 @@ export const BettingPotentialGain = ({ data }: BettingPotentialGainProps) => {
 }
 
 const BettingFeel = ({ betFormat, data }: BettingFeelProps) => {
-  const [helpOpen, setHelpOpen] = useState(false)
-
-  const handleOpenHelp = () => {
-    setHelpOpen(true)
-  }
-
-  const handleCloseHelp = () => {
-    setHelpOpen(false)
-  }
-
   return (
-    <>
-      <div className="space-y-2 pt-0.5 border-t border-gray-100">
-        <BetDistributionBar bets={data.merged} betFormat={betFormat} />
-        <div className="flex flex-wrap items-center gap-2 min-w-0">
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
-            onClick={handleOpenHelp}
-            aria-label="Aide sur le calcul des points"
-          >
-            <HelpCircle size={14} className="shrink-0" />
-            <span>Comment les points sont calculés ?</span>
-          </button>
-        </div>
-      </div>
-      <ScoringHelpModal open={helpOpen} onClose={handleCloseHelp} />
-    </>
+    <div className="space-y-2 pt-0.5 border-t border-gray-100">
+      <BetDistributionBar bets={data.merged} betFormat={betFormat} />
+    </div>
   )
 }
 
