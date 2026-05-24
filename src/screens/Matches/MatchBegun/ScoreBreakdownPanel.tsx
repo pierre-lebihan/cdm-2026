@@ -50,23 +50,11 @@ const ScoreBreakdownPanel = ({
 
   return (
     <>
-      <div className="text-xs text-gray-500 mb-4">
+      <div className="text-xs text-gray-500 mb-4 leading-relaxed">
         <span className="font-semibold text-navy">
           {teamAName ?? '—'} {scoreA} – {scoreB} {teamBName ?? '—'}
         </span>{' '}
         · {formatTournamentPhaseLabel(tournamentPhase)}
-        {hasBet && (
-          <>
-            {' '}
-            ·{' '}
-            <span>
-              Prono :{' '}
-              <span className="font-semibold text-navy">
-                {betTeamA} – {betTeamB}
-              </span>
-            </span>
-          </>
-        )}
       </div>
 
       {!hasBet && (

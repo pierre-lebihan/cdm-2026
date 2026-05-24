@@ -106,14 +106,22 @@ const BetDistributionBar = ({
   }
 
   return (
-    <div
-      className="w-full"
-      onClick={(e) => {
-        e.stopPropagation()
-        setShowOdds((prev) => !prev)
-      }}
-      role="button"
-    >
+    <div className="w-full space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
+          Qui a prono quoi ?
+        </span>
+        <button
+          type="button"
+          className={`text-[0.6rem] font-semibold px-2 py-0.5 rounded-full transition-colors ${showOdds ? 'bg-navy text-white' : 'bg-gray-100 text-gray-500'}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowOdds((prev) => !prev)
+          }}
+        >
+          {showOdds ? 'Cotes' : '% → Cotes'}
+        </button>
+      </div>
       <div className="flex w-full h-7 rounded-lg overflow-hidden gap-[1.5px]">
         {segments.map((seg) => (
           <div
