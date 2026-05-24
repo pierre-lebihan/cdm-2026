@@ -1,19 +1,23 @@
 import { RefreshCw } from 'lucide-react'
 import { type Dispatch, type SetStateAction, useEffect, useState } from 'react'
-import { useRegisterSW } from 'virtual:pwa-register/react'
+import {
+  type RegisterSWOptions,
+  useRegisterSW,
+} from 'virtual:pwa-register/react'
 import { getLatestAppBuildId } from 'utils/appVersion'
 
 const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000
 const RELOAD_FALLBACK_DELAY = 1500
+const SERVICE_WORKER_READY_TIMEOUT = 8000
+const AUTO_RELOAD_SESSION_KEY = 'mpga-pwa-auto-reload'
 
 type AvailableBuildIdSetter = Dispatch<SetStateAction<string | null>>
 type ReloadingSetter = Dispatch<SetStateAction<boolean>>
-type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>
+type WorkerResolver = (worker: ServiceWorker | null) => void
 
 interface MandatoryUpdateOverlayProps {
   isReloading: boolean
-  setReloading: ReloadingSetter
-  updateServiceWorker: UpdateServiceWorker
+  onReloadClick: () => void
 }
 
 let registeredServiceWorker: ServiceWorkerRegistration | null = null
@@ -31,8 +35,43 @@ function reloadWindow(): void {
   window.location.reload()
 }
 
-function scheduleReloadFallback(): void {
-  window.setTimeout(reloadWindow, RELOAD_FALLBACK_DELAY)
+function getAutoReloadKey(buildId: string): string {
+  const key = `${AUTO_RELOAD_SESSION_KEY}:${buildId}`
+
+  return key
+}
+
+function hasAutoReloadAlreadyRun(buildId: string): boolean {
+  const key = getAutoReloadKey(buildId)
+  const storedValue = window.sessionStorage.getItem(key)
+
+  return storedValue === '1'
+}
+
+function markAutoReloadRun(buildId: string): void {
+  const key = getAutoReloadKey(buildId)
+
+  window.sessionStorage.setItem(key, '1')
+}
+
+function clearAutoReloadRun(buildId: string): void {
+  const key = getAutoReloadKey(buildId)
+
+  window.sessionStorage.removeItem(key)
+}
+
+function isReloadNavigation(): boolean {
+  if (typeof PerformanceNavigationTiming === 'undefined') {
+    return false
+  }
+
+  const entries = window.performance.getEntriesByType('navigation')
+  const navigationEntry = entries[0]
+  if (!(navigationEntry instanceof PerformanceNavigationTiming)) {
+    return false
+  }
+
+  return navigationEntry.type === 'reload'
 }
 
 function handleMandatoryReloadError(error: unknown): void {
@@ -40,14 +79,18 @@ function handleMandatoryReloadError(error: unknown): void {
   reloadWindow()
 }
 
-function forceUpdateAndReload(
-  updateServiceWorker: UpdateServiceWorker,
+async function forceUpdateAndReload(
   setReloading: ReloadingSetter,
-): void {
+): Promise<void> {
   setReloading(true)
-  pollServiceWorkerUpdate()
-  updateServiceWorker(true).catch(handleMandatoryReloadError)
-  scheduleReloadFallback()
+  const worker = await findServiceWorkerReadyForActivation()
+  if (!worker) {
+    reloadWindow()
+    return
+  }
+
+  const activator = new ServiceWorkerActivator(worker)
+  activator.activate()
 }
 
 function pollServiceWorkerUpdate(): void {
@@ -90,6 +133,7 @@ async function showUpdateIfAppVersionChanged(
     return
   }
   if (latestBuildId === __APP_BUILD_ID__) {
+    clearAutoReloadRun(latestBuildId)
     setAvailableBuildId(null)
     return
   }
@@ -140,6 +184,208 @@ class AppVersionPoller {
     showUpdateIfAppVersionChanged(this.setAvailableBuildId).catch(
       logUpdateError,
     )
+  }
+}
+
+class ServiceWorkerActivator {
+  private reloaded = false
+  private timeoutId: number | null = null
+  private worker: ServiceWorker
+
+  constructor(worker: ServiceWorker) {
+    this.worker = worker
+  }
+
+  activate = (): void => {
+    navigator.serviceWorker.addEventListener(
+      'controllerchange',
+      this.handleControllerChange,
+    )
+    this.timeoutId = window.setTimeout(
+      this.reloadWithoutControllerChange,
+      RELOAD_FALLBACK_DELAY,
+    )
+    this.worker.postMessage({ type: 'SKIP_WAITING' })
+  }
+
+  private handleControllerChange = (): void => {
+    this.reloadOnce()
+  }
+
+  private reloadWithoutControllerChange = (): void => {
+    this.reloadOnce()
+  }
+
+  private reloadOnce(): void {
+    if (this.reloaded) {
+      return
+    }
+
+    this.reloaded = true
+    navigator.serviceWorker.removeEventListener(
+      'controllerchange',
+      this.handleControllerChange,
+    )
+    if (this.timeoutId !== null) {
+      window.clearTimeout(this.timeoutId)
+    }
+
+    reloadWindow()
+  }
+}
+
+class InstalledWorkerWaiter {
+  private resolve: WorkerResolver | null = null
+  private timeoutId: number | null = null
+  private worker: ServiceWorker
+
+  constructor(worker: ServiceWorker) {
+    this.worker = worker
+  }
+
+  wait = (): Promise<ServiceWorker | null> => {
+    if (this.worker.state === 'installed') {
+      return Promise.resolve(this.worker)
+    }
+
+    if (this.worker.state === 'redundant') {
+      return Promise.resolve(null)
+    }
+
+    return new Promise(this.start)
+  }
+
+  private start = (resolve: WorkerResolver): void => {
+    this.resolve = resolve
+    this.worker.addEventListener('statechange', this.handleStateChange)
+    this.timeoutId = window.setTimeout(
+      this.finishWithoutWorker,
+      SERVICE_WORKER_READY_TIMEOUT,
+    )
+  }
+
+  private handleStateChange = (): void => {
+    if (this.worker.state === 'installed') {
+      this.finishWithWorker()
+      return
+    }
+
+    if (this.worker.state === 'redundant') {
+      this.finishWithoutWorker()
+    }
+  }
+
+  private finishWithWorker = (): void => {
+    this.finish(this.worker)
+  }
+
+  private finishWithoutWorker = (): void => {
+    this.finish(null)
+  }
+
+  private finish(worker: ServiceWorker | null): void {
+    if (!this.resolve) {
+      return
+    }
+
+    const resolve = this.resolve
+    this.resolve = null
+    this.worker.removeEventListener('statechange', this.handleStateChange)
+    if (this.timeoutId !== null) {
+      window.clearTimeout(this.timeoutId)
+    }
+
+    resolve(worker)
+  }
+}
+
+class WaitingServiceWorkerFinder {
+  private registration: ServiceWorkerRegistration
+  private resolve: WorkerResolver | null = null
+  private timeoutId: number | null = null
+
+  constructor(registration: ServiceWorkerRegistration) {
+    this.registration = registration
+  }
+
+  wait = (): Promise<ServiceWorker | null> => {
+    const worker = findCurrentWorkerCandidate(this.registration)
+    if (worker) {
+      return waitForInstalledWorker(worker)
+    }
+
+    return new Promise(this.start)
+  }
+
+  private start = (resolve: WorkerResolver): void => {
+    this.resolve = resolve
+    this.registration.addEventListener('updatefound', this.handleUpdateFound)
+    this.timeoutId = window.setTimeout(
+      this.finishWithoutWorker,
+      SERVICE_WORKER_READY_TIMEOUT,
+    )
+  }
+
+  private handleUpdateFound = (): void => {
+    const worker = this.registration.installing
+    if (!worker) {
+      return
+    }
+
+    waitForInstalledWorker(worker).then(this.finish)
+  }
+
+  private finishWithoutWorker = (): void => {
+    this.finish(null)
+  }
+
+  private finish = (worker: ServiceWorker | null): void => {
+    if (!this.resolve) {
+      return
+    }
+
+    const resolve = this.resolve
+    this.resolve = null
+    this.registration.removeEventListener('updatefound', this.handleUpdateFound)
+    if (this.timeoutId !== null) {
+      window.clearTimeout(this.timeoutId)
+    }
+
+    resolve(worker)
+  }
+}
+
+class PwaRegisterCallbacks implements RegisterSWOptions {
+  private setAvailableBuildId: AvailableBuildIdSetter
+
+  constructor(setAvailableBuildId: AvailableBuildIdSetter) {
+    this.setAvailableBuildId = setAvailableBuildId
+  }
+
+  onNeedRefresh = (): void => {
+    showUpdateIfAppVersionChanged(this.setAvailableBuildId).catch(
+      logUpdateError,
+    )
+  }
+
+  onRegistered = (registration?: ServiceWorkerRegistration): void => {
+    startUpdatePolling(registration)
+  }
+
+  onRegisterError = (error: unknown): void => {
+    logRegisterError(error)
+  }
+}
+
+class ReloadClickHandler {
+  private setReloading: ReloadingSetter
+
+  constructor(setReloading: ReloadingSetter) {
+    this.setReloading = setReloading
+  }
+
+  handleClick = (): void => {
+    forceUpdateAndReload(this.setReloading).catch(handleMandatoryReloadError)
   }
 }
 
@@ -209,10 +455,74 @@ class NativeUpdateListener {
   }
 }
 
+function findCurrentWorkerCandidate(
+  registration: ServiceWorkerRegistration,
+): ServiceWorker | null {
+  if (registration.waiting) {
+    return registration.waiting
+  }
+
+  if (registration.installing) {
+    return registration.installing
+  }
+
+  return null
+}
+
+function waitForInstalledWorker(
+  worker: ServiceWorker,
+): Promise<ServiceWorker | null> {
+  const waiter = new InstalledWorkerWaiter(worker)
+
+  return waiter.wait()
+}
+
+async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
+  if (registeredServiceWorker) {
+    return registeredServiceWorker
+  }
+
+  if (!('serviceWorker' in navigator)) {
+    return null
+  }
+
+  const registration = await navigator.serviceWorker.ready
+  registeredServiceWorker = registration
+
+  return registration
+}
+
+async function updateRegistration(
+  registration: ServiceWorkerRegistration,
+): Promise<void> {
+  try {
+    await registration.update()
+  } catch (error) {
+    logUpdateError(error)
+  }
+}
+
+async function findServiceWorkerReadyForActivation(): Promise<ServiceWorker | null> {
+  const registration = await getServiceWorkerRegistration()
+  if (!registration) {
+    return null
+  }
+
+  await updateRegistration(registration)
+
+  const worker = findCurrentWorkerCandidate(registration)
+  if (worker) {
+    return waitForInstalledWorker(worker)
+  }
+
+  const finder = new WaitingServiceWorkerFinder(registration)
+
+  return finder.wait()
+}
+
 function MandatoryUpdateOverlay({
   isReloading,
-  setReloading,
-  updateServiceWorker,
+  onReloadClick,
 }: MandatoryUpdateOverlayProps) {
   return (
     <div
@@ -238,9 +548,7 @@ function MandatoryUpdateOverlay({
         <button
           type="button"
           className="mt-5 w-full rounded-lg bg-navy px-4 py-3 font-semibold text-cream shadow-card transition-colors hover:bg-navy/90 disabled:cursor-wait disabled:opacity-80"
-          onClick={() => {
-            forceUpdateAndReload(updateServiceWorker, setReloading)
-          }}
+          onClick={onReloadClick}
           disabled={isReloading}
         >
           {isReloading ? 'Rechargement...' : 'Recharger maintenant'}
@@ -253,11 +561,12 @@ function MandatoryUpdateOverlay({
 export const PwaUpdatePrompt = () => {
   const [availableBuildId, setAvailableBuildId] = useState<string | null>(null)
   const [isReloading, setReloading] = useState(false)
+  const [autoReloadBuildId, setAutoReloadBuildId] = useState<string | null>(
+    null,
+  )
+  const reloadClickHandler = new ReloadClickHandler(setReloading)
 
-  const { updateServiceWorker } = useRegisterSW({
-    onRegistered: startUpdatePolling,
-    onRegisterError: logRegisterError,
-  })
+  useRegisterSW(new PwaRegisterCallbacks(setAvailableBuildId))
 
   useEffect(() => {
     const listener = new NativeUpdateListener(setAvailableBuildId)
@@ -281,15 +590,36 @@ export const PwaUpdatePrompt = () => {
     return poller.stop
   }, [])
 
+  useEffect(() => {
+    if (!availableBuildId) {
+      return
+    }
+
+    if (!isReloadNavigation()) {
+      return
+    }
+
+    if (hasAutoReloadAlreadyRun(availableBuildId)) {
+      return
+    }
+
+    markAutoReloadRun(availableBuildId)
+    setAutoReloadBuildId(availableBuildId)
+    forceUpdateAndReload(setReloading).catch(handleMandatoryReloadError)
+  }, [availableBuildId])
+
   if (!availableBuildId) {
+    return null
+  }
+
+  if (autoReloadBuildId === availableBuildId) {
     return null
   }
 
   return (
     <MandatoryUpdateOverlay
       isReloading={isReloading}
-      setReloading={setReloading}
-      updateServiceWorker={updateServiceWorker}
+      onReloadClick={reloadClickHandler.handleClick}
     />
   )
 }
