@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Download, Share, X } from 'lucide-react'
+import { useHideCrisp } from '../hooks/useHideCrisp'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -77,8 +78,10 @@ export default function InstallPrompt() {
     localStorage.setItem(DISMISS_KEY, Date.now().toString())
   }
 
-  if (dismissed) return null
-  if (!showChromePrompt && !showIosPrompt) return null
+  const isVisible = !dismissed && (showChromePrompt || showIosPrompt)
+  useHideCrisp(isVisible)
+
+  if (!isVisible) return null
 
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-[9999] p-4 bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col gap-4 animate-slide-up">

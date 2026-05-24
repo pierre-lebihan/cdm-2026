@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useIsUserAdmin } from '../../../hooks/user'
+import { useHideCrisp } from '../../../hooks/useHideCrisp'
 import Mascot from '../../../components/Mascot'
 
 interface ScoringHelpModalProps {
@@ -10,6 +11,7 @@ interface ScoringHelpModalProps {
 
 const ScoringHelpModal = ({ open, onClose }: ScoringHelpModalProps) => {
   const isAdmin = useIsUserAdmin()
+  useHideCrisp(open)
 
   if (!open) {
     return null

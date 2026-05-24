@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCompetition } from '../../contexts/CompetitionContext'
 import { saveBatchBets } from '../../hooks/bets'
+import { useHideCrisp } from '../../hooks/useHideCrisp'
 import { generatePredictions, type AiProvider } from '../../lib/openrouter'
 import type { NormalizedMatch } from '../../hooks/matches'
 
@@ -79,6 +80,7 @@ const AiBetModal = ({
 }: AiBetModalProps) => {
   const { user, profile } = useAuth()
   const { activeCompetitionId, competition } = useCompetition()
+  useHideCrisp(open)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [step, setStep] = useState<ModalStep>('prompt')
   const [prompt, setPrompt] = useState('')

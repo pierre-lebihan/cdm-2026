@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Bell, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useHideCrisp } from '../hooks/useHideCrisp'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 import { optInPushSubscription } from '../lib/pushNotificationState'
 
@@ -38,6 +39,8 @@ export default function NotificationPrompt() {
     enabled &&
     !dismissed &&
     state === 'can_enable'
+
+  useHideCrisp(!!show)
 
   if (!show) {
     return null
