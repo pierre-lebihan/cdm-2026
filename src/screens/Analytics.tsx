@@ -99,7 +99,7 @@ const Analytics = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="sticky top-14 z-10 flex gap-1 justify-center py-3 px-4 bg-cream/[0.85] backdrop-blur-sm flex-wrap">
+      <div className="sticky top-20 z-10 flex gap-1 justify-center py-3 px-4 bg-cream/[0.85] backdrop-blur-sm flex-wrap">
         {groups.map((g) => (
           <button
             key={g.id}
@@ -126,14 +126,14 @@ const Analytics = () => {
       {!error && !loading && iframeSrc && (
         <div
           className="relative"
-          style={{ minHeight: 'calc(100vh - 120px)' }}
+          style={{ minHeight: 'calc(100vh - 144px)' }}
         >
           <iframe
             key={iframeSrc}
             src={iframeSrc}
             width="100%"
             height="100%"
-            style={{ border: 'none', minHeight: 'calc(100vh - 120px)' }}
+            style={{ border: 'none', minHeight: 'calc(100vh - 144px)' }}
             allowTransparency
             onLoad={() => setIframeLoaded(true)}
           />

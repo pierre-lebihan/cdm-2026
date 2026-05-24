@@ -42,6 +42,7 @@ export default defineConfig({
         'icon-256x256.png',
         'icon-384x384.png',
         'icon-512x512.png',
+        'title.png',
       ],
       manifest: {
         lang: 'fr',

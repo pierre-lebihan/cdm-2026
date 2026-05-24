@@ -66,7 +66,7 @@ const User = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="sticky top-14 z-10 flex items-center gap-4 py-3 px-4 bg-cream/[0.85] backdrop-blur-sm">
+      <div className="sticky top-20 z-10 flex items-center gap-4 py-3 px-4 bg-cream/[0.85] backdrop-blur-sm">
         <button onClick={() => navigate(-1)} className="p-2 hover:bg-navy/[0.06] rounded-full transition-colors" aria-label="Retour">
           <ArrowLeft size={20} />
         </button>
