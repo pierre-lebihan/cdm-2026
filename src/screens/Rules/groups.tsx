@@ -2,7 +2,7 @@ import Section from './component/rulesSection'
 import Table from './component/table'
 
 const Groups = () => (
-  <Section mascot="canada">
+  <Section>
     <div>
       <h2 className="text-xl font-bold text-navy">Règles durant la phase de groupe</h2>
       <p>

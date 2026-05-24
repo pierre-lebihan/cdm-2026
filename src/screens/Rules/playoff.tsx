@@ -2,7 +2,7 @@ import Section from './component/rulesSection'
 import Table from './component/table'
 
 const Playoff = () => (
-  <Section mascot="mexico">
+  <Section>
     <div>
       <h2 className="text-xl font-bold text-navy">Règles durant la phase finale</h2>
       <p>

@@ -1,7 +1,7 @@
 import Section from './component/rulesSection'
 
 const Subscription = () => (
-  <Section mascot="usa">
+  <Section>
     <h2 className="text-xl font-bold text-navy">
       Droits d&apos;inscription et mode de qualification
     </h2>
