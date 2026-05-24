@@ -18,6 +18,10 @@ declare global {
 const DISMISS_KEY = 'pwaPromptDismissed'
 const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000
 
+interface InstallPromptProps {
+  enabled?: boolean
+}
+
 function isIos(): boolean {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !('MSStream' in window)
 }
@@ -32,13 +36,20 @@ function wasDismissedRecently(): boolean {
   return Date.now() - parseInt(dismissedTimestamp, 10) < DISMISS_DURATION_MS
 }
 
-export default function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
+export default function InstallPrompt({ enabled = true }: InstallPromptProps) {
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null)
   const [showChromePrompt, setShowChromePrompt] = useState(false)
   const [showIosPrompt, setShowIosPrompt] = useState(false)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
+    if (!enabled) {
+      setShowChromePrompt(false)
+      setShowIosPrompt(false)
+      return
+    }
+
     if (isInStandaloneMode() || wasDismissedRecently()) return
 
     if (isIos()) {
@@ -61,7 +72,7 @@ export default function InstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
+  }, [enabled])
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return
@@ -78,7 +89,7 @@ export default function InstallPrompt() {
     localStorage.setItem(DISMISS_KEY, Date.now().toString())
   }
 
-  const isVisible = !dismissed && (showChromePrompt || showIosPrompt)
+  const isVisible = enabled && !dismissed && (showChromePrompt || showIosPrompt)
   useHideCrisp(isVisible)
 
   if (!isVisible) return null

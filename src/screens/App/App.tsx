@@ -10,10 +10,9 @@ import MatchesPage from '../Matches'
 import NotFoundPage from '../NotFoundPage'
 import ConnectionWidget from './ConnectionWidget/ConnectionWidget'
 import NavigationMenu from './NavigationMenu'
-import InstallPrompt from 'components/InstallPrompt'
 import Loader from 'components/Loader'
+import PromptCoordinator from 'components/PromptCoordinator'
 import PwaUpdatePrompt from 'components/PwaUpdatePrompt'
-import NotificationPrompt from 'components/NotificationPrompt'
 import { OneSignalSubscriber } from 'components/OneSignalSubscriber'
 
 const AnalyticsPage = lazy(() => import('../Analytics'))
@@ -103,8 +102,7 @@ const App = () => {
           </Routes>
         </Suspense>
       </main>
-      <InstallPrompt />
-      <NotificationPrompt />
+      <PromptCoordinator />
       <PwaUpdatePrompt />
       <OneSignalSubscriber />
       <Toaster position="bottom-center" />
