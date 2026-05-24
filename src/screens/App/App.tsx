@@ -11,6 +11,7 @@ import NotFoundPage from '../NotFoundPage'
 import ConnectionWidget from './ConnectionWidget/ConnectionWidget'
 import NavigationMenu from './NavigationMenu'
 import InstallPrompt from 'components/InstallPrompt'
+import Loader from 'components/Loader'
 import PwaUpdatePrompt from 'components/PwaUpdatePrompt'
 import NotificationPrompt from 'components/NotificationPrompt'
 import { OneSignalSubscriber } from 'components/OneSignalSubscriber'
@@ -47,10 +48,15 @@ const App = () => {
           </button>
           <Link
             to="/"
-            className="text-[1.05rem] font-extrabold text-navy tracking-tight hover:opacity-80 active:scale-95 transition-all inline-block"
+            className="flex items-center gap-2 text-[1.05rem] font-extrabold text-navy tracking-tight hover:opacity-80 active:scale-95 transition-all"
             title="Retour à l'accueil"
           >
-            Make Prono Great Again
+            <img
+              src="/icon-192x192.png"
+              alt=""
+              className="w-8 h-8 rounded-md object-contain shrink-0"
+            />
+            <span>Make Prono Great Again</span>
           </Link>
           <div className="shrink-0">
             <ConnectionWidget />
@@ -66,13 +72,7 @@ const App = () => {
       )}
 
       <main className={hideHeader ? '' : 'pt-14 min-h-[calc(100vh-56px)]'}>
-        <Suspense
-          fallback={
-            <div className="flex items-center justify-center min-h-[40vh] text-gray-400">
-              Chargement...
-            </div>
-          }
-        >
+        <Suspense fallback={<Loader />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/rules" element={<RulesPage />} />

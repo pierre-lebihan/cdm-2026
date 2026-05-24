@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useGroupsForUserMember, type GroupWithMembers } from '../hooks/groups'
+import Loader from '../components/Loader'
 
 function getSelectedGroup(
   groups: GroupWithMembers[],
@@ -23,6 +24,11 @@ const Analytics = () => {
   const [iframeSrc, setIframeSrc] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
+  const [iframeLoaded, setIframeLoaded] = useState<boolean>(false)
+
+  useEffect(() => {
+    setIframeLoaded(false)
+  }, [iframeSrc])
 
   useEffect(() => {
     const selectedGroup = getSelectedGroup(groups, selectedGroupId)
@@ -115,20 +121,28 @@ const Analytics = () => {
         </div>
       )}
 
-      {!error && loading && (
-        <div className="flex items-center justify-center py-10">
-          <div className="animate-spin text-4xl text-navy">⏳</div>
-        </div>
-      )}
+      {!error && loading && <Loader />}
 
       {!error && !loading && iframeSrc && (
-        <iframe
-          src={iframeSrc}
-          width="100%"
-          height="100%"
-          style={{ border: 'none', minHeight: 'calc(100vh - 120px)' }}
-          allowTransparency
-        />
+        <div
+          className="relative"
+          style={{ minHeight: 'calc(100vh - 120px)' }}
+        >
+          <iframe
+            key={iframeSrc}
+            src={iframeSrc}
+            width="100%"
+            height="100%"
+            style={{ border: 'none', minHeight: 'calc(100vh - 120px)' }}
+            allowTransparency
+            onLoad={() => setIframeLoaded(true)}
+          />
+          {!iframeLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-cream">
+              <Loader />
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

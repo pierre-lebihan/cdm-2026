@@ -8,6 +8,7 @@ import { useMatch } from 'hooks/matches'
 import { useBet } from '../../../hooks/bets'
 import MatchBegun from '../MatchBegun/Match'
 import ScoreBreakdownPanel from '../MatchBegun/ScoreBreakdownPanel'
+import Loader from '../../../components/Loader'
 import { computeScoringBreakdown } from '../../../lib/scoring'
 
 const Details = () => {
@@ -47,11 +48,7 @@ const Details = () => {
   }, [match, currentBet])
 
   if (!match) {
-    return (
-      <div className="flex items-center justify-center min-h-[40vh] text-gray-400">
-        Chargement...
-      </div>
-    )
+    return <Loader />
   }
 
   const tabs = [
@@ -136,7 +133,7 @@ const Details = () => {
 
 const DetailsWithSuspense = (props: Record<string, unknown>) => {
   return (
-    <Suspense fallback="Loading...">
+    <Suspense fallback={<Loader />}>
       <Details {...props} />
     </Suspense>
   )

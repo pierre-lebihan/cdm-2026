@@ -1,5 +1,7 @@
+import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 import type { Tables } from '../lib/database.types'
 
 export function useGoogleLogin(): () => Promise<void> {
@@ -63,4 +65,54 @@ export function useUpdateProfile(): (
 ) => void {
   const { updateProfile } = useAuth()
   return updateProfile
+}
+
+export function useSaveProfile() {
+  const { user, updateProfile } = useAuth()
+
+  return useCallback(
+    async (updates: Partial<Tables<'profiles'>>) => {
+      if (!user) throw new Error('Not authenticated')
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      updateProfile(data)
+      return data
+    },
+    [user?.id, updateProfile],
+  )
+}
+
+export function useUploadAvatar() {
+  const { user } = useAuth()
+
+  return useCallback(
+    async (file: File) => {
+      if (!user) throw new Error('Not authenticated')
+
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'png'
+      const path = `${user.id}/avatar-${Date.now()}.${extension}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: file.type,
+        })
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      return data.publicUrl
+    },
+    [user?.id],
+  )
 }

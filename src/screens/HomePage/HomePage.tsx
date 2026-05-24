@@ -144,7 +144,11 @@ const HomePageConnected = () => {
   return (
     <div className="py-8 px-4 pb-12 max-w-[520px] mx-auto">
       <div className="text-center mb-7">
-        <div className="text-5xl mb-2">🏆</div>
+        <img
+          src="/og-image.png"
+          alt=""
+          className="w-full max-w-[360px] h-auto mx-auto mb-2 rounded-xl"
+        />
         <h1 className="text-2xl font-extrabold text-navy m-0 mb-2">
           {competitionTitle}
         </h1>

@@ -132,7 +132,11 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-gray-100">
-            <span className="text-2xl">🏆</span>
+            <img
+              src="/icon-192x192.png"
+              alt=""
+              className="w-8 h-8 rounded-md object-contain shrink-0"
+            />
             <div>
               <span className="block text-base font-extrabold text-navy leading-tight">
                 Make Prono Great Again

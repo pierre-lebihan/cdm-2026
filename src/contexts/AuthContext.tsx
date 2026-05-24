@@ -194,19 +194,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data) {
-      const displayName = getUserDisplayName(user, data.display_name || '')
+      const displayName =
+        data.display_name || getUserDisplayName(user, user.email || '')
+      const avatarUrl = data.avatar_url || user.user_metadata?.avatar_url || null
       await supabase
         .from('profiles')
         .update({
           last_connection: new Date().toISOString(),
           nb_connections: (data.nb_connections || 0) + 1,
-          avatar_url: user.user_metadata?.avatar_url || data.avatar_url,
+          avatar_url: avatarUrl,
           display_name: displayName,
         })
         .eq('id', user.id)
       setProfile({
         ...data,
-        avatar_url: user.user_metadata?.avatar_url || data.avatar_url,
+        avatar_url: avatarUrl,
         display_name: displayName,
       })
     }

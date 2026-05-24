@@ -10,8 +10,8 @@ const PointsWon = ({
   if (!scores) return null
 
   const { A, B } = scores
-
-  const isPositive = pointsWon > 0
+  const points = pointsWon || 0
+  const isPositive = points > 0
 
   const title = pointsWonTitleOther(
     betTeamA,
@@ -22,14 +22,21 @@ const PointsWon = ({
     B,
   )
 
+  const bubbleClass = isPositive
+    ? 'bg-green-500 text-white shadow-md'
+    : 'bg-gray-200 text-gray-500'
+
   return (
-    <div title={title} className="flex flex-col items-center gap-0.5">
-      <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">Points</span>
-      <span
-        className={`text-xs font-bold ${isPositive ? 'text-green-500' : 'text-navy'}`}
-      >
-        {pointsWon > 0 ? '+' : ''}
-        {pointsWon || 0}
+    <div
+      title={title}
+      className={`absolute -top-2 -right-2 z-10 flex flex-col items-center justify-center min-w-[44px] h-[44px] px-2 rounded-full font-extrabold text-sm leading-none ring-2 ring-cream ${bubbleClass}`}
+    >
+      <span className="text-[0.6rem] font-semibold uppercase tracking-wide opacity-80">
+        pts
+      </span>
+      <span className="text-base">
+        {isPositive ? '+' : ''}
+        {points}
       </span>
     </div>
   )

@@ -14,7 +14,7 @@ const Groups = () => {
           Gérez vos tribus et affrontez vos proches
         </p>
       </div>
-      <MyGroups groups={groups} />
+      <MyGroups groups={groups} onChange={refetch} />
       <JoinGroup onSuccess={refetch} />
       <CreateGroup onSuccess={refetch} />
     </div>
