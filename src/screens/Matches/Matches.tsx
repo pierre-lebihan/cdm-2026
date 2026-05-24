@@ -90,6 +90,16 @@ function formatWinnerOdd(winOdd: number | null): string | null {
   }).format(winOdd)
 }
 
+function formatPotentialPoints(points: number | null): string | null {
+  if (points == null) {
+    return null
+  }
+
+  return new Intl.NumberFormat('fr-FR', {
+    maximumFractionDigits: 0,
+  }).format(Math.round(points))
+}
+
 const FinalWinnerReminder = ({
   hasWinner,
   selectedTeam,
@@ -142,9 +152,9 @@ const FinalWinnerReminder = ({
 const FinalWinnerAliveReminder = ({
   selectedTeam,
 }: FinalWinnerAliveReminderProps) => {
-  const formattedOdd = formatWinnerOdd(selectedTeam.winOdd)
-  const potentialGain = formattedOdd
-    ? `+${formattedOdd} pts`
+  const formattedPoints = formatPotentialPoints(selectedTeam.winOdd)
+  const potentialGain = formattedPoints
+    ? `+${formattedPoints} pts`
     : 'le bonus vainqueur final'
 
   return (
