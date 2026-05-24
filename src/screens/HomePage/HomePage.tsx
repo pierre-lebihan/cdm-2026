@@ -14,7 +14,7 @@ import {
 } from '../../hooks/competition'
 import { useIsUserConnected } from '../../hooks/user'
 import FinalWinner from './FinalWinner/FinalWinner'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import baniere from '../../assets/visuels/baniere.jpeg'
 import logo from '../../assets/icons/logo.png'
 import ConnectionModal from '../App/ConnectionModal'
@@ -23,6 +23,8 @@ import Mascot from '../../components/Mascot'
 import { MASCOT_LIST } from '../../lib/mascots'
 
 const ONBOARDING_STORAGE_KEY = 'mpga-onboarding-seen'
+const FINAL_WINNER_ELEMENT_ID = 'final-winner'
+const FINAL_WINNER_HASH = `#${FINAL_WINNER_ELEMENT_ID}`
 
 type HeroSlide = {
   imagePosition: number
@@ -113,6 +115,16 @@ const advanceHeroSlide = (
   setHeroSlideIndex(getNextHeroSlideIndex)
 }
 
+const scrollToFinalWinner = () => {
+  const element = document.getElementById(FINAL_WINNER_ELEMENT_ID)
+
+  if (!element) {
+    return
+  }
+
+  element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 // ─── Page connecté : ancienne homepage ───────────────────────────────────────
 
 const WinnerChoice = () => {
@@ -136,7 +148,7 @@ const WinnerChoice = () => {
   }
 
   return (
-    <div className="mb-7">
+    <div id={FINAL_WINNER_ELEMENT_ID} className="mb-7 scroll-mt-24">
       <FinalWinner />
     </div>
   )
@@ -144,10 +156,22 @@ const WinnerChoice = () => {
 
 const HomePageConnected = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const competitionTitle = useCompetitionDisplayName()
   const [onboardingOpen, setOnboardingOpen] = useState(false)
 
   useEffect(() => {
+    if (location.hash !== FINAL_WINNER_HASH) return
+
+    const timeoutId = window.setTimeout(scrollToFinalWinner, 100)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [location.hash])
+
+  useEffect(() => {
+    if (location.hash === FINAL_WINNER_HASH) return
     if (typeof window === 'undefined') return
     try {
       const seen = window.localStorage.getItem(ONBOARDING_STORAGE_KEY)
@@ -157,7 +181,7 @@ const HomePageConnected = () => {
     } catch {
       return
     }
-  }, [])
+  }, [location.hash])
 
   const handleCloseOnboarding = () => {
     setOnboardingOpen(false)

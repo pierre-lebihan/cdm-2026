@@ -2,7 +2,7 @@ import { isPast, format, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import map from 'lodash/map'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
-import { HelpCircle, Sparkles } from 'lucide-react'
+import { ArrowRight, HelpCircle, Sparkles, Trophy } from 'lucide-react'
 import { useCompetitionData } from '../../hooks/competition'
 import {
   useMatches,
@@ -15,8 +15,9 @@ import MatchToBet from './MatchToBet/Match'
 import MatchBegun from './MatchBegun/Match'
 import AiBetModal from './AiBetModal'
 import Loader from '../../components/Loader'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ScoringHelpModal from './MatchToBet/ScoringHelpModal'
+import { useSelectedWinner } from '../../hooks/winner'
 
 interface ScoringHelpButtonProps {
   onClick: () => void
@@ -51,12 +52,40 @@ const ScoringHelpButton = ({ onClick }: ScoringHelpButtonProps) => {
   )
 }
 
+const FinalWinnerReminder = () => {
+  return (
+    <div className="px-4 pt-2">
+      <div className="mx-auto flex max-w-[520px] items-center gap-3 rounded-lg border border-amber-100 bg-white px-4 py-3 shadow-card">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+          <Trophy size={20} />
+        </span>
+        <div className="min-w-0 flex-1 text-left">
+          <p className="m-0 text-sm font-bold leading-snug text-navy">
+            Choisis ton vainqueur final
+          </p>
+          <p className="m-0 text-xs leading-snug text-gray-500">
+            Il est encore temps de tenter le gros bonus.
+          </p>
+        </div>
+        <Link
+          to="/#final-winner"
+          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-navy px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-light"
+        >
+          <span>Y aller</span>
+          <ArrowRight size={14} />
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 const Matches = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const isAdmin = useIsUserAdmin()
   const isConnected = useIsUserConnected()
   const { bettedMatchIds, refresh: refreshBets } = useAllUserBets()
+  const [selectedWinner] = useSelectedWinner()
   const [aiModalOpen, setAiModalOpen] = useState(false)
   const [scoringHelpOpen, setScoringHelpOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -131,6 +160,17 @@ const Matches = () => {
     upcomingMatches.length > 0 &&
     (hasUnbettedMatches || isAdmin)
 
+  const finalWinnerLocked = useMemo(() => {
+    if (!competitionData?.start_date) return true
+    return isPast(new Date(competitionData.start_date))
+  }, [competitionData?.start_date])
+
+  const showFinalWinnerReminder =
+    isConnected &&
+    selectedTab === 0 &&
+    selectedWinner === null &&
+    !finalWinnerLocked
+
   const dateGroups = useMemo(
     () => groupMatchesByDate(filteredMatches),
     [filteredMatches],
@@ -175,6 +215,8 @@ const Matches = () => {
       <div className="flex justify-center px-4 pt-3 pb-1">
         <ScoringHelpButton onClick={handleOpenScoringHelp} />
       </div>
+
+      {showFinalWinnerReminder && <FinalWinnerReminder />}
 
       {showAiButton && (
         <div className="flex justify-center py-2 px-4">
