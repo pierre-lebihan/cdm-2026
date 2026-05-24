@@ -88,7 +88,7 @@ const AlgorithmPage = () => (
         appliquée à tes points de base est :
       </p>
       <div className="rounded-xl bg-navy/[0.04] border border-navy/10 px-4 py-3 mb-3 font-mono text-sm text-navy break-all">
-        Cote = exp(−p² × 2) × 10
+        Cote = exp(−p^(1/2) × 2) × 10
       </div>
       <p className="text-sm text-gray-600 m-0 mb-2 leading-relaxed">
         La cote est ensuite bornée entre <span className="font-semibold">×1</span> et{' '}
@@ -96,7 +96,7 @@ const AlgorithmPage = () => (
         cote reste à ×1 (pas d’effet « anti-mouton » sans foule).
       </p>
       <p className="text-sm text-gray-600 m-0 leading-relaxed">
-        <span className="font-semibold text-navy">Points finaux</span> = arrondi des points de base × cote.
+        <span className="font-semibold text-navy">Points finaux</span> = arrondi des points de base × cote × multiplicateur de phase.
       </p>
     </section>
 

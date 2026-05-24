@@ -55,7 +55,7 @@ export function dynamicMultiplier(
     return 1
   }
   const p = sameCount / totalValid
-  const raw = Math.exp(-p * p * 2) * 10
+  const raw = Math.exp(-Math.sqrt(p) * 2) * 10
   if (raw < 1) {
     return 1
   }

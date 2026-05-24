@@ -67,11 +67,11 @@ The app supports multiple concurrent competitions (e.g. CDM 2026 + Champions Lea
 - `ecart` (0–3pts): margin accuracy
 - `bonus` (4pts): exact score
 
-Final points = `(base * winningOdds * phaseMultiplier)`, rounded to integer. Phase multipliers: `group`×1, `round_of_16`×1, `round_of_8`×2, `quarter_final`×3, `semi_final`×5, `third_place`×7, `final`×10.
+Final points = `(base * winningOdds * phaseMultiplier)`, rounded to integer. Phase multipliers: `group`×0.75, `round_of_16`×1, `round_of_8`×1.5, `quarter_final`×3, `semi_final`×6, `third_place`×8, `final`×12.
 
 ### Odds System
 
-Odds (`odds_a`, `odds_b`, `odds_draw`) are **not** from a bookmaker. They are computed dynamically by a DB trigger on `bets` INSERT/UPDATE/DELETE (as long as the match hasn't started), based on prediction popularity. `src/lib/bettingOdds.ts` contains the frontend mirror of this logic used for live preview.
+Odds (`odds_a`, `odds_b`, `odds_draw`) are **not** from a bookmaker. They are computed dynamically by a DB trigger on `bets` INSERT/UPDATE/DELETE (as long as the match hasn't started), based on prediction popularity with `exp(-p^(1/2) * 2) * 10` clamped to `[1, 10]`. `src/lib/bettingOdds.ts` contains the frontend mirror of this logic used for live preview.
 
 ### Match Bet Formats
 
