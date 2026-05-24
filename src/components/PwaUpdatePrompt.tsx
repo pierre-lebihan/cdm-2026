@@ -7,7 +7,7 @@ import {
 import { getLatestAppBuildId } from 'utils/appVersion'
 
 const UPDATE_CHECK_INTERVAL = 30 * 1000
-const RELOAD_FALLBACK_DELAY = 1500
+const RELOAD_FALLBACK_DELAY = 10 * 1000
 const SERVICE_WORKER_READY_TIMEOUT = 8000
 const AUTO_RELOAD_SESSION_KEY = 'mpga-pwa-auto-reload'
 
@@ -85,7 +85,8 @@ async function forceUpdateAndReload(
   setReloading(true)
   const worker = await findServiceWorkerReadyForActivation()
   if (!worker) {
-    reloadWindow()
+    pollServiceWorkerUpdate()
+    setReloading(false)
     return
   }
 
@@ -139,6 +140,12 @@ async function showUpdateIfAppVersionChanged(
   }
 
   pollServiceWorkerUpdate()
+  const worker = await findServiceWorkerReadyForActivation()
+  if (!worker) {
+    setAvailableBuildId(null)
+    return
+  }
+
   setAvailableBuildId(latestBuildId)
 }
 
@@ -213,14 +220,28 @@ class ServiceWorkerActivator {
       'controllerchange',
       this.handleControllerChange,
     )
+    this.worker.addEventListener('statechange', this.handleStateChange)
     this.timeoutId = window.setTimeout(
       this.reloadWithoutControllerChange,
       RELOAD_FALLBACK_DELAY,
     )
+    if (this.worker.state === 'activated') {
+      this.reloadOnce()
+      return
+    }
+
     this.worker.postMessage({ type: 'SKIP_WAITING' })
   }
 
   private handleControllerChange = (): void => {
+    this.reloadOnce()
+  }
+
+  private handleStateChange = (): void => {
+    if (this.worker.state !== 'activated') {
+      return
+    }
+
     this.reloadOnce()
   }
 
@@ -238,6 +259,7 @@ class ServiceWorkerActivator {
       'controllerchange',
       this.handleControllerChange,
     )
+    this.worker.removeEventListener('statechange', this.handleStateChange)
     if (this.timeoutId !== null) {
       window.clearTimeout(this.timeoutId)
     }
