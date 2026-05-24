@@ -18,6 +18,7 @@ import Loader from '../../components/Loader'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ScoringHelpModal from './MatchToBet/ScoringHelpModal'
 import { useSelectedWinner } from '../../hooks/winner'
+import { useTeams, type NormalizedTeam } from '../../hooks/teams'
 
 interface ScoringHelpButtonProps {
   onClick: () => void
@@ -52,7 +53,53 @@ const ScoringHelpButton = ({ onClick }: ScoringHelpButtonProps) => {
   )
 }
 
-const FinalWinnerReminder = () => {
+interface FinalWinnerReminderProps {
+  hasWinner: boolean
+  selectedTeam: NormalizedTeam | null
+}
+
+function findTeamById(
+  teams: NormalizedTeam[],
+  teamId: string | null | undefined,
+): NormalizedTeam | null {
+  if (!teamId) {
+    return null
+  }
+
+  for (const team of teams) {
+    if (team.id === teamId) {
+      return team
+    }
+  }
+
+  return null
+}
+
+function formatWinnerOdd(winOdd: number | null): string | null {
+  if (winOdd == null) {
+    return null
+  }
+
+  return new Intl.NumberFormat('fr-FR', {
+    maximumFractionDigits: 2,
+  }).format(winOdd)
+}
+
+const FinalWinnerReminder = ({
+  hasWinner,
+  selectedTeam,
+}: FinalWinnerReminderProps) => {
+  const formattedOdd = formatWinnerOdd(selectedTeam?.winOdd ?? null)
+  const title = hasWinner
+    ? `Ton vainqueur : ${selectedTeam?.name ?? 'choix enregistré'}`
+    : 'Il te manque le vainqueur final'
+  const description = hasWinner
+    ? formattedOdd
+      ? `Cote associée : ${formattedOdd}. Clique ici pour changer ton choix.`
+      : 'Clique ici pour changer ton choix.'
+    : "Tu n'as pas encore tenté le gros bonus. Choisis ton champion maintenant."
+  const actionLabel = hasWinner ? 'Changer' : 'Choisir'
+
   return (
     <div className="px-4 pt-2">
       <div className="mx-auto flex max-w-[520px] items-center gap-3 rounded-lg border border-amber-100 bg-white px-4 py-3 shadow-card">
@@ -61,17 +108,17 @@ const FinalWinnerReminder = () => {
         </span>
         <div className="min-w-0 flex-1 text-left">
           <p className="m-0 text-sm font-bold leading-snug text-navy">
-            Choisis ton vainqueur final
+            {title}
           </p>
           <p className="m-0 text-xs leading-snug text-gray-500">
-            Il est encore temps de tenter le gros bonus.
+            {description}
           </p>
         </div>
         <Link
           to="/#final-winner"
           className="inline-flex shrink-0 items-center gap-1 rounded-full bg-navy px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-light"
         >
-          <span>Y aller</span>
+          <span>{actionLabel}</span>
           <ArrowRight size={14} />
         </Link>
       </div>
@@ -86,6 +133,7 @@ const Matches = () => {
   const isConnected = useIsUserConnected()
   const { bettedMatchIds, refresh: refreshBets } = useAllUserBets()
   const [selectedWinner] = useSelectedWinner()
+  const teams = useTeams()
   const [aiModalOpen, setAiModalOpen] = useState(false)
   const [scoringHelpOpen, setScoringHelpOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -168,8 +216,11 @@ const Matches = () => {
   const showFinalWinnerReminder =
     isConnected &&
     selectedTab === 0 &&
-    selectedWinner === null &&
+    selectedWinner !== undefined &&
     !finalWinnerLocked
+
+  const selectedWinnerTeam = findTeamById(teams, selectedWinner)
+  const hasSelectedWinner = selectedWinner != null
 
   const dateGroups = useMemo(
     () => groupMatchesByDate(filteredMatches),
@@ -216,7 +267,12 @@ const Matches = () => {
         <ScoringHelpButton onClick={handleOpenScoringHelp} />
       </div>
 
-      {showFinalWinnerReminder && <FinalWinnerReminder />}
+      {showFinalWinnerReminder && (
+        <FinalWinnerReminder
+          hasWinner={hasSelectedWinner}
+          selectedTeam={selectedWinnerTeam}
+        />
+      )}
 
       {showAiButton && (
         <div className="flex justify-center py-2 px-4">
