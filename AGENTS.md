@@ -145,6 +145,8 @@ Ne jamais commiter de fichiers `.env`, credentials, ou cles d'API.
 
 ## Deploiement
 
+**Toujours commit + push immédiatement après chaque changement**, sans demander confirmation. Ne jamais attendre que l'utilisateur demande de push.
+
 Push sur `main` declenche le workflow `.github/workflows/deploy.yml` :
 1. `supabase db push` (migrations)
 2. Deploy des Edge Functions (`update-results`, `notify-pre-match`)

@@ -1,19 +1,24 @@
 import { useMemo } from 'react'
 import { useBetsFromGame } from '../../../hooks/bets'
-import { predictionPopularityKey } from '../../../lib/bettingOdds'
+import {
+  dynamicMultiplier,
+  predictionPopularityKey,
+} from '../../../lib/bettingOdds'
 import { formatOdds } from '../../../lib/scoring'
 import type { MatchBetFormat } from '../../../lib/matchEnums'
 
 interface BetDistributionBarProps {
   matchId: string
   betFormat: MatchBetFormat
-  odds: { PA: number | null; PB: number | null; PN: number | null }
+  odds?: { PA: number | null; PB: number | null; PN: number | null }
+  betsOverride?: BetItem[] | undefined
 }
 
 interface BetItem {
   betTeamA: number | null
   betTeamB: number | null
   betPlayoffWinner: 'A' | 'B' | null
+  userId?: string | null
 }
 
 interface SegmentData {
@@ -59,15 +64,18 @@ function pctLabel(count: number, total: number): string {
 function buildSegments(
   dist: { countA: number; countN: number; countB: number; total: number },
   betFormat: MatchBetFormat,
-  odds: { PA: number | null; PB: number | null; PN: number | null },
+  odds: { PA: number | null; PB: number | null; PN: number | null } | undefined,
 ): SegmentData[] {
   const isKnockout = betFormat === 'knockout_decider'
+  const oddA = odds ? odds.PA : dynamicMultiplier(dist.total, dist.countA)
+  const oddN = odds ? odds.PN : dynamicMultiplier(dist.total, dist.countN)
+  const oddB = odds ? odds.PB : dynamicMultiplier(dist.total, dist.countB)
   const all = [
-    { key: '1', color: 'bg-emerald-500', count: dist.countA, odd: odds.PA },
+    { key: '1', color: 'bg-emerald-500', count: dist.countA, odd: oddA },
     ...(isKnockout
       ? []
-      : [{ key: 'N', color: 'bg-slate-400', count: dist.countN, odd: odds.PN }]),
-    { key: '2', color: 'bg-orange-400', count: dist.countB, odd: odds.PB },
+      : [{ key: 'N', color: 'bg-slate-400', count: dist.countN, odd: oddN }]),
+    { key: '2', color: 'bg-orange-400', count: dist.countB, odd: oddB },
   ]
   return all
     .filter((s) => s.count > 0)
@@ -83,8 +91,11 @@ const BetDistributionBar = ({
   matchId,
   betFormat,
   odds,
+  betsOverride,
 }: BetDistributionBarProps) => {
-  const bets = useBetsFromGame(matchId, true)
+  const hasBetsOverride = betsOverride !== undefined
+  const fetchedBets = useBetsFromGame(matchId, !hasBetsOverride)
+  const bets = hasBetsOverride ? betsOverride : fetchedBets
 
   const dist = useMemo(() => {
     if (!bets) {

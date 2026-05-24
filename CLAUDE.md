@@ -35,12 +35,12 @@ npm run prettier:write
 
 ## Git Workflow
 
-**Push directly to `main` — no pull requests.** After committing changes:
+**Push directly to `main` — no pull requests.** After every change, **always commit and push immediately** without waiting for the user to ask:
 ```bash
-git push origin HEAD:main
+git add -A && git commit -m "message" && git push origin HEAD:main
 ```
 
-CI/CD automation (`.github/workflows/deploy.yml`) handles all testing, building, and deployment to production automatically upon push. This workflow bypasses review overhead for this small team.
+Never ask "should I push?" — just do it. CI/CD automation (`.github/workflows/deploy.yml`) handles all testing, building, and deployment to production automatically upon push. This workflow bypasses review overhead for this small team.
 
 ## Architecture
 
