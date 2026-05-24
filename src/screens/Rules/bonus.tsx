@@ -10,7 +10,7 @@ function Bonus() {
       : `Chaque joueur pronostique le champion de « ${competitionLabel} » avant le début de la compétition. Si le pronostic est correct, la cote associée est ajoutée au total de points.`
 
   return (
-    <Section>
+    <Section mascot="usa">
     <h2 className="text-xl font-bold text-navy">Règles additionnelles</h2>
     <br />
     <h3 className="text-lg font-bold text-navy">Vainqueur final</h3>

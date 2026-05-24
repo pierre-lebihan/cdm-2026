@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useIsUserAdmin } from '../../../hooks/user'
+import Mascot from '../../../components/Mascot'
 
 interface ScoringHelpModalProps {
   open: boolean
@@ -27,9 +28,12 @@ const ScoringHelpModal = ({ open, onClose }: ScoringHelpModalProps) => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start gap-3 mb-4">
-          <h2 id="scoring-help-title" className="text-lg font-extrabold text-navy m-0 pr-2">
-            Comment sont calculés les points ?
-          </h2>
+          <div className="flex items-center gap-3">
+            <Mascot id="mexico" size="sm" className="ring-2 ring-emerald-100 shadow-sm" />
+            <h2 id="scoring-help-title" className="text-lg font-extrabold text-navy m-0">
+              Comment sont calculés les points ?
+            </h2>
+          </div>
           <button
             type="button"
             className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-navy shrink-0"
@@ -39,6 +43,9 @@ const ScoringHelpModal = ({ open, onClose }: ScoringHelpModalProps) => {
             <X size={20} />
           </button>
         </div>
+        <p className="text-xs italic text-emerald-700 mb-3">
+          « Diego t'explique : sois précis, mais aussi malin ! »
+        </p>
         <div className="text-sm text-gray-600 space-y-4 leading-relaxed">
           <p className="m-0">
             <span className="font-semibold text-navy">La précision.</span> Sur chaque match, tu peux marquer jusqu’à

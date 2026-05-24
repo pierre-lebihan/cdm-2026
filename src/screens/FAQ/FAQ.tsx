@@ -2,6 +2,8 @@ import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { useCompetitionDisplayName } from '../../hooks/competition'
 import FaqEntry from './FaqEntry'
+import Mascot from '../../components/Mascot'
+import { MASCOT_LIST } from '../../lib/mascots'
 
 function faqWhatIsItAnswer(competitionLabel: string): string {
   const suffix =
@@ -18,11 +20,21 @@ function FAQPage() {
   return (
     <div className="max-w-[600px] mx-auto py-6 px-4 pb-12">
       <div className="text-center mb-6">
+        <div className="flex justify-center -space-x-4 mb-3">
+          {MASCOT_LIST.map((m) => (
+            <Mascot
+              key={m.id}
+              id={m.id}
+              size="sm"
+              className="ring-4 ring-cream shadow-md"
+            />
+          ))}
+        </div>
         <h1 className="text-xl font-extrabold text-navy m-0 mb-1">
           Questions fréquentes
         </h1>
         <p className="text-sm text-gray-500 m-0 mb-5">
-          Tout ce qu'il faut savoir sur Make Prono Great Again
+          Sam, Diego et Pierre répondent à tes questions
         </p>
       </div>
 

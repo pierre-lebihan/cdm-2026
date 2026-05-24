@@ -18,6 +18,11 @@ import { useNavigate, Link } from 'react-router-dom'
 import baniere from '../../assets/visuels/baniere.jpeg'
 import logo from '../../assets/icons/logo.png'
 import ConnectionModal from '../App/ConnectionModal'
+import OnboardingModal from '../App/OnboardingModal'
+import Mascot from '../../components/Mascot'
+import { MASCOT_LIST } from '../../lib/mascots'
+
+const ONBOARDING_STORAGE_KEY = 'mpga-onboarding-seen'
 
 type HeroSlide = {
   imagePosition: number
@@ -140,6 +145,32 @@ const WinnerChoice = () => {
 const HomePageConnected = () => {
   const navigate = useNavigate()
   const competitionTitle = useCompetitionDisplayName()
+  const [onboardingOpen, setOnboardingOpen] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const seen = window.localStorage.getItem(ONBOARDING_STORAGE_KEY)
+      if (!seen) {
+        setOnboardingOpen(true)
+      }
+    } catch {
+      return
+    }
+  }, [])
+
+  const handleCloseOnboarding = () => {
+    setOnboardingOpen(false)
+    try {
+      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, '1')
+    } catch {
+      return
+    }
+  }
+
+  const handleReplayOnboarding = () => {
+    setOnboardingOpen(true)
+  }
 
   return (
     <div className="py-8 px-4 pb-12 max-w-[520px] mx-auto">
@@ -157,6 +188,34 @@ const HomePageConnected = () => {
           affrontez vos amis et votre famille dans votre tribu !
         </p>
       </div>
+
+      <button
+        type="button"
+        onClick={handleReplayOnboarding}
+        className="group w-full mb-7 rounded-2xl bg-white p-4 shadow-card hover:shadow-card-hover hover:-translate-y-px transition-all text-left flex items-center gap-3"
+      >
+        <div className="flex -space-x-3 shrink-0">
+          {MASCOT_LIST.map((m) => (
+            <Mascot
+              key={m.id}
+              id={m.id}
+              size="sm"
+              className="ring-2 ring-white"
+            />
+          ))}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-navy m-0 leading-snug">
+            Découvre comment jouer
+          </p>
+          <p className="text-xs text-gray-500 m-0 leading-snug">
+            Sam, Diego et Pierre t'expliquent en 3 étapes
+          </p>
+        </div>
+        <span className="text-xs font-semibold text-indigo-600 shrink-0 group-hover:underline">
+          Lancer →
+        </span>
+      </button>
 
       <div className="flex flex-wrap gap-2.5 justify-center mb-7">
         <button
@@ -186,6 +245,8 @@ const HomePageConnected = () => {
       </div>
 
       <WinnerChoice />
+
+      <OnboardingModal open={onboardingOpen} onClose={handleCloseOnboarding} />
     </div>
   )
 }
