@@ -1,7 +1,6 @@
 import { HelpCircle, Scale, Shield, Target, UsersRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
-import { useBetsFromGame } from '../../../hooks/bets'
 import {
   estimatedPotentialGain,
   mergeBetsWithDraft,
@@ -26,8 +25,15 @@ interface BettingFeelStatus {
   message: string
 }
 
+interface BetRow {
+  uid: string | null
+  betTeamA: number | null
+  betTeamB: number | null
+  betPlayoffWinner: 'A' | 'B' | null
+}
+
 interface BettingFeelInput {
-  matchId: string
+  bets: BetRow[] | null
   betFormat: MatchBetFormat
   tournamentPhase: MatchTournamentPhase
   betTeamA: number | null | undefined
@@ -44,7 +50,6 @@ interface BettingFeelData {
 }
 
 interface BettingFeelProps {
-  matchId: string
   betFormat: MatchBetFormat
   data: BettingFeelData
 }
@@ -95,7 +100,7 @@ function iconForThermoKind(kind: BettingFeelKind | null) {
 }
 
 export function useBettingFeelData({
-  matchId,
+  bets,
   betFormat,
   tournamentPhase,
   betTeamA,
@@ -104,7 +109,7 @@ export function useBettingFeelData({
 }: BettingFeelInput): BettingFeelData {
   const { user } = useAuth()
   const uid = user?.id
-  const betsRows = useBetsFromGame(matchId, Boolean(uid))
+  const betsRows = bets
 
   const draft: BetLike | null = useMemo(() => {
     if (!uid) {
@@ -212,7 +217,7 @@ export const BettingPotentialGain = ({ data }: BettingPotentialGainProps) => {
   )
 }
 
-const BettingFeel = ({ matchId, betFormat, data }: BettingFeelProps) => {
+const BettingFeel = ({ betFormat, data }: BettingFeelProps) => {
   const [helpOpen, setHelpOpen] = useState(false)
 
   const handleOpenHelp = () => {
@@ -226,11 +231,7 @@ const BettingFeel = ({ matchId, betFormat, data }: BettingFeelProps) => {
   return (
     <>
       <div className="space-y-2 pt-0.5 border-t border-gray-100">
-        <BetDistributionBar
-          matchId={matchId}
-          betFormat={betFormat}
-          betsOverride={data.merged}
-        />
+        <BetDistributionBar bets={data.merged} betFormat={betFormat} />
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <button
             type="button"

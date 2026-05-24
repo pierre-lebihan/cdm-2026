@@ -1,4 +1,4 @@
-import { useBetFromUser } from '../../../hooks/bets'
+import { useBetFromUser, useBetsFromGame } from '../../../hooks/bets'
 import Flag from '../../../components/Flag'
 import PointsWon from './PointsWon'
 import { isNumber } from 'lodash'
@@ -6,13 +6,19 @@ import { useNavigate, useParams } from 'react-router-dom'
 import InformationMatch from '../../Matches/MatchToBet/InformationMatch'
 import { cardBgClassForUserBet } from '../../../lib/betOutcomeStatus'
 import BetDistributionBar from '../../Matches/MatchBegun/BetDistributionBar'
+import MatchSkeleton from '../../Matches/MatchBegun/MatchSkeleton'
 
 const Match = ({ match }) => {
   const { id } = useParams()
-  const [currentBet] = useBetFromUser(match.id, id)
+  const [currentBet, betLoading] = useBetFromUser(match.id, id)
+  const [allBets, betsLoading] = useBetsFromGame(match.id, true)
   const navigate = useNavigate()
 
   if (!match.display) return null
+
+  if (betLoading || betsLoading) {
+    return <MatchSkeleton />
+  }
 
   const hasBet =
     isNumber(currentBet?.betTeamA) && isNumber(currentBet?.betTeamB)
@@ -85,7 +91,7 @@ const Match = ({ match }) => {
       </div>
 
       <BetDistributionBar
-        matchId={match.id}
+        bets={allBets}
         betFormat={match.betFormat}
         odds={match.odds}
       />

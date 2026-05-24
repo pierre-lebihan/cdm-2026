@@ -3,7 +3,8 @@ import isNumber from 'lodash/isNumber'
 import { useEffect, useRef, useState } from 'react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
-import { useBet } from '../../../hooks/bets'
+import { useBet, useBetsFromGame } from '../../../hooks/bets'
+import { useAuth } from '../../../contexts/AuthContext'
 import InformationMatch from './InformationMatch'
 import BettingFeel, {
   BettingPotentialGain,
@@ -12,12 +13,15 @@ import BettingFeel, {
 import ValidIcon from './ValidIcon'
 import Flag from '../../../components/Flag'
 import PlayoffWinnerSelector from './PlayoffWinnerSelector'
+import MatchSkeleton from '../MatchBegun/MatchSkeleton'
 
 const MAX_SCORE = 10
 const SAVE_DEBOUNCE_MS = 800
 
 const Match = ({ match }) => {
-  const [bet, saveBet] = useBet(match.id)
+  const { user } = useAuth()
+  const [bet, saveBet, betLoading] = useBet(match.id)
+  const [allBets, betsLoading] = useBetsFromGame(match.id, Boolean(user?.id))
   const [currentBet, setCurrentBet] = useState(bet)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -139,7 +143,7 @@ const Match = ({ match }) => {
   }
 
   const bettingFeel = useBettingFeelData({
-    matchId: match.id,
+    bets: allBets,
     betFormat: match.betFormat,
     tournamentPhase: match.tournamentPhase,
     betTeamA: currentBet?.betTeamA,
@@ -148,6 +152,10 @@ const Match = ({ match }) => {
   })
 
   if (!match.display) return null
+
+  if (betLoading || betsLoading) {
+    return <MatchSkeleton />
+  }
 
   const dateTime = match.dateTime
     ? new Date(match.dateTime.seconds * 1000)
@@ -230,11 +238,7 @@ const Match = ({ match }) => {
         />
       )}
 
-      <BettingFeel
-        matchId={match.id}
-        betFormat={match.betFormat}
-        data={bettingFeel}
-      />
+      <BettingFeel betFormat={match.betFormat} data={bettingFeel} />
     </div>
   )
 }

@@ -43,65 +43,95 @@ function normalizeBet(row: BetRow | null): NormalizedBet | undefined {
   }
 }
 
-export function useBetsFromGame(matchId: string | undefined, enabled: boolean) {
+export function useBetsFromGame(
+  matchId: string | undefined,
+  enabled: boolean,
+): [NormalizedBet[] | null, boolean] {
   const [bets, setBets] = useState<NormalizedBet[] | null>(null)
+  const [loading, setLoading] = useState<boolean>(Boolean(matchId && enabled))
 
   useEffect(() => {
     if (!matchId || !enabled) {
       if (!enabled) {
         setBets(null)
       }
+      setLoading(false)
       return
     }
+    setLoading(true)
     supabase
       .from('bets')
       .select('*')
       .eq('match_id', matchId)
-      .then(({ data }) =>
+      .then(({ data }) => {
         setBets(
           data?.flatMap((b) => {
             const n = normalizeBet(b)
             return n ? [n] : []
           }) ?? null,
-        ),
-      )
+        )
+        setLoading(false)
+      })
   }, [matchId, enabled])
 
-  return bets
+  return [bets, loading]
 }
 
-export function useBetFromUser(matchId: string | undefined, uid: string | undefined) {
+export function useBetFromUser(
+  matchId: string | undefined,
+  uid: string | undefined,
+): [NormalizedBet | null | undefined, boolean] {
   const [bet, setBet] = useState<NormalizedBet | null | undefined>(null)
+  const [loading, setLoading] = useState<boolean>(Boolean(matchId && uid))
 
   useEffect(() => {
-    if (!matchId || !uid) return
+    if (!matchId || !uid) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
     supabase
       .from('bets')
       .select('*')
       .eq('match_id', matchId)
       .eq('user_id', uid)
       .maybeSingle()
-      .then(({ data }) => setBet(normalizeBet(data) ?? null))
+      .then(({ data }) => {
+        setBet(normalizeBet(data) ?? null)
+        setLoading(false)
+      })
   }, [matchId, uid])
 
-  return [bet]
+  return [bet, loading]
 }
 
-export function useBet(matchId: string | undefined): [NormalizedBet | undefined, (betData: { betTeamA: number; betTeamB: number; betPlayoffWinner?: 'A' | 'B' | null }) => Promise<void>] {
+export function useBet(matchId: string | undefined): [
+  NormalizedBet | undefined,
+  (betData: { betTeamA: number; betTeamB: number; betPlayoffWinner?: 'A' | 'B' | null }) => Promise<void>,
+  boolean,
+] {
   const { user } = useAuth()
   const { activeCompetitionId } = useCompetition()
   const uid = user?.id
   const [bet, setBetState] = useState<BetRow | null>(null)
+  const [loading, setLoading] = useState<boolean>(Boolean(matchId && uid))
 
   useEffect(() => {
-    if (!matchId || !uid) return
+    if (!matchId || !uid) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
     supabase
       .from('bets')
       .select('*')
       .eq('match_id', matchId)
       .eq('user_id', uid)
       .maybeSingle()
-      .then(({ data }) => setBetState(data))
+      .then(({ data }) => {
+        setBetState(data)
+        setLoading(false)
+      })
   }, [matchId, uid])
 
   const setBet = useCallback(
@@ -140,7 +170,7 @@ export function useBet(matchId: string | undefined): [NormalizedBet | undefined,
 
   const normalizedBet = useMemo(() => normalizeBet(bet), [bet])
 
-  return [normalizedBet, setBet]
+  return [normalizedBet, setBet, loading]
 }
 
 export function useAllUserBets() {

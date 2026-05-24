@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { useBetsFromGame } from '../../../hooks/bets'
 import {
   dynamicMultiplier,
   predictionPopularityKey,
@@ -7,18 +6,17 @@ import {
 import { formatOdds } from '../../../lib/scoring'
 import type { MatchBetFormat } from '../../../lib/matchEnums'
 
-interface BetDistributionBarProps {
-  matchId: string
-  betFormat: MatchBetFormat
-  odds?: { PA: number | null; PB: number | null; PN: number | null }
-  betsOverride?: BetItem[] | undefined
-}
-
 interface BetItem {
   betTeamA: number | null
   betTeamB: number | null
   betPlayoffWinner: 'A' | 'B' | null
   userId?: string | null
+}
+
+interface BetDistributionBarProps {
+  bets: BetItem[] | null
+  betFormat: MatchBetFormat
+  odds?: { PA: number | null; PB: number | null; PN: number | null }
 }
 
 interface SegmentData {
@@ -88,15 +86,10 @@ function buildSegments(
 const MIN_FLEX = 0.10
 
 const BetDistributionBar = ({
-  matchId,
+  bets,
   betFormat,
   odds,
-  betsOverride,
 }: BetDistributionBarProps) => {
-  const hasBetsOverride = betsOverride !== undefined
-  const fetchedBets = useBetsFromGame(matchId, !hasBetsOverride)
-  const bets = hasBetsOverride ? betsOverride : fetchedBets
-
   const dist = useMemo(() => {
     if (!bets) {
       return { countA: 0, countN: 0, countB: 0, total: 0 }

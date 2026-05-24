@@ -26,7 +26,7 @@ const Loader = ({
   return (
     <div className={wrapperClasses[variant]}>
       <img
-        src="/og-image.png"
+        src="/icon-512x512.png"
         alt=""
         className={`${sizeClasses[size]} object-contain animate-pulse`}
       />
