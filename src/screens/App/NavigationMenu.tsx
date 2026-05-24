@@ -135,12 +135,14 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
             <img
               src="/icon-192x192.png"
               alt=""
-              className="w-8 h-8 rounded-md object-contain shrink-0"
+              className="w-12 h-12 rounded-md object-contain shrink-0"
             />
-            <div>
-              <span className="block text-base font-extrabold text-navy leading-tight">
-                Make Prono Great Again
-              </span>
+            <div className="min-w-0">
+              <img
+                src="/title.png"
+                alt="Make Prono Great Again"
+                className="block w-40 h-auto object-contain"
+              />
               <span className="block text-[0.65rem] text-gray-400 mt-0.5">
                 {competitionSubtitle}
               </span>

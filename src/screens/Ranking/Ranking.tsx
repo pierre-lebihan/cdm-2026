@@ -54,7 +54,7 @@ const Ranking = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="sticky top-14 z-10 flex gap-1 justify-center py-3 px-4 bg-cream/[0.85] backdrop-blur-sm flex-wrap">
+      <div className="sticky top-20 z-10 flex gap-1 justify-center py-3 px-4 bg-cream/[0.85] backdrop-blur-sm flex-wrap">
         {tabs.map((tab, i) => (
           <button
             key={tab.key}

@@ -37,7 +37,7 @@ const App = () => {
   return (
     <>
       {!hideHeader && (
-        <header className="fixed top-0 left-0 right-0 z-[1100] h-14 flex items-center justify-between px-4 bg-cream/[0.88] backdrop-blur-sm border-b border-black/[0.06]">
+        <header className="fixed top-0 left-0 right-0 z-[1100] h-20 flex items-center justify-between px-4 bg-cream/[0.88] backdrop-blur-sm border-b border-black/[0.06]">
           <button
             type="button"
             aria-label="Menu"
@@ -48,15 +48,19 @@ const App = () => {
           </button>
           <Link
             to="/"
-            className="flex items-center gap-2 text-[1.05rem] font-extrabold text-navy tracking-tight hover:opacity-80 active:scale-95 transition-all"
+            className="flex-1 flex items-center justify-center min-w-0 px-2 hover:opacity-80 active:scale-95 transition-all"
             title="Retour à l'accueil"
           >
             <img
               src="/icon-192x192.png"
               alt=""
-              className="w-8 h-8 rounded-md object-contain shrink-0"
+              className="w-12 h-12 rounded-md object-contain shrink-0"
             />
-            <span>Make Prono Great Again</span>
+            <img
+              src="/title.png"
+              alt="Make Prono Great Again"
+              className="w-50 h-20 object-contain"
+            />
           </Link>
           <div className="shrink-0">
             <ConnectionWidget />
@@ -71,7 +75,7 @@ const App = () => {
         />
       )}
 
-      <main className={hideHeader ? '' : 'pt-14 min-h-[calc(100vh-56px)]'}>
+      <main className={hideHeader ? '' : 'pt-20 min-h-[calc(100vh-80px)]'}>
         <Suspense fallback={<Loader />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
