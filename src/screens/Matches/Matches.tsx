@@ -118,7 +118,7 @@ const Matches = () => {
         <div className="flex justify-center py-2 px-4">
           <button className="flex items-center gap-2 py-2.5 px-5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]" onClick={handleOpenAiModal}>
             <Sparkles size={18} />
-            <span>J'ai pas le temps, laisse l'IA pronostiquer !</span>
+            <span>Laisse l'IA pronostiquer !</span>
           </button>
         </div>
       )}

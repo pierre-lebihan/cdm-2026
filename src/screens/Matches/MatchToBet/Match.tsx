@@ -5,7 +5,10 @@ import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useBet } from '../../../hooks/bets'
 import InformationMatch from './InformationMatch'
-import BettingFeel from './BettingFeel'
+import BettingFeel, {
+  BettingPotentialGain,
+  useBettingFeelData,
+} from './BettingFeel'
 import ValidIcon from './ValidIcon'
 import Flag from '../../../components/Flag'
 import PlayoffWinnerSelector from './PlayoffWinnerSelector'
@@ -91,20 +94,20 @@ const Match = ({ match }) => {
     debouncedSaveBetIfValid(updatedBet)
   }
 
-  const handleScoreChange = (team) => ({ target: { value } }) => {
-    const parsed = Number(value)
-    if (isNaN(parsed)) return
-    updateScore(team, parsed)
-  }
+  const handleScoreChange =
+    (team) =>
+    ({ target: { value } }) => {
+      const parsed = Number(value)
+      if (isNaN(parsed)) return
+      updateScore(team, parsed)
+    }
 
   const handleKeyDown = (team) => (e) => {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
     e.preventDefault()
     const currentScore = currentBet?.[`betTeam${team}`]
     const base =
-      typeof currentScore === 'number' && currentScore >= 0
-        ? currentScore
-        : -1
+      typeof currentScore === 'number' && currentScore >= 0 ? currentScore : -1
     if (e.key === 'ArrowUp') {
       updateScore(team, base + 1)
     }
@@ -135,6 +138,15 @@ const Match = ({ match }) => {
     )
   }
 
+  const bettingFeel = useBettingFeelData({
+    matchId: match.id,
+    betFormat: match.betFormat,
+    tournamentPhase: match.tournamentPhase,
+    betTeamA: currentBet?.betTeamA,
+    betTeamB: currentBet?.betTeamB,
+    betPlayoffWinner: currentBet?.betPlayoffWinner,
+  })
+
   if (!match.display) return null
 
   const dateTime = match.dateTime
@@ -154,7 +166,7 @@ const Match = ({ match }) => {
         </span>
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-end justify-between gap-2">
         <div className="flex flex-col items-center gap-1.5 w-[90px] shrink-0">
           <Flag
             country={match.teamACode}
@@ -165,34 +177,37 @@ const Match = ({ match }) => {
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          <input
-            type="text"
-            placeholder="–"
-            className="w-11 h-11 rounded-[10px] border-[1.5px] border-gray-200 text-center text-xl font-bold text-navy bg-gray-50 outline-none transition-colors focus:border-indigo-500 focus:bg-white placeholder:text-gray-300"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={2}
-            value={
-              currentBet?.betTeamA !== undefined && currentBet?.betTeamA >= 0
-                ? currentBet?.betTeamA
-                : ''
-            }
-            onChange={handleTeamAChange}
-            onKeyDown={handleKeyDown('A')}
-          />
-          <ValidIcon valid={betSaved()} />
-          <input
-            type="text"
-            placeholder="–"
-            className="w-11 h-11 rounded-[10px] border-[1.5px] border-gray-200 text-center text-xl font-bold text-navy bg-gray-50 outline-none transition-colors focus:border-indigo-500 focus:bg-white placeholder:text-gray-300"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={2}
-            value={currentBet?.betTeamB >= 0 ? currentBet?.betTeamB : ''}
-            onChange={handleTeamBChange}
-            onKeyDown={handleKeyDown('B')}
-          />
+        <div className="flex min-w-[120px] shrink-0 flex-col items-center gap-1.5">
+          <BettingPotentialGain data={bettingFeel} />
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              placeholder="–"
+              className="w-11 h-11 rounded-[10px] border-[1.5px] border-gray-200 text-center text-xl font-bold text-navy bg-gray-50 outline-none transition-colors focus:border-indigo-500 focus:bg-white placeholder:text-gray-300"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={2}
+              value={
+                currentBet?.betTeamA !== undefined && currentBet?.betTeamA >= 0
+                  ? currentBet?.betTeamA
+                  : ''
+              }
+              onChange={handleTeamAChange}
+              onKeyDown={handleKeyDown('A')}
+            />
+            <ValidIcon valid={betSaved()} />
+            <input
+              type="text"
+              placeholder="–"
+              className="w-11 h-11 rounded-[10px] border-[1.5px] border-gray-200 text-center text-xl font-bold text-navy bg-gray-50 outline-none transition-colors focus:border-indigo-500 focus:bg-white placeholder:text-gray-300"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={2}
+              value={currentBet?.betTeamB >= 0 ? currentBet?.betTeamB : ''}
+              onChange={handleTeamBChange}
+              onKeyDown={handleKeyDown('B')}
+            />
+          </div>
         </div>
 
         <div className="flex flex-col items-center gap-1.5 w-[90px] shrink-0">
@@ -218,9 +233,7 @@ const Match = ({ match }) => {
       <BettingFeel
         matchId={match.id}
         betFormat={match.betFormat}
-        betTeamA={currentBet?.betTeamA}
-        betTeamB={currentBet?.betTeamB}
-        betPlayoffWinner={currentBet?.betPlayoffWinner}
+        data={bettingFeel}
       />
     </div>
   )
