@@ -6,7 +6,7 @@ import {
 } from 'virtual:pwa-register/react'
 import { getLatestAppBuildId } from 'utils/appVersion'
 
-const UPDATE_CHECK_INTERVAL = 5 * 60 * 1000
+const UPDATE_CHECK_INTERVAL = 30 * 1000
 const RELOAD_FALLBACK_DELAY = 1500
 const SERVICE_WORKER_READY_TIMEOUT = 8000
 const AUTO_RELOAD_SESSION_KEY = 'mpga-pwa-auto-reload'
@@ -165,6 +165,8 @@ class AppVersionPoller {
       return
     }
 
+    window.addEventListener('focus', this.checkVersion)
+    document.addEventListener('visibilitychange', this.checkVisibleVersion)
     this.pollingId = window.setInterval(
       this.checkVersion,
       UPDATE_CHECK_INTERVAL,
@@ -172,6 +174,8 @@ class AppVersionPoller {
   }
 
   stop = (): void => {
+    window.removeEventListener('focus', this.checkVersion)
+    document.removeEventListener('visibilitychange', this.checkVisibleVersion)
     if (this.pollingId === null) {
       return
     }
@@ -184,6 +188,14 @@ class AppVersionPoller {
     showUpdateIfAppVersionChanged(this.setAvailableBuildId).catch(
       logUpdateError,
     )
+  }
+
+  private checkVisibleVersion = (): void => {
+    if (document.visibilityState !== 'visible') {
+      return
+    }
+
+    this.checkVersion()
   }
 }
 
