@@ -42,43 +42,43 @@ const Match = ({ match }) => {
         />
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-col items-center gap-1.5 w-[72px] shrink-0">
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="flex flex-col items-center gap-1.5 w-[60px] shrink-0">
           <Flag
             country={match.teamACode}
             className="h-9 w-9 object-contain rounded"
           />
-          <span className="text-xs font-semibold text-navy text-center leading-tight">
+          <span className="text-[0.7rem] font-semibold text-navy text-center leading-tight">
             {match.teamAName ?? 'À déterminer'}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <div className="flex flex-col items-center gap-1">
-            <span className="text-[0.625rem] text-gray-500 font-semibold uppercase tracking-wide">
+            <span className="text-[0.6rem] text-gray-500 font-semibold uppercase tracking-wide whitespace-nowrap">
               Score final
             </span>
-            <span className="inline-block text-xl font-extrabold text-navy bg-white py-1.5 px-3.5 rounded-[10px] border border-gray-200">
+            <span className="inline-block text-lg font-extrabold text-navy bg-white py-1 px-2.5 rounded-[10px] border border-gray-200 whitespace-nowrap">
               {match.scores.A} – {match.scores.B}
             </span>
           </div>
 
           <div className="flex flex-col items-center gap-1">
-            <span className="text-[0.625rem] text-gray-400 font-semibold uppercase tracking-wide">
+            <span className="text-[0.6rem] text-gray-400 font-semibold uppercase tracking-wide whitespace-nowrap">
               Son prono
             </span>
-            <span className="inline-block text-lg font-bold text-navy/70 bg-gray-100 py-1.5 px-3.5 rounded-[10px]">
+            <span className="inline-block text-lg font-extrabold text-navy/70 bg-gray-100 py-1 px-2.5 rounded-[10px] whitespace-nowrap">
               {hasBet ? `${currentBet.betTeamA} – ${currentBet.betTeamB}` : '– – –'}
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-1.5 w-[72px] shrink-0">
+        <div className="flex flex-col items-center gap-1.5 w-[60px] shrink-0">
           <Flag
             country={match.teamBCode}
             className="h-9 w-9 object-contain rounded"
           />
-          <span className="text-xs font-semibold text-navy text-center leading-tight">
+          <span className="text-[0.7rem] font-semibold text-navy text-center leading-tight">
             {match.teamBName ?? 'À déterminer'}
           </span>
         </div>
