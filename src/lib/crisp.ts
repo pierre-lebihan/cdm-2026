@@ -21,3 +21,11 @@ export function syncCrispUser(opts: {
     pushCrispCommand(['set', 'user:nickname', [opts.nickname]])
   }
 }
+
+export function hideCrispChat() {
+  pushCrispCommand(['do', 'chat:hide'])
+}
+
+export function showCrispChat() {
+  pushCrispCommand(['do', 'chat:show'])
+}

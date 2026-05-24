@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import Mascot from '../../components/Mascot'
 import type { MascotId } from '../../lib/mascots'
+import { hideCrispChat, showCrispChat } from '../../lib/crisp'
 
 interface OnboardingModalProps {
   open: boolean
@@ -62,6 +63,12 @@ const OnboardingModal = ({ open, onClose }: OnboardingModalProps) => {
   useEffect(() => {
     if (open) {
       setStepIndex(0)
+      hideCrispChat()
+    } else {
+      showCrispChat()
+    }
+    return () => {
+      showCrispChat()
     }
   }, [open])
 
