@@ -2,7 +2,7 @@ import { isPast, format, isSameDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import map from 'lodash/map'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowRight, HelpCircle, Sparkles, Trophy } from 'lucide-react'
+import { ArrowRight, HelpCircle, Sparkles } from 'lucide-react'
 import { useCompetitionData } from '../../hooks/competition'
 import {
   useMatches,
@@ -19,6 +19,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ScoringHelpModal from './MatchToBet/ScoringHelpModal'
 import { useSelectedWinner } from '../../hooks/winner'
 import { useTeams, type NormalizedTeam } from '../../hooks/teams'
+import Flag from '../../components/Flag'
 
 interface ScoringHelpButtonProps {
   onClick: () => void
@@ -99,12 +100,23 @@ const FinalWinnerReminder = ({
       : 'Clique ici pour changer ton choix.'
     : "Tu n'as pas encore tenté le gros bonus. Choisis ton champion maintenant."
   const actionLabel = hasWinner ? 'Changer' : 'Choisir'
+  const ariaLabel = hasWinner
+    ? 'Changer le pronostic du vainqueur final'
+    : 'Choisir le vainqueur final'
 
   return (
     <div className="px-4 pt-2">
-      <div className="mx-auto flex max-w-[520px] items-center gap-3 rounded-lg border border-amber-100 bg-white px-4 py-3 shadow-card">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-          <Trophy size={20} />
+      <Link
+        to="/#final-winner"
+        aria-label={ariaLabel}
+        className="group mx-auto flex max-w-[520px] items-center gap-3 rounded-lg border border-amber-100 bg-white px-4 py-3 text-left shadow-card transition-all hover:-translate-y-px hover:border-amber-200 hover:shadow-card-hover focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-cream"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-50 ring-1 ring-amber-100">
+          <Flag
+            country={selectedTeam?.code}
+            tooltipText={selectedTeam?.name}
+            className="h-full w-full rounded-full object-cover"
+          />
         </span>
         <div className="min-w-0 flex-1 text-left">
           <p className="m-0 text-sm font-bold leading-snug text-navy">
@@ -114,14 +126,11 @@ const FinalWinnerReminder = ({
             {description}
           </p>
         </div>
-        <Link
-          to="/#final-winner"
-          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-navy px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-light"
-        >
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-navy px-3 py-2 text-xs font-semibold text-white transition-colors group-hover:bg-navy-light">
           <span>{actionLabel}</span>
           <ArrowRight size={14} />
-        </Link>
-      </div>
+        </span>
+      </Link>
     </div>
   )
 }
