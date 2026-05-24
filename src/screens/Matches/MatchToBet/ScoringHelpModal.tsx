@@ -44,7 +44,7 @@ const ScoringHelpModal = ({ open, onClose }: ScoringHelpModalProps) => {
           </button>
         </div>
         <p className="text-xs italic text-emerald-700 mb-3">
-          « Diego t'explique : sois précis, mais aussi malin ! »
+          « Iván t'explique : sois précis, mais aussi malin ! »
         </p>
         <div className="text-sm text-gray-600 space-y-4 leading-relaxed">
           <p className="m-0">

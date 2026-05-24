@@ -38,7 +38,7 @@ const STEPS: Step[] = [
     subtitle: '« Sois malin, amigo ! »',
     body:
       'Score parfait, bon vainqueur, bon nul, écart proche : tu marques jusqu\'à 20 points de base. Puis une cote « anti-mouton » multiplie ton score : plus tu pronostiques l\'inattendu, plus le gain potentiel grimpe.',
-    tipLabel: 'Astuce de Diego',
+    tipLabel: 'Astuce de Iván',
     tip:
       'Regarde la barre de tendance sous chaque match : elle te montre où vont les autres joueurs et la cote correspondante.',
     bgGradient: 'from-emerald-50 via-amber-50 to-orange-50',

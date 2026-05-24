@@ -209,7 +209,7 @@ const HomePageConnected = () => {
             Découvre comment jouer
           </p>
           <p className="text-xs text-gray-500 m-0 leading-snug">
-            Sam, Diego et Pierre t'expliquent en 3 étapes
+            Sam, Iván et Pierre t'expliquent en 3 étapes
           </p>
         </div>
         <span className="text-xs font-semibold text-indigo-600 shrink-0 group-hover:underline">

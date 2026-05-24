@@ -22,7 +22,7 @@ export const MASCOTS: Record<MascotId, MascotInfo> = {
   },
   mexico: {
     id: 'mexico',
-    name: 'Diego',
+    name: 'Iván',
     src: cartoonMexicain,
     accent: 'text-emerald-700',
     bg: 'bg-emerald-50',

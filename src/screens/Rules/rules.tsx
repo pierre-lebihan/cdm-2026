@@ -9,12 +9,12 @@ import { MASCOT_LIST } from '../../lib/mascots'
 const Rules = () => (
   <div className="max-w-[600px] mx-auto py-8 px-4 pb-12">
     <div className="text-center mb-8">
-      <div className="flex justify-center -space-x-4 mb-3">
+      <div className="flex justify-center gap-3 sm:gap-5 mb-4">
         {MASCOT_LIST.map((m) => (
           <Mascot
             key={m.id}
             id={m.id}
-            size="md"
+            size="lg"
             className="ring-4 ring-cream shadow-md"
           />
         ))}
@@ -23,7 +23,7 @@ const Rules = () => (
         Règles du jeu
       </h1>
       <p className="text-sm text-gray-500 m-0 mb-3">
-        Sam, Diego et Pierre t'expliquent comment pronostiquer
+        Sam, Iván et Pierre t'expliquent comment pronostiquer
       </p>
       <Link
         to="/rules/algorithm"

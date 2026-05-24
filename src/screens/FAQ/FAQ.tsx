@@ -34,7 +34,7 @@ function FAQPage() {
           Questions fréquentes
         </h1>
         <p className="text-sm text-gray-500 m-0 mb-5">
-          Sam, Diego et Pierre répondent à tes questions
+          Sam, Iván et Pierre répondent à tes questions
         </p>
       </div>
 
