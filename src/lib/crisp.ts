@@ -22,10 +22,15 @@ export function syncCrispUser(opts: {
   }
 }
 
-export function hideCrispChat() {
-  pushCrispCommand(['do', 'chat:hide'])
-}
+export function setCrispChatVisible(visible: boolean) {
+  if (typeof document === 'undefined') {
+    return
+  }
 
-export function showCrispChat() {
-  pushCrispCommand(['do', 'chat:show'])
+  const el = document.getElementById('crisp-chatbox')
+  if (!el) {
+    return
+  }
+
+  el.style.display = visible ? '' : 'none'
 }
