@@ -20,12 +20,12 @@ function FAQPage() {
   return (
     <div className="max-w-[600px] mx-auto py-6 px-4 pb-12">
       <div className="text-center mb-6">
-        <div className="flex justify-center -space-x-4 mb-3">
+        <div className="flex justify-center gap-3 sm:gap-5 mb-4">
           {MASCOT_LIST.map((m) => (
             <Mascot
               key={m.id}
               id={m.id}
-              size="sm"
+              size="lg"
               className="ring-4 ring-cream shadow-md"
             />
           ))}
@@ -39,34 +39,48 @@ function FAQPage() {
       </div>
 
       <FaqEntry
+        mascot="usa"
+        punchline="Welcome to the show, partner !"
         question="Qu'est-ce que c'est ?"
         answer={faqWhatIsItAnswer(competitionLabel)}
       />
       <FaqEntry
+        mascot="usa"
+        punchline="Free as in freedom, baby !"
         question="Est-ce gratuit ?"
         answer="Oui, l'inscription au site est gratuite. Néanmoins, il est conseillé aux tribus de mettre en place une
           cagnotte pour récompenser les vainqueurs et rajouter de l'enjeu."
       />
       <FaqEntry
+        mascot="canada"
+        punchline="Trouve ta tribu et plante ta hache !"
         question="Comment participer ?"
         answer="Après vous être connecté, vous devez tout d'abord rejoindre une tribu ou créer votre propre tribu.
           Une fois cette étape réalisée, vous pourrez pronostiquer votre vainqueur final ainsi que vos premiers
           matchs."
       />
       <FaqEntry
+        mascot="canada"
+        punchline="C'est ta meute, ta cabane, ton clan !"
         question="Qu'est-ce qu'une tribu ?"
         answer="Une tribu est un groupe de personnes qui regroupe des amis, des connaissances, des familles, avec lesquels vous aurez
           choisi de jouer. Chacun d'entre vous peut créer sa propre tribu s'il le souhaite."
       />
       <FaqEntry
+        mascot="canada"
+        punchline="Le code, c'est la clé du chalet !"
         question="Comment rejoindre une tribu ?"
         answer="Allez dans l'onglet 'Tribus' dans le menu, entrez le code que vous a indiqué votre chef d'équipe dans la section 'Rejoindre une tribu'. Votre demande sera validée et vous pourrez commencer vos pronostics."
       />
       <FaqEntry
+        mascot="canada"
+        punchline="Bâtis-la comme une cabane en rondins !"
         question="Comment créer ma tribu ?"
         answer="Allez dans l'onglet 'Tribus' dans le menu. Dans la section 'Créer une tribu', choisissez le nom de la tribu. Un code d'accès sera alors créé, qu'il vous suffira d'envoyer aux personnes qui souhaitent faire partie de votre tribu."
       />
       <FaqEntry
+        mascot="mexico"
+        punchline="Sois précis, sois malin, sois original !"
         question="Comment sont calculés les points ?"
         answer={
           <>
@@ -91,10 +105,14 @@ function FAQPage() {
         }
       />
       <FaqEntry
+        mascot="mexico"
+        punchline="Una apuesta, muchas tribus, amigo !"
         question="Puis-je faire partie de plusieurs tribus ?"
         answer="Oui, vous pouvez faire partie d'autant de tribus que vous le souhaitez. Par contre, vous ne pouvez parier qu'un seul score par match, qui sera le même dans toutes vos tribus."
       />
       <FaqEntry
+        mascot="usa"
+        punchline="Tes données restent dans ton territoire !"
         question="Que faites-vous de mes données ?"
         answer={
           <>
@@ -104,6 +122,8 @@ function FAQPage() {
         }
       />
       <FaqEntry
+        mascot="canada"
+        punchline="Envoie un signal de fumée à Pierre !"
         question="J'ai un problème non listé ici"
         answer="Vous pouvez nous envoyer votre requête à l'adresse pierre@le-bihan.eu. Nous vous répondrons le plus rapidement possible."
       />
