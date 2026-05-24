@@ -19,8 +19,11 @@ const Match = ({
 
   if (!match.display) return null
 
+  const hasBet =
+    isNumber(currentBet?.betTeamA) && isNumber(currentBet?.betTeamB)
+
   const cardBg = cardBgClassForUserBet({
-    hasBet: isNumber(currentBet?.betTeamA) && isNumber(currentBet?.betTeamB),
+    hasBet,
     scoreA: match.scores.A,
     scoreB: match.scores.B,
     outcomeStatus: currentBet?.outcomeStatus,
@@ -31,11 +34,13 @@ const Match = ({
 
   return (
     <div
-      className={`w-full rounded-[14px] py-3.5 px-4 shadow-card text-left flex flex-col gap-2.5 transition-all duration-150 ${cardBg} ${clickable ? 'cursor-pointer hover:shadow-card-hover hover:-translate-y-px' : ''}`}
+      className={`relative w-full rounded-[14px] py-3.5 px-4 shadow-card text-left flex flex-col gap-3 transition-all duration-150 ${cardBg} ${clickable ? 'cursor-pointer hover:shadow-card-hover hover:-translate-y-px' : ''}`}
       onClick={clickable ? () => navigate(`/matches/${match.id}`) : undefined}
       role={clickable ? 'button' : undefined}
     >
-      <div className="flex justify-between items-center">
+      <PointsWon {...match} {...currentBet} />
+
+      <div className="flex justify-between items-center pr-14">
         <InformationMatch
           tournamentPhase={match.tournamentPhase}
           groupName={match.groupName}
@@ -43,7 +48,7 @@ const Match = ({
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-col items-center gap-1.5 w-[90px] shrink-0">
+        <div className="flex flex-col items-center gap-1.5 w-[72px] shrink-0">
           <Flag
             country={match.teamACode}
             className="h-9 w-9 object-contain rounded"
@@ -53,11 +58,27 @@ const Match = ({
           </span>
         </div>
 
-        <span className="inline-block text-xl font-extrabold text-navy bg-gray-100 py-1.5 px-3.5 rounded-[10px]">
-          {match.scores.A} – {match.scores.B}
-        </span>
+        <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-[0.625rem] text-gray-500 font-semibold uppercase tracking-wide">
+              Score final
+            </span>
+            <span className="inline-block text-xl font-extrabold text-navy bg-white py-1.5 px-3.5 rounded-[10px] border border-gray-200">
+              {match.scores.A} – {match.scores.B}
+            </span>
+          </div>
 
-        <div className="flex flex-col items-center gap-1.5 w-[90px] shrink-0">
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-[0.625rem] text-gray-400 font-semibold uppercase tracking-wide">
+              Prono
+            </span>
+            <span className="inline-block text-lg font-bold text-navy/70 bg-gray-100 py-1.5 px-3.5 rounded-[10px]">
+              {hasBet ? `${currentBet.betTeamA} – ${currentBet.betTeamB}` : '– – –'}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-1.5 w-[72px] shrink-0">
           <Flag
             country={match.teamBCode}
             className="h-9 w-9 object-contain rounded"
@@ -66,18 +87,6 @@ const Match = ({
             {match.teamBName ?? 'À déterminer'}
           </span>
         </div>
-      </div>
-
-      <div className="flex justify-between items-center gap-2 pt-2 border-t border-gray-100">
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
-            Mon prono
-          </span>
-          <span className="text-xs font-bold text-navy">
-            {currentBet?.betTeamA ?? '–'} – {currentBet?.betTeamB ?? '–'}
-          </span>
-        </div>
-        <PointsWon {...match} {...currentBet} />
       </div>
 
       <BetDistributionBar
