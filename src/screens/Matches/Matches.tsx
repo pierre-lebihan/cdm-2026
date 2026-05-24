@@ -59,6 +59,10 @@ interface FinalWinnerReminderProps {
   selectedTeam: NormalizedTeam | null
 }
 
+interface FinalWinnerAliveReminderProps {
+  selectedTeam: NormalizedTeam
+}
+
 function findTeamById(
   teams: NormalizedTeam[],
   teamId: string | null | undefined,
@@ -131,6 +135,38 @@ const FinalWinnerReminder = ({
           <ArrowRight size={14} />
         </span>
       </Link>
+    </div>
+  )
+}
+
+const FinalWinnerAliveReminder = ({
+  selectedTeam,
+}: FinalWinnerAliveReminderProps) => {
+  const formattedOdd = formatWinnerOdd(selectedTeam.winOdd)
+  const potentialGain = formattedOdd
+    ? `+${formattedOdd} pts`
+    : 'le bonus vainqueur final'
+
+  return (
+    <div className="px-4 pt-2">
+      <div className="mx-auto flex max-w-[520px] items-center gap-3 rounded-lg border border-emerald-100 bg-white px-4 py-3 text-left shadow-card">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-50 ring-1 ring-emerald-100">
+          <Flag
+            country={selectedTeam.code}
+            tooltipText={selectedTeam.name}
+            className="h-full w-full rounded-full object-cover"
+          />
+        </span>
+        <div className="min-w-0 flex-1 text-left">
+          <p className="m-0 text-sm font-bold leading-snug text-navy">
+            Ton vainqueur est toujours en course
+          </p>
+          <p className="m-0 text-xs leading-snug text-gray-500">
+            {selectedTeam.name} peut encore te rapporter {potentialGain} si elle
+            va au bout.
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
@@ -230,6 +266,14 @@ const Matches = () => {
 
   const selectedWinnerTeam = findTeamById(teams, selectedWinner)
   const hasSelectedWinner = selectedWinner != null
+  const selectedWinnerStillAlive =
+    selectedWinnerTeam != null && selectedWinnerTeam.elimination !== true
+
+  const showFinalWinnerAliveReminder =
+    isConnected &&
+    selectedTab === 1 &&
+    finalWinnerLocked &&
+    selectedWinnerStillAlive
 
   const dateGroups = useMemo(
     () => groupMatchesByDate(filteredMatches),
@@ -281,6 +325,10 @@ const Matches = () => {
           hasWinner={hasSelectedWinner}
           selectedTeam={selectedWinnerTeam}
         />
+      )}
+
+      {showFinalWinnerAliveReminder && selectedWinnerTeam && (
+        <FinalWinnerAliveReminder selectedTeam={selectedWinnerTeam} />
       )}
 
       {showAiButton && (

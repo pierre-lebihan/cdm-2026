@@ -4,7 +4,7 @@ import { useAuth } from '../../../contexts/AuthContext'
 import forgotBetImgUrl from '../../../assets/icons/ForgotBet.png'
 import imgUrl from '../../../assets/icons/mask6.png'
 import { useOpponents } from '../../../hooks/opponents'
-import { useTeams } from '../../../hooks/teams'
+import { useTeams, type NormalizedTeam } from '../../../hooks/teams'
 import OwnRank from './OwnRank'
 import { useNavigate } from 'react-router-dom'
 import Flag from 'components/Flag'
@@ -20,6 +20,21 @@ interface GroupRankingProps {
     score?: number | null
     winner_team?: string | null
   }>
+}
+
+function shouldHideOpponentWinner(
+  isOwn: boolean,
+  team: NormalizedTeam | null,
+): boolean {
+  if (isOwn) {
+    return false
+  }
+
+  if (!team) {
+    return false
+  }
+
+  return team.elimination !== true
 }
 
 const GroupRanking = ({
@@ -54,12 +69,15 @@ const GroupRanking = ({
             : null
           const isLast = index === sortedOpponents.length - 1
           const isOwn = opponent.id === uid
+          const hideWinner = shouldHideOpponentWinner(isOwn, team ?? null)
 
           return (
             <div
               key={opponent.id}
               className={`flex items-center py-2.5 px-3.5 gap-3 cursor-pointer transition-colors first:rounded-t-[14px] last:rounded-b-[14px] ${
-                isOwn ? 'bg-amber-100 hover:bg-amber-200' : 'hover:bg-cream-dark'
+                isOwn
+                  ? 'bg-amber-100 hover:bg-amber-200'
+                  : 'hover:bg-cream-dark'
               } ${!isLast ? 'border-b border-gray-100' : ''}`}
               onClick={() => navigate(`/user/${opponent.id}`)}
             >
@@ -92,7 +110,15 @@ const GroupRanking = ({
 
               <div className="shrink-0 w-8 h-8">
                 {team ? (
-                  team.elimination ? (
+                  hideWinner ? (
+                    <Tooltip content="Vainqueur encore secret">
+                      <img
+                        src={imgUrl}
+                        style={{ width: 28, height: 28 }}
+                        alt="Mystère"
+                      />
+                    </Tooltip>
+                  ) : team.elimination ? (
                     <Flag
                       tooltipText={'Éliminé : ' + team.name}
                       country={team.code}
