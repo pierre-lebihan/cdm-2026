@@ -140,3 +140,11 @@ export function estimatedGainRange(
 ): { min: number; max: number } {
   return { min: 0, max: Math.round(maxBasePoints * mult) }
 }
+
+export function estimatedPotentialGain(
+  maxBasePoints: number,
+  mult: number,
+  phaseMultiplier: number,
+): number {
+  return Math.round(maxBasePoints * mult * phaseMultiplier)
+}

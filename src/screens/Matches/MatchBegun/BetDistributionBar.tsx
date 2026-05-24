@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useBetsFromGame } from '../../../hooks/bets'
 import { predictionPopularityKey } from '../../../lib/bettingOdds'
 import { formatOdds } from '../../../lib/scoring'
@@ -77,7 +77,7 @@ function buildSegments(
     }))
 }
 
-const MIN_FLEX = 0.08
+const MIN_FLEX = 0.10
 
 const BetDistributionBar = ({
   matchId,
@@ -85,7 +85,6 @@ const BetDistributionBar = ({
   odds,
 }: BetDistributionBarProps) => {
   const bets = useBetsFromGame(matchId, true)
-  const [showOdds, setShowOdds] = useState(false)
 
   const dist = useMemo(() => {
     if (!bets) {
@@ -106,34 +105,20 @@ const BetDistributionBar = ({
   }
 
   return (
-    <div className="w-full space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
-          Qui a prono quoi ?
-        </span>
-        <button
-          type="button"
-          className={`text-[0.6rem] font-semibold px-2 py-0.5 rounded-full transition-colors ${showOdds ? 'bg-navy text-white' : 'bg-gray-100 text-gray-500'}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowOdds((prev) => !prev)
-          }}
-        >
-          {showOdds ? 'Cotes' : '% → Cotes'}
-        </button>
-      </div>
-      <div className="flex w-full h-7 rounded-lg overflow-hidden gap-[1.5px]">
+    <div className="w-full space-y-1">
+      <div className="flex w-full h-6 rounded-lg overflow-hidden gap-[1.5px]">
         {segments.map((seg) => (
           <div
             key={seg.key}
-            className={`${seg.color} flex items-center justify-center transition-all duration-300`}
+            className={`${seg.color} flex items-center justify-between px-2 transition-all duration-300`}
             style={{ flex: Math.max(seg.pct, MIN_FLEX) }}
           >
-            {seg.pct >= 0.12 && (
-              <span className="text-[11px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
-                {showOdds
-                  ? `x${formatOdds(seg.odd)}`
-                  : pctLabel(seg.count, dist.total)}
+            <span className="text-[10px] font-bold text-white/90">
+              {pctLabel(seg.count, dist.total)}
+            </span>
+            {seg.pct >= MIN_FLEX && seg.odd !== null && (
+              <span className="text-[10px] font-semibold text-white/70">
+                ×{formatOdds(seg.odd)}
               </span>
             )}
           </div>
