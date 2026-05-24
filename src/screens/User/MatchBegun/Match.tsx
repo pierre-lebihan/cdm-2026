@@ -90,11 +90,7 @@ const Match = ({ match }) => {
         </div>
       </div>
 
-      <BetDistributionBar
-        bets={allBets}
-        betFormat={match.betFormat}
-        odds={match.odds}
-      />
+      <BetDistributionBar bets={allBets} betFormat={match.betFormat} />
     </div>
   )
 }

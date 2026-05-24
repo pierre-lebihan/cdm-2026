@@ -16,7 +16,6 @@ interface BetItem {
 interface BetDistributionBarProps {
   bets: BetItem[] | null
   betFormat: MatchBetFormat
-  odds?: { PA: number | null; PB: number | null; PN: number | null }
 }
 
 interface SegmentData {
@@ -62,12 +61,11 @@ function pctLabel(count: number, total: number): string {
 function buildSegments(
   dist: { countA: number; countN: number; countB: number; total: number },
   betFormat: MatchBetFormat,
-  odds: { PA: number | null; PB: number | null; PN: number | null } | undefined,
 ): SegmentData[] {
   const isKnockout = betFormat === 'knockout_decider'
-  const oddA = odds ? odds.PA : dynamicMultiplier(dist.total, dist.countA)
-  const oddN = odds ? odds.PN : dynamicMultiplier(dist.total, dist.countN)
-  const oddB = odds ? odds.PB : dynamicMultiplier(dist.total, dist.countB)
+  const oddA = dynamicMultiplier(dist.total, dist.countA)
+  const oddN = dynamicMultiplier(dist.total, dist.countN)
+  const oddB = dynamicMultiplier(dist.total, dist.countB)
   const all = [
     { key: '1', color: 'bg-emerald-500', count: dist.countA, odd: oddA },
     ...(isKnockout
@@ -88,7 +86,6 @@ const MIN_FLEX = 0.10
 const BetDistributionBar = ({
   bets,
   betFormat,
-  odds,
 }: BetDistributionBarProps) => {
   const [showOdds, setShowOdds] = useState(false)
 
@@ -103,8 +100,8 @@ const BetDistributionBar = ({
     if (dist.total === 0) {
       return []
     }
-    return buildSegments(dist, betFormat, odds)
-  }, [dist, betFormat, odds])
+    return buildSegments(dist, betFormat)
+  }, [dist, betFormat])
 
   if (!bets || segments.length === 0) {
     return null
