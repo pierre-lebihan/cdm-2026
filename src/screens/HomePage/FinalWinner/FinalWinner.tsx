@@ -6,7 +6,12 @@ import {
   useCompetitionData,
   useCompetitionDisplayName,
 } from '../../../hooks/competition'
+import Loader from '../../../components/Loader'
 import FinalWinnerChoice from './FinalWinnerChoice'
+
+const finalWinnerLoader = (
+  <Loader label="Chargement du vainqueur final..." size="sm" variant="inline" />
+)
 
 const FinalWinner = () => {
   const [team, saveWinner] = useSelectedWinner()
@@ -28,12 +33,17 @@ const FinalWinner = () => {
   if (!CompetitionStartDate) return null
 
   const locked = isPast(CompetitionStartDate)
+  const winnerLoading = team === undefined
 
   const lockLabel = useMemo(() => {
     if (!competitionData?.start_date) return null
-    return format(new Date(competitionData.start_date), "d MMMM yyyy 'à' HH:mm", {
-      locale: fr,
-    })
+    return format(
+      new Date(competitionData.start_date),
+      "d MMMM yyyy 'à' HH:mm",
+      {
+        locale: fr,
+      },
+    )
   }, [competitionData?.start_date])
 
   return (
@@ -49,13 +59,21 @@ const FinalWinner = () => {
             : `Qui gagnera ${competitionLabel} ?`}
         {!locked && lockLabel != null && (
           <span className="block mt-2 text-gray-500">
-            Clôture des pronostics vainqueur au coup d&apos;envoi du premier quart de finale (
-            {lockLabel}).
+            Clôture des pronostics vainqueur au coup d&apos;envoi du premier
+            quart de finale ({lockLabel}).
           </span>
         )}
       </p>
-      <Suspense fallback={null}>
-        <FinalWinnerChoice userTeam={team} disabled={locked} onTeamSelect={handleTeamSelect} />
+      <Suspense fallback={finalWinnerLoader}>
+        {winnerLoading ? (
+          finalWinnerLoader
+        ) : (
+          <FinalWinnerChoice
+            userTeam={team}
+            disabled={locked}
+            onTeamSelect={handleTeamSelect}
+          />
+        )}
       </Suspense>
     </div>
   )
