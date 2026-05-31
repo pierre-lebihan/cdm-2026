@@ -82,18 +82,21 @@ export type Database = {
       competition_profiles: {
         Row: {
           competition_id: string
+          final_winner_points: number
           user_id: string
           score: number
           winner_team: string | null
         }
         Insert: {
           competition_id: string
+          final_winner_points?: number
           user_id: string
           score?: number
           winner_team?: string | null
         }
         Update: {
           competition_id?: string
+          final_winner_points?: number
           user_id?: string
           score?: number
           winner_team?: string | null
@@ -110,6 +113,7 @@ export type Database = {
       }
       competitions: {
         Row: {
+          final_winner_team: string | null
           id: string
           launch_bet: string | null
           name: string
@@ -117,6 +121,7 @@ export type Database = {
           start_date: string | null
         }
         Insert: {
+          final_winner_team?: string | null
           id?: string
           launch_bet?: string | null
           name?: string
@@ -124,6 +129,7 @@ export type Database = {
           start_date?: string | null
         }
         Update: {
+          final_winner_team?: string | null
           id?: string
           launch_bet?: string | null
           name?: string

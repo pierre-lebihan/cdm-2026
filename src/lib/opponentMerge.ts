@@ -5,6 +5,7 @@ export interface ProfileRow {
 }
 
 export interface CpRow {
+  final_winner_points: number | null
   user_id: string
   score: number | null
   winner_team: string | null
@@ -14,6 +15,7 @@ export interface OpponentMerged {
   id: string
   display_name: string | null
   avatar_url: string | null
+  final_winner_points: number | null
   score: number | null
   winner_team: string | null
 }
@@ -39,6 +41,7 @@ export function mergeCpWithProfilesForUserIds(
       id: uid,
       display_name: p?.display_name ?? null,
       avatar_url: p?.avatar_url ?? null,
+      final_winner_points: cp?.final_winner_points ?? 0,
       score: cp?.score ?? 0,
       winner_team: cp?.winner_team ?? null,
     })
@@ -46,7 +49,10 @@ export function mergeCpWithProfilesForUserIds(
   return result
 }
 
-export function mergeCpWithProfiles(cpRows: CpRow[], profileRows: ProfileRow[]): OpponentMerged[] {
+export function mergeCpWithProfiles(
+  cpRows: CpRow[],
+  profileRows: ProfileRow[],
+): OpponentMerged[] {
   const profileById = new Map<string, ProfileRow>()
   for (const p of profileRows) {
     profileById.set(p.id, p)
@@ -58,6 +64,7 @@ export function mergeCpWithProfiles(cpRows: CpRow[], profileRows: ProfileRow[]):
       id: row.user_id,
       display_name: p?.display_name ?? null,
       avatar_url: p?.avatar_url ?? null,
+      final_winner_points: row.final_winner_points ?? 0,
       score: row.score ?? 0,
       winner_team: row.winner_team ?? null,
     })

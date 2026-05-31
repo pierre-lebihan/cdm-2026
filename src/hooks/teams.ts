@@ -44,7 +44,7 @@ export function useTeam(id: string | null | undefined): NormalizedTeam | null {
   return team
 }
 
-export function useTeams(): NormalizedTeam[] {
+export function useTeams(refreshKey: number = 0): NormalizedTeam[] {
   const [teams, setTeams] = useState<NormalizedTeam[]>([])
   const { activeCompetitionId } = useCompetition()
 
@@ -63,7 +63,7 @@ export function useTeams(): NormalizedTeam[] {
           }) ?? [],
         ),
       )
-  }, [activeCompetitionId])
+  }, [activeCompetitionId, refreshKey])
 
   return teams
 }

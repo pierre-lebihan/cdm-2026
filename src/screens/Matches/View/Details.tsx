@@ -71,13 +71,16 @@ const Details = () => {
         </h3>
         <ScoreBreakdownPanel
           breakdown={breakdown}
+          betFormat={match.betFormat}
           tournamentPhase={match.tournamentPhase}
           teamAName={match.teamAName}
           teamBName={match.teamBName}
           scoreA={match.scores.A}
           scoreB={match.scores.B}
+          playoffWinner={match.playoffWinner}
           betTeamA={currentBet?.betTeamA}
           betTeamB={currentBet?.betTeamB}
+          betPlayoffWinner={currentBet?.betPlayoffWinner}
           pointsWon={currentBet?.pointsWon}
         />
       </div>

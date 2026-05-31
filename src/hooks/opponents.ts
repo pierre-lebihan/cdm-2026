@@ -10,6 +10,7 @@ interface Opponent {
   id: string
   display_name: string | null
   avatar_url: string | null
+  final_winner_points: number | null
   score: number | null
   winner_team: string | null
 }
@@ -26,10 +27,13 @@ export function useOpponents(userIds: string[] | undefined): Opponent[] {
     Promise.all([
       supabase
         .from('competition_profiles')
-        .select('user_id, score, winner_team')
+        .select('user_id, final_winner_points, score, winner_team')
         .eq('competition_id', activeCompetitionId)
         .in('user_id', userIds),
-      supabase.from('profiles').select('id, display_name, avatar_url').in('id', userIds),
+      supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .in('id', userIds),
     ]).then(([cpRes, prRes]) => {
       if (cancelled) return
       if (cpRes.error || prRes.error) {
@@ -37,7 +41,11 @@ export function useOpponents(userIds: string[] | undefined): Opponent[] {
         return
       }
       setOpponents(
-        mergeCpWithProfilesForUserIds(userIds, cpRes.data ?? [], prRes.data ?? []),
+        mergeCpWithProfilesForUserIds(
+          userIds,
+          cpRes.data ?? [],
+          prRes.data ?? [],
+        ),
       )
     })
 
@@ -60,7 +68,7 @@ export function useAllOpponents(): Opponent[] {
 
     supabase
       .from('competition_profiles')
-      .select('user_id, score, winner_team')
+      .select('user_id, final_winner_points, score, winner_team')
       .eq('competition_id', activeCompetitionId)
       .then(({ data: cpRows, error: cpError }) => {
         if (cancelled) return
@@ -108,11 +116,15 @@ export function useOpponent(userId: string | undefined): Opponent | null {
     Promise.all([
       supabase
         .from('competition_profiles')
-        .select('user_id, score, winner_team')
+        .select('user_id, final_winner_points, score, winner_team')
         .eq('competition_id', activeCompetitionId)
         .eq('user_id', userId)
         .maybeSingle(),
-      supabase.from('profiles').select('id, display_name, avatar_url').eq('id', userId).single(),
+      supabase
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .eq('id', userId)
+        .single(),
     ]).then(([cpRes, prRes]) => {
       if (cancelled) return
       if (cpRes.error || prRes.error) {
@@ -129,6 +141,7 @@ export function useOpponent(userId: string | undefined): Opponent | null {
         id: userId,
         display_name: p.display_name ?? null,
         avatar_url: p.avatar_url ?? null,
+        final_winner_points: cp?.final_winner_points ?? 0,
         score: cp?.score ?? 0,
         winner_team: cp?.winner_team ?? null,
       })

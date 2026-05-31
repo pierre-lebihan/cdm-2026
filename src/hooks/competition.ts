@@ -15,6 +15,7 @@ export function useCompetitionDisplayName(): string {
 
 interface CompetitionData {
   id: string
+  final_winner_team: string | null
   launch_bet: string | null
   start_date: string | null
   name: string

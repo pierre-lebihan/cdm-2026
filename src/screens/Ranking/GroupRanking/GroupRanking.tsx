@@ -17,6 +17,7 @@ interface GroupRankingProps {
     id: string
     display_name?: string | null
     avatar_url?: string | null
+    final_winner_points?: number | null
     score?: number | null
     winner_team?: string | null
   }>

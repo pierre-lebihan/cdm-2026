@@ -1,16 +1,27 @@
 import { formatOdds, type ScoringBreakdown } from '../../../lib/scoring'
 import { formatTournamentPhaseLabel } from '../../../lib/matchEnums'
-import type { MatchTournamentPhase } from '../../../lib/matchEnums'
+import type {
+  MatchBetFormat,
+  MatchTournamentPhase,
+} from '../../../lib/matchEnums'
+import {
+  getDrawBetPlayoffWinnerName,
+  getPlayoffWinnerName,
+  shouldShowPlayoffWinner,
+} from '../../../lib/playoffWinner'
 
 export interface ScoreBreakdownPanelProps {
   breakdown: ScoringBreakdown | null
+  betFormat: MatchBetFormat
   tournamentPhase: MatchTournamentPhase
   teamAName: string | null
   teamBName: string | null
   scoreA: number | null
   scoreB: number | null
+  playoffWinner?: 'A' | 'B' | null
   betTeamA: number | null | undefined
   betTeamB: number | null | undefined
+  betPlayoffWinner?: 'A' | 'B' | null
   pointsWon: number | null | undefined
 }
 
@@ -33,13 +44,16 @@ const BaseLine = ({ label, value, maxValue }: BaseLineProps) => (
 
 const ScoreBreakdownPanel = ({
   breakdown,
+  betFormat,
   tournamentPhase,
   teamAName,
   teamBName,
   scoreA,
   scoreB,
+  playoffWinner,
   betTeamA,
   betTeamB,
+  betPlayoffWinner,
   pointsWon,
 }: ScoreBreakdownPanelProps) => {
   const hasBet =
@@ -48,13 +62,49 @@ const ScoreBreakdownPanel = ({
     betTeamB !== null &&
     betTeamB !== undefined
 
+  const playoffWinnerName = shouldShowPlayoffWinner(
+    betFormat,
+    scoreA,
+    scoreB,
+    playoffWinner,
+  )
+    ? getPlayoffWinnerName(playoffWinner, teamAName, teamBName)
+    : null
+
+  const betPlayoffWinnerName = getDrawBetPlayoffWinnerName(
+    betTeamA,
+    betTeamB,
+    betPlayoffWinner,
+    teamAName,
+    teamBName,
+  )
+
   return (
     <>
       <div className="text-xs text-gray-500 mb-4 leading-relaxed">
-        <span className="font-semibold text-navy">
-          {teamAName ?? '—'} {scoreA} – {scoreB} {teamBName ?? '—'}
-        </span>{' '}
-        · {formatTournamentPhaseLabel(tournamentPhase)}
+        <div>
+          <span className="font-semibold text-navy">
+            Score final : {teamAName ?? '—'} {scoreA} – {scoreB}{' '}
+            {teamBName ?? '—'}
+          </span>{' '}
+          · {formatTournamentPhaseLabel(tournamentPhase)}
+        </div>
+        {playoffWinnerName && (
+          <div className="mt-1 font-semibold text-amber-700">
+            Vainqueur final : {playoffWinnerName}
+          </div>
+        )}
+        {hasBet && (
+          <div className="mt-1">
+            Prono : {betTeamA} – {betTeamB}
+            {betPlayoffWinnerName && (
+              <span className="font-semibold text-indigo-700">
+                {' '}
+                · vainqueur si nul : {betPlayoffWinnerName}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {!hasBet && (
@@ -76,13 +126,35 @@ const ScoreBreakdownPanel = ({
               Points de base
             </h3>
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-1.5">
-              <BaseLine label="Résultat correct (1 / N / 2)" value={breakdown.resultat} maxValue={2} />
-              <BaseLine label="Gagnant effectif" value={breakdown.gagnant} maxValue={8} />
-              <BaseLine label="Proximité du score" value={breakdown.proximite} maxValue={3} />
-              <BaseLine label="Écart de buts" value={breakdown.ecart} maxValue={3} />
-              <BaseLine label="Bonus score exact" value={breakdown.bonus} maxValue={4} />
+              <BaseLine
+                label="Résultat correct (1 / N / 2)"
+                value={breakdown.resultat}
+                maxValue={2}
+              />
+              <BaseLine
+                label="Gagnant effectif"
+                value={breakdown.gagnant}
+                maxValue={8}
+              />
+              <BaseLine
+                label="Proximité du score"
+                value={breakdown.proximite}
+                maxValue={3}
+              />
+              <BaseLine
+                label="Écart de buts"
+                value={breakdown.ecart}
+                maxValue={3}
+              />
+              <BaseLine
+                label="Bonus score exact"
+                value={breakdown.bonus}
+                maxValue={4}
+              />
               <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-200">
-                <span className="text-xs font-semibold text-navy">Total de base</span>
+                <span className="text-xs font-semibold text-navy">
+                  Total de base
+                </span>
                 <span className="text-sm font-bold text-navy tabular-nums">
                   {breakdown.base} / 20
                 </span>
@@ -96,13 +168,17 @@ const ScoreBreakdownPanel = ({
             </h3>
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-1.5">
               <div className="flex justify-between items-center gap-3">
-                <span className="text-xs text-gray-600">Cote gagnante (popularité)</span>
+                <span className="text-xs text-gray-600">
+                  Cote gagnante (popularité)
+                </span>
                 <span className="text-xs font-semibold text-navy tabular-nums">
                   × {formatOdds(breakdown.winningOdds)}
                 </span>
               </div>
               <div className="flex justify-between items-center gap-3">
-                <span className="text-xs text-gray-600">Multiplicateur de phase</span>
+                <span className="text-xs text-gray-600">
+                  Multiplicateur de phase
+                </span>
                 <span className="text-xs font-semibold text-navy tabular-nums">
                   × {breakdown.phaseMultiplier}
                 </span>
@@ -116,7 +192,8 @@ const ScoreBreakdownPanel = ({
                 Calcul final
               </div>
               <div className="text-sm font-mono mb-2 text-white/90">
-                {breakdown.base} × {formatOdds(breakdown.winningOdds)} × {breakdown.phaseMultiplier}
+                {breakdown.base} × {formatOdds(breakdown.winningOdds)} ×{' '}
+                {breakdown.phaseMultiplier}
               </div>
               <div className="flex items-end gap-2">
                 <span className="text-3xl font-extrabold tabular-nums">

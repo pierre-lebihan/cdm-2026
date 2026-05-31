@@ -23,6 +23,7 @@ interface CompetitionContextValue {
   setActiveCompetitionId: (id: string) => void
   /** Admin: change which competition is active (visible to users) */
   setPublicCompetition: (id: string) => Promise<void>
+  refreshCompetitions: () => Promise<void>
   loading: boolean
 }
 
@@ -55,42 +56,47 @@ function DocumentTitleFromCompetition() {
 
 export function CompetitionProvider({ children }: { children: ReactNode }) {
   const [competitions, setCompetitions] = useState<Competition[]>([])
-  const [activeCompetitionId, setActiveCompetitionId] = useState<string | null>(null)
+  const [activeCompetitionId, setActiveCompetitionId] = useState<string | null>(
+    null,
+  )
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    supabase
+  const refreshCompetitions = useCallback(async () => {
+    const { data } = await supabase
       .from('competitions')
       .select('*')
       .order('start_date', { ascending: false })
-      .then(({ data }) => {
-        const list = data ?? []
-        setCompetitions(list)
-        const active = list.find((c) => c.active) ?? list[0] ?? null
-        if (active) {
-          setActiveCompetitionId(active.id)
-        }
-        setLoading(false)
-      })
+
+    const list = data ?? []
+    setCompetitions(list)
+    setActiveCompetitionId((currentId) => {
+      const current = list.find((c) => c.id === currentId)
+      if (current) {
+        return current.id
+      }
+
+      const active = list.find((c) => c.active) ?? list[0] ?? null
+      return active?.id ?? null
+    })
+    setLoading(false)
   }, [])
+
+  useEffect(() => {
+    refreshCompetitions()
+  }, [refreshCompetitions])
 
   const competition = useMemo(
     () => competitions.find((c) => c.active) ?? null,
     [competitions],
   )
 
-  const setPublicCompetition = useCallback(
-    async (id: string) => {
-      // Deactivate all others, then activate the chosen one
-      await supabase.from('competitions').update({ active: false }).neq('id', id)
-      await supabase.from('competitions').update({ active: true }).eq('id', id)
-      setCompetitions((prev) =>
-        prev.map((c) => ({ ...c, active: c.id === id })),
-      )
-      setActiveCompetitionId(id)
-    },
-    [],
-  )
+  const setPublicCompetition = useCallback(async (id: string) => {
+    // Deactivate all others, then activate the chosen one
+    await supabase.from('competitions').update({ active: false }).neq('id', id)
+    await supabase.from('competitions').update({ active: true }).eq('id', id)
+    setCompetitions((prev) => prev.map((c) => ({ ...c, active: c.id === id })))
+    setActiveCompetitionId(id)
+  }, [])
 
   const value = useMemo<CompetitionContextValue>(
     () => ({
@@ -99,9 +105,17 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
       activeCompetitionId,
       setActiveCompetitionId,
       setPublicCompetition,
+      refreshCompetitions,
       loading,
     }),
-    [competition, competitions, activeCompetitionId, setPublicCompetition, loading],
+    [
+      competition,
+      competitions,
+      activeCompetitionId,
+      setPublicCompetition,
+      refreshCompetitions,
+      loading,
+    ],
   )
 
   return (

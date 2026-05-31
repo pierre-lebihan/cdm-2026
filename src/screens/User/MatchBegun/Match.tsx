@@ -7,8 +7,19 @@ import InformationMatch from '../../Matches/MatchToBet/InformationMatch'
 import { cardBgClassForUserBet } from '../../../lib/betOutcomeStatus'
 import BetDistributionBar from '../../Matches/MatchBegun/BetDistributionBar'
 import MatchSkeleton from '../../Matches/MatchBegun/MatchSkeleton'
+import {
+  getDrawBetPlayoffWinnerName,
+  getPlayoffWinnerName,
+  shouldShowPlayoffWinner,
+} from '../../../lib/playoffWinner'
 
-const Match = ({ match }) => {
+const Match = ({
+  match,
+  clickable = true,
+}: {
+  match: any
+  clickable?: boolean
+}) => {
   const { id } = useParams()
   const [currentBet, betLoading] = useBetFromUser(match.id, id)
   const [allBets, betsLoading] = useBetsFromGame(match.id, true)
@@ -33,11 +44,36 @@ const Match = ({ match }) => {
     pointsWon: currentBet?.pointsWon,
   })
 
+  const playoffWinnerName = shouldShowPlayoffWinner(
+    match.betFormat,
+    match.scores.A,
+    match.scores.B,
+    match.playoffWinner,
+  )
+    ? getPlayoffWinnerName(
+        match.playoffWinner,
+        match.teamAName,
+        match.teamBName,
+      )
+    : null
+
+  const betPlayoffWinnerName = getDrawBetPlayoffWinnerName(
+    currentBet?.betTeamA,
+    currentBet?.betTeamB,
+    currentBet?.betPlayoffWinner,
+    match.teamAName,
+    match.teamBName,
+  )
+
   return (
     <div
-      className={`relative w-full rounded-[14px] py-3.5 px-4 shadow-card text-left flex flex-col gap-3 transition-all duration-150 cursor-pointer hover:shadow-card-hover hover:-translate-y-px ${cardBg}`}
-      onClick={() => navigate(`/matches/${match.id}`)}
-      role="button"
+      className={`relative w-full rounded-[14px] py-3.5 px-4 shadow-card text-left flex flex-col gap-3 transition-all duration-150 ${cardBg} ${clickable ? 'cursor-pointer hover:shadow-card-hover hover:-translate-y-px' : ''}`}
+      onClick={
+        clickable
+          ? () => navigate(`/user/${id}/matches/${match.id}`)
+          : undefined
+      }
+      role={clickable ? 'button' : undefined}
     >
       <PointsWon {...match} {...currentBet} />
 
@@ -74,7 +110,9 @@ const Match = ({ match }) => {
               Son prono
             </span>
             <span className="inline-block text-lg font-extrabold text-navy/70 bg-gray-100 py-1 px-2.5 rounded-[10px] whitespace-nowrap">
-              {hasBet ? `${currentBet.betTeamA} – ${currentBet.betTeamB}` : '– – –'}
+              {hasBet
+                ? `${currentBet.betTeamA} – ${currentBet.betTeamB}`
+                : '– – –'}
             </span>
           </div>
         </div>
@@ -89,6 +127,21 @@ const Match = ({ match }) => {
           </span>
         </div>
       </div>
+
+      {(playoffWinnerName || betPlayoffWinnerName) && (
+        <div className="flex flex-wrap gap-2">
+          {playoffWinnerName && (
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-[0.7rem] font-bold text-amber-900">
+              Vainqueur final : {playoffWinnerName}
+            </span>
+          )}
+          {betPlayoffWinnerName && (
+            <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-[0.7rem] font-bold text-indigo-700">
+              Son vainqueur si nul : {betPlayoffWinnerName}
+            </span>
+          )}
+        </div>
+      )}
 
       <BetDistributionBar bets={allBets} betFormat={match.betFormat} />
     </div>
