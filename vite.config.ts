@@ -5,6 +5,7 @@ import path from 'path'
 import { PWA_SERVICE_WORKER_FILENAME } from './src/serviceWorkerName'
 
 const APP_VERSION_FILENAME = 'app-version.json'
+const SEO_ROUTE_ENTRYPOINTS: string[] = ['rules', 'rules/algorithm', 'faq']
 const appBuildId = getAppBuildId()
 
 function getAppBuildId(): string {
@@ -27,10 +28,33 @@ function appVersionPlugin(): Plugin {
   }
 }
 
+function staticRouteEntrypointsPlugin(): Plugin {
+  return {
+    name: 'static-route-entrypoints',
+    enforce: 'post',
+    generateBundle(_, bundle) {
+      const indexAsset = bundle['index.html']
+
+      if (!indexAsset || indexAsset.type !== 'asset') {
+        return
+      }
+
+      for (const route of SEO_ROUTE_ENTRYPOINTS) {
+        this.emitFile({
+          type: 'asset',
+          fileName: `${route}/index.html`,
+          source: indexAsset.source,
+        })
+      }
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     react(),
     appVersionPlugin(),
+    staticRouteEntrypointsPlugin(),
     VitePWA({
       filename: PWA_SERVICE_WORKER_FILENAME,
       registerType: 'prompt',

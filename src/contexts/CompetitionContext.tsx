@@ -29,31 +29,6 @@ interface CompetitionContextValue {
 
 const CompetitionContext = createContext<CompetitionContextValue | null>(null)
 
-function DocumentTitleFromCompetition() {
-  const { competition, loading } = useCompetition()
-
-  useEffect(() => {
-    if (loading) {
-      return
-    }
-    const name = competition?.name?.trim()
-    if (name != null && name !== '') {
-      document.title = `${name} · Make Prono Great Again`
-    } else {
-      document.title = 'Make Prono Great Again'
-    }
-    const meta = document.querySelector('meta[name="description"]')
-    if (meta != null && name != null && name !== '') {
-      meta.setAttribute(
-        'content',
-        `Pronostics ${name} entre amis · Make Prono Great Again`,
-      )
-    }
-  }, [competition?.name, loading])
-
-  return null
-}
-
 export function CompetitionProvider({ children }: { children: ReactNode }) {
   const [competitions, setCompetitions] = useState<Competition[]>([])
   const [activeCompetitionId, setActiveCompetitionId] = useState<string | null>(
@@ -120,7 +95,6 @@ export function CompetitionProvider({ children }: { children: ReactNode }) {
 
   return (
     <CompetitionContext.Provider value={value}>
-      <DocumentTitleFromCompetition />
       {children}
     </CompetitionContext.Provider>
   )

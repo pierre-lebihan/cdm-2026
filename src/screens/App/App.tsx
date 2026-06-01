@@ -14,6 +14,7 @@ import Loader from 'components/Loader'
 import PromptCoordinator from 'components/PromptCoordinator'
 import PwaUpdatePrompt from 'components/PwaUpdatePrompt'
 import { OneSignalSubscriber } from 'components/OneSignalSubscriber'
+import SeoMetadata from 'components/SeoMetadata'
 
 const AnalyticsPage = lazy(() => import('../Analytics'))
 const AuthPasswordPage = lazy(() => import('../AuthPasswordPage'))
@@ -35,6 +36,7 @@ const App = () => {
 
   return (
     <>
+      <SeoMetadata />
       {!hideHeader && (
         <header className="fixed top-0 left-0 right-0 z-[1100] h-14 flex items-center justify-between px-4 bg-cream/[0.88] backdrop-blur-sm border-b border-black/[0.06]">
           <button
