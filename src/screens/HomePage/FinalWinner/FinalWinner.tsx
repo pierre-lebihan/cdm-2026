@@ -59,8 +59,7 @@ const FinalWinner = () => {
             : `Qui gagnera ${competitionLabel} ?`}
         {!locked && lockLabel != null && (
           <span className="block mt-2 text-gray-500">
-            Clôture des pronostics vainqueur au coup d&apos;envoi du premier
-            quart de finale ({lockLabel}).
+            Clôture des pronostics vainqueur le {lockLabel}.
           </span>
         )}
       </p>
