@@ -78,6 +78,10 @@ function getLoginError(err: unknown): string {
   return 'Email ou mot de passe incorrect.'
 }
 
+function reloadCurrentPage() {
+  window.location.reload()
+}
+
 const ConnectionModal = () => {
   const authenticateWithGoogle = useGoogleLogin()
   const checkEmailExists = useEmailExists()
@@ -360,17 +364,29 @@ const ConnectionModal = () => {
       ) : null}
 
       {step === 'created' ? (
-        <div className="text-sm text-navy-dark bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-          Un compte vient d&apos;être créé pour <strong>{email}</strong>. Clique
-          sur le lien reçu par email pour configurer ton mot de passe.
-          <button
-            type="button"
-            className="mt-3 inline-flex items-center justify-center gap-1 text-xs font-semibold text-navy hover:underline"
-            onClick={handleBackToEmail}
-          >
-            <ArrowLeft size={14} />
-            <span>Utiliser une autre adresse</span>
-          </button>
+        <div className="text-sm text-navy-dark bg-green-50 border border-green-100 rounded-xl px-4 py-3 flex flex-col gap-3">
+          <p className="m-0">
+            Un compte vient d&apos;être créé pour <strong>{email}</strong>.
+            Clique sur le lien reçu par email pour configurer ton mot de passe.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-navy text-white text-xs font-semibold transition-all hover:opacity-90"
+              onClick={handleBackToEmail}
+            >
+              <ArrowLeft size={14} />
+              <span>Retour à la connexion</span>
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-green-200 bg-white text-xs font-semibold text-navy transition-all hover:border-navy"
+              onClick={reloadCurrentPage}
+            >
+              <RotateCcw size={14} />
+              <span>Rafraîchir la page</span>
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
