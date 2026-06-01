@@ -20,6 +20,7 @@ const AnalyticsPage = lazy(() => import('../Analytics'))
 const AuthPasswordPage = lazy(() => import('../AuthPasswordPage'))
 const FAQPage = lazy(() => import('../FAQ/FAQ'))
 const GroupsPage = lazy(() => import('../Groups/Groups'))
+const LegalPage = lazy(() => import('../Legal'))
 const Profile = lazy(() => import('../Profile/Profile'))
 const RankingPage = lazy(() => import('../Ranking/Ranking'))
 const RulesPage = lazy(() => import('../Rules/rules'))
@@ -79,6 +80,7 @@ const App = () => {
             <Route path="/rules" element={<RulesPage />} />
             <Route path="/rules/algorithm" element={<AlgorithmPage />} />
             <Route path="/faq" element={<FAQPage />} />
+            <Route path="/legal" element={<LegalPage />} />
             <Route
               path="/auth/set-password"
               element={<AuthPasswordPage mode="setup" />}

@@ -36,6 +36,12 @@ const STATIC_ROUTE_SEO: Record<string, StaticRouteSeo> = {
       'Retrouvez les réponses aux questions fréquentes sur Make Prono Great Again, les tribus, les pronostics et les données.',
     canonicalPath: '/faq/',
   },
+  '/legal': {
+    title: `Confidentialité et conditions · ${SITE_NAME}`,
+    description:
+      "Consultez la politique de confidentialité et les conditions d'utilisation de Make Prono Great Again.",
+    canonicalPath: '/legal/',
+  },
 }
 
 const PRIVATE_ROUTE_SEO: SeoState = {

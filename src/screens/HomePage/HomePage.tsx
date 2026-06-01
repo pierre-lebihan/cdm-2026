@@ -363,6 +363,12 @@ const HomePageGuest = () => {
           >
             Voir les règles
           </Link>
+          <Link
+            to="/legal"
+            className="text-[0.7rem] text-white/45 hover:text-white/80 transition-colors underline underline-offset-2"
+          >
+            Confidentialité et conditions
+          </Link>
         </div>
       </div>
 

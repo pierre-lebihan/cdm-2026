@@ -5,7 +5,12 @@ import path from 'path'
 import { PWA_SERVICE_WORKER_FILENAME } from './src/serviceWorkerName'
 
 const APP_VERSION_FILENAME = 'app-version.json'
-const SEO_ROUTE_ENTRYPOINTS: string[] = ['rules', 'rules/algorithm', 'faq']
+const SEO_ROUTE_ENTRYPOINTS: string[] = [
+  'rules',
+  'rules/algorithm',
+  'faq',
+  'legal',
+]
 const appBuildId = getAppBuildId()
 
 function getAppBuildId(): string {

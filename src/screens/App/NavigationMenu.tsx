@@ -5,6 +5,7 @@ import {
   HelpCircle,
   MessageCircleQuestion,
   BarChart3,
+  FileText,
   ShieldCheck,
   type LucideProps,
 } from 'lucide-react'
@@ -77,6 +78,13 @@ const menuItems = [
     label: 'FAQ',
     icon: MessageCircleQuestion,
     path: '/faq',
+    auth: false,
+    admin: false,
+  },
+  {
+    label: 'Confidentialité',
+    icon: FileText,
+    path: '/legal',
     auth: false,
     admin: false,
   },
