@@ -74,7 +74,7 @@ function formatAdminPoints(points: number | null | undefined): string {
 
   return new Intl.NumberFormat('fr-FR', {
     maximumFractionDigits: 0,
-  }).format(Math.round(points))
+  }).format(Math.round(points / 10) * 10)
 }
 
 function isFinalWinnerTeam(

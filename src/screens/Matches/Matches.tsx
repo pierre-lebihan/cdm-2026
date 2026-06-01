@@ -87,8 +87,8 @@ function formatWinnerOdd(winOdd: number | null): string | null {
   }
 
   return new Intl.NumberFormat('fr-FR', {
-    maximumFractionDigits: 2,
-  }).format(winOdd)
+    maximumFractionDigits: 0,
+  }).format(Math.round(winOdd / 10) * 10)
 }
 
 function formatPotentialPoints(points: number | null): string | null {
@@ -98,7 +98,7 @@ function formatPotentialPoints(points: number | null): string | null {
 
   return new Intl.NumberFormat('fr-FR', {
     maximumFractionDigits: 0,
-  }).format(Math.round(points))
+  }).format(Math.round(points / 10) * 10)
 }
 
 const FinalWinnerReminder = ({

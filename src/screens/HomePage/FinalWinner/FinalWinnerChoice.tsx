@@ -119,7 +119,7 @@ const FinalWinnerChoice = ({
                     <span
                       className={`text-xs ${team.id === userTeam ? 'text-indigo-600' : 'text-gray-400'}`}
                     >
-                      {team.winOdd}
+                      {Math.round(team.winOdd / 10) * 10}
                     </span>
                   )}
                 </button>
@@ -136,7 +136,7 @@ const FinalWinnerChoice = ({
 
       {selectedTeam?.winOdd && (
         <p className="text-xs font-semibold text-indigo-500 mt-2">
-          Cote : {selectedTeam.winOdd}
+          Cote : {Math.round(selectedTeam.winOdd / 10) * 10}
         </p>
       )}
     </div>

@@ -60,7 +60,7 @@ function formatWinnerPoints(points: number | null | undefined): string {
 
   return new Intl.NumberFormat('fr-FR', {
     maximumFractionDigits: 0,
-  }).format(Math.round(points))
+  }).format(Math.round(points / 10) * 10)
 }
 
 function getPotentialWinnerPoints(team: NormalizedTeam | null): number {
@@ -68,7 +68,7 @@ function getPotentialWinnerPoints(team: NormalizedTeam | null): number {
     return 0
   }
 
-  return Math.round(team.winOdd)
+  return Math.round(team.winOdd / 10) * 10
 }
 
 function UserWinnerStatus({
