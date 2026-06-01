@@ -102,7 +102,7 @@ export default defineConfig({
         start_url: '/',
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,webp,svg,woff2}'],
         importScripts: [
           'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js',
         ],

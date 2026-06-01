@@ -7,9 +7,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="stylesheet"
+      rel="preload"
+      as="style"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;600;700&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@300;400;500;600;700&display=swap"
+      />
+    </noscript>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#19194b" />
     <meta
@@ -17,6 +25,10 @@
       content="Pronostiquez les matches de la Coupe du Monde 2026 entre amis, créez votre tribu et suivez le classement en temps réel."
     />
     <meta name="robots" content="index, follow" />
+    <meta
+      name="google-site-verification"
+      content="CQj7BtamtWUVXonKdha8zYVxhfdBGpZJWwGoKTTM7ss"
+    />
     <meta name="application-name" content="Make Prono Great Again" />
     <link rel="canonical" href="https://makepronogreatagain.bzh/" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -59,13 +71,13 @@
     <script type="text/javascript">
       window.$crisp = []
       window.CRISP_WEBSITE_ID = '7595e148-b066-4869-8ede-b677f2fbe9fb'
-      ;(function () {
+      window.addEventListener('load', function () {
         var d = document
         var s = d.createElement('script')
         s.src = 'https://client.crisp.chat/l.js'
         s.async = 1
         d.getElementsByTagName('head')[0].appendChild(s)
-      })()
+      })
     </script>
   </head>
   <body>

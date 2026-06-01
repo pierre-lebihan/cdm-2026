@@ -15,8 +15,8 @@ import {
 import { useIsUserConnected } from '../../hooks/user'
 import FinalWinner from './FinalWinner/FinalWinner'
 import { useNavigate, Link, useLocation } from 'react-router-dom'
-import baniere from '../../assets/visuels/baniere.jpeg'
-import logo from '../../assets/icons/logo.png'
+import baniere from '../../assets/visuels/baniere.webp'
+import logo from '../../assets/icons/logo.webp'
 import ConnectionModal from '../App/ConnectionModal'
 import OnboardingModal from '../App/OnboardingModal'
 import Mascot from '../../components/Mascot'
@@ -320,6 +320,7 @@ const HomePageGuest = () => {
         className="absolute inset-0 h-full w-full object-cover transition-[object-position] duration-700 ease-in-out sm:hidden"
         style={{ objectPosition: `${heroSlidePosition}% 50%` }}
         draggable={false}
+        fetchPriority="high"
       />
 
       <img
@@ -327,6 +328,7 @@ const HomePageGuest = () => {
         alt="Make Prono Great Again"
         className="absolute inset-0 hidden h-full w-full object-cover object-center sm:block"
         draggable={false}
+        fetchPriority="high"
       />
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
