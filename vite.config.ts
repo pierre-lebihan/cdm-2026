@@ -69,7 +69,7 @@ export default defineConfig({
       ],
       manifest: {
         lang: 'fr',
-        short_name: 'Make Prono',
+        short_name: 'MPGA',
         name: 'Make Prono Great Again',
         icons: [
           {
