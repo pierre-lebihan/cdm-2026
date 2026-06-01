@@ -98,7 +98,7 @@ function UserWinnerStatus({
   const finalWinnerKnown =
     finalWinnerTeam !== null && finalWinnerTeam !== undefined
   const isCorrectWinner = finalWinnerKnown && finalWinnerTeam === team.id
-  const isEliminated = team.elimination === true
+  const isEliminated = team.elimination === true && !isCorrectWinner
   const potentialPoints = getPotentialWinnerPoints(team)
   const revealTeam = isOwn || isEliminated || finalWinnerKnown
   const title = isCorrectWinner
@@ -109,7 +109,13 @@ function UserWinnerStatus({
         ? 'Son vainqueur final est éliminé : 0 point'
         : `Ce joueur peut gagner ${formatWinnerPoints(potentialPoints)} points`
   const description = revealTeam
-    ? `${team.name} ${isEliminated ? 'est éliminé.' : 'est encore en course.'}`
+    ? `${team.name} ${
+        isCorrectWinner
+          ? 'a gagné la compétition.'
+          : isEliminated
+            ? 'est éliminé.'
+            : 'est encore en course.'
+      }`
     : 'Son choix reste masqué tant que cette équipe est encore en course.'
 
   return (

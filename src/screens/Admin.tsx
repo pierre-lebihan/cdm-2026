@@ -314,6 +314,54 @@ function formatPhaseAdmin(match: NormalizedMatch): string {
   return `${phaseLabel} · ${betLabel}`
 }
 
+function AdminTeamEliminationRow({
+  team,
+  finalWinnerTeam,
+  onToggle,
+}: {
+  team: NormalizedTeam
+  finalWinnerTeam: string | null | undefined
+  onToggle: (team: NormalizedTeam, eliminated: boolean) => Promise<void>
+}) {
+  const isFinalWinner = isFinalWinnerTeam(team, finalWinnerTeam)
+  const isEliminated = team.elimination === true && !isFinalWinner
+
+  return (
+    <div className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+      <Flag
+        country={team.code}
+        className={`h-8 w-8 rounded object-contain ${
+          isEliminated ? 'opacity-40 grayscale' : ''
+        }`}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="m-0 text-sm font-bold text-navy">{team.name}</p>
+        <p className="m-0 text-xs text-gray-500">
+          {isFinalWinner
+            ? 'Vainqueur officiel'
+            : isEliminated
+              ? 'Éliminée'
+              : 'Encore en course'}
+        </p>
+      </div>
+      <button
+        type="button"
+        className={`text-xs font-semibold py-1.5 px-3 rounded-full border transition-colors ${
+          isFinalWinner
+            ? 'border-gray-200 text-gray-400 bg-gray-100 cursor-not-allowed'
+            : isEliminated
+              ? 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
+              : 'border-red-200 text-red-500 bg-white hover:bg-red-50'
+        }`}
+        disabled={isFinalWinner}
+        onClick={() => onToggle(team, !isEliminated)}
+      >
+        {isFinalWinner ? 'Protégée' : isEliminated ? 'Remettre' : 'Éliminer'}
+      </button>
+    </div>
+  )
+}
+
 const Admin = () => {
   const { user, profile, loading: authLoading } = useAuth()
   const isAdmin = useIsUserAdmin()
@@ -850,36 +898,12 @@ const Admin = () => {
           </p>
           <div className="flex flex-col divide-y divide-gray-100">
             {teams.map((team) => (
-              <div
+              <AdminTeamEliminationRow
                 key={team.id}
-                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
-              >
-                <Flag
-                  country={team.code}
-                  className={`h-8 w-8 rounded object-contain ${
-                    team.elimination ? 'opacity-40 grayscale' : ''
-                  }`}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="m-0 text-sm font-bold text-navy">{team.name}</p>
-                  <p className="m-0 text-xs text-gray-500">
-                    {team.elimination ? 'Éliminée' : 'Encore en course'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className={`text-xs font-semibold py-1.5 px-3 rounded-full border transition-colors ${
-                    team.elimination
-                      ? 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
-                      : 'border-red-200 text-red-500 bg-white hover:bg-red-50'
-                  }`}
-                  onClick={() =>
-                    handleTeamEliminationChange(team, !team.elimination)
-                  }
-                >
-                  {team.elimination ? 'Remettre' : 'Éliminer'}
-                </button>
-              </div>
+                team={team}
+                finalWinnerTeam={activeCompetition?.final_winner_team}
+                onToggle={handleTeamEliminationChange}
+              />
             ))}
           </div>
         </div>

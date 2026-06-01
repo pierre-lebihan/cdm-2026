@@ -5,6 +5,7 @@ import forgotBetImgUrl from '../../../assets/icons/ForgotBet.png'
 import imgUrl from '../../../assets/icons/mask6.png'
 import { useOpponents } from '../../../hooks/opponents'
 import { useTeams, type NormalizedTeam } from '../../../hooks/teams'
+import { useCompetitionData } from '../../../hooks/competition'
 import OwnRank from './OwnRank'
 import { useNavigate } from 'react-router-dom'
 import Flag from 'components/Flag'
@@ -26,12 +27,17 @@ interface GroupRankingProps {
 function shouldHideOpponentWinner(
   isOwn: boolean,
   team: NormalizedTeam | null,
+  finalWinnerTeam: string | null | undefined,
 ): boolean {
   if (isOwn) {
     return false
   }
 
   if (!team) {
+    return false
+  }
+
+  if (team.id === finalWinnerTeam) {
     return false
   }
 
@@ -47,6 +53,7 @@ const GroupRanking = ({
   const uid = user?.id
   const opponents = useOpponents(memberIds)
   const navigate = useNavigate()
+  const competitionData = useCompetitionData()
 
   const opponentsUsed = opponentsProvided || opponents
 
@@ -70,7 +77,13 @@ const GroupRanking = ({
             : null
           const isLast = index === sortedOpponents.length - 1
           const isOwn = opponent.id === uid
-          const hideWinner = shouldHideOpponentWinner(isOwn, team ?? null)
+          const isFinalWinner =
+            team != null && team.id === competitionData?.final_winner_team
+          const hideWinner = shouldHideOpponentWinner(
+            isOwn,
+            team ?? null,
+            competitionData?.final_winner_team,
+          )
 
           return (
             <div
@@ -119,6 +132,12 @@ const GroupRanking = ({
                         alt="Mystère"
                       />
                     </Tooltip>
+                  ) : isFinalWinner ? (
+                    <Flag
+                      tooltipText={'Vainqueur officiel : ' + team.name}
+                      country={team.code}
+                      style={{ width: 28, height: 28 }}
+                    />
                   ) : team.elimination ? (
                     <Flag
                       tooltipText={'Éliminé : ' + team.name}

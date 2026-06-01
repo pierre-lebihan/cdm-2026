@@ -60,6 +60,7 @@ interface FinalWinnerReminderProps {
 }
 
 interface FinalWinnerAliveReminderProps {
+  isOfficialWinner: boolean
   selectedTeam: NormalizedTeam
 }
 
@@ -150,12 +151,19 @@ const FinalWinnerReminder = ({
 }
 
 const FinalWinnerAliveReminder = ({
+  isOfficialWinner,
   selectedTeam,
 }: FinalWinnerAliveReminderProps) => {
   const formattedPoints = formatPotentialPoints(selectedTeam.winOdd)
   const potentialGain = formattedPoints
     ? `+${formattedPoints} pts`
     : 'le bonus vainqueur final'
+  const title = isOfficialWinner
+    ? 'Ton vainqueur a gagné'
+    : 'Ton vainqueur est toujours en course'
+  const description = isOfficialWinner
+    ? `${selectedTeam.name} a gagné et ton bonus vainqueur final est validé.`
+    : `${selectedTeam.name} peut encore te rapporter ${potentialGain} si elle va au bout.`
 
   return (
     <div className="px-4 pt-2">
@@ -169,11 +177,10 @@ const FinalWinnerAliveReminder = ({
         </span>
         <div className="min-w-0 flex-1 text-left">
           <p className="m-0 text-sm font-bold leading-snug text-navy">
-            Ton vainqueur est toujours en course
+            {title}
           </p>
           <p className="m-0 text-xs leading-snug text-gray-500">
-            {selectedTeam.name} peut encore te rapporter {potentialGain} si elle
-            va au bout.
+            {description}
           </p>
         </div>
       </div>
@@ -276,8 +283,12 @@ const Matches = () => {
 
   const selectedWinnerTeam = findTeamById(teams, selectedWinner)
   const hasSelectedWinner = selectedWinner != null
+  const selectedWinnerIsOfficialWinner =
+    selectedWinnerTeam != null &&
+    selectedWinnerTeam.id === competitionData?.final_winner_team
   const selectedWinnerStillAlive =
-    selectedWinnerTeam != null && selectedWinnerTeam.elimination !== true
+    selectedWinnerTeam != null &&
+    (selectedWinnerTeam.elimination !== true || selectedWinnerIsOfficialWinner)
 
   const showFinalWinnerAliveReminder =
     isConnected &&
@@ -338,7 +349,10 @@ const Matches = () => {
       )}
 
       {showFinalWinnerAliveReminder && selectedWinnerTeam && (
-        <FinalWinnerAliveReminder selectedTeam={selectedWinnerTeam} />
+        <FinalWinnerAliveReminder
+          isOfficialWinner={selectedWinnerIsOfficialWinner}
+          selectedTeam={selectedWinnerTeam}
+        />
       )}
 
       {showAiButton && (
