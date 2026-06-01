@@ -16,6 +16,7 @@ import Loader from 'components/Loader'
 import { formatTournamentPhaseLabel } from '../lib/matchEnums'
 
 type AdminTab = 'scores' | 'winner' | 'eliminations'
+type AdminMatchFilter = 'all' | 'pending' | 'finished'
 type AdminPlayoffWinner = 'A' | 'B' | null
 
 type MatchScoreEdit = {
@@ -101,6 +102,32 @@ function jsonNumberField(value: unknown, key: string): number {
   }
 
   return 0
+}
+
+function getAdminMatchTimestamp(match: NormalizedMatch): number {
+  if (!match.dateTime) {
+    return 0
+  }
+
+  return match.dateTime.seconds
+}
+
+function compareAdminMatchesNewestFirst(
+  a: NormalizedMatch,
+  b: NormalizedMatch,
+): number {
+  return getAdminMatchTimestamp(b) - getAdminMatchTimestamp(a)
+}
+
+function sortAdminFilteredMatches(
+  matches: NormalizedMatch[],
+  filter: AdminMatchFilter,
+): NormalizedMatch[] {
+  if (filter !== 'finished') {
+    return matches
+  }
+
+  return [...matches].sort(compareAdminMatchesNewestFirst)
 }
 
 function AdminMatchRow({
@@ -386,9 +413,7 @@ const Admin = () => {
   const [adminTab, setAdminTab] = useState<AdminTab>('scores')
   const [finalWinnerTeam, setFinalWinnerTeam] = useState('')
   const [savingFinalWinner, setSavingFinalWinner] = useState(false)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'finished'>(
-    'pending',
-  )
+  const [filter, setFilter] = useState<AdminMatchFilter>('pending')
   const [recalculating, setRecalculating] = useState(false)
   const [refreshingOdds, setRefreshingOdds] = useState(false)
 
@@ -638,11 +663,12 @@ const Admin = () => {
     return <Loader />
   }
 
-  const filteredMatches = matches.filter((m) => {
+  const filteredMatchesRaw = matches.filter((m) => {
     if (filter === 'pending') return !m.finished
     if (filter === 'finished') return m.finished
     return true
   })
+  const filteredMatches = sortAdminFilteredMatches(filteredMatchesRaw, filter)
 
   const groupedByPhase = filteredMatches.reduce<
     Record<string, NormalizedMatch[]>
