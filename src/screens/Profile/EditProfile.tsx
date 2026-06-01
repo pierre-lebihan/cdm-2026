@@ -2,8 +2,9 @@ import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Camera, Check, Pencil, X } from 'lucide-react'
 import { useSaveProfile, useUploadAvatar } from '../../hooks/user'
+import { compressAvatarImage } from '../../lib/imageCompression'
 
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024
+const MAX_INPUT_BYTES = 15 * 1024 * 1024
 
 function getInitials(name: string): string {
   if (!name) return '?'
@@ -74,14 +75,15 @@ const EditProfile = ({
       return
     }
 
-    if (file.size > MAX_AVATAR_BYTES) {
-      toast.error('Image trop lourde (2 Mo max)')
+    if (file.size > MAX_INPUT_BYTES) {
+      toast.error('Image trop lourde (15 Mo max)')
       return
     }
 
     setUploading(true)
     try {
-      const url = await uploadAvatar(file)
+      const compressed = await compressAvatarImage(file)
+      const url = await uploadAvatar(compressed)
       await saveProfile({ avatar_url: url })
       toast.success('Photo mise à jour')
     } catch (err) {
@@ -127,7 +129,9 @@ const EditProfile = ({
       </div>
 
       {uploading && (
-        <p className="text-xs text-gray-400 m-0 mb-2">Envoi de la photo…</p>
+        <p className="text-xs text-gray-400 m-0 mb-2">
+          Compression et envoi de la photo…
+        </p>
       )}
 
       {editingName ? (
