@@ -1,6 +1,6 @@
 import { Menu, X } from 'lucide-react'
 import { Suspense, lazy, useState } from 'react'
-import { Route, Routes, Link, useLocation } from 'react-router-dom'
+import { Route, Routes, Link, Navigate, useLocation } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from '../../contexts/AuthContext'
 import { useIsUserConnected } from '../../hooks/user'
@@ -79,7 +79,6 @@ const App = () => {
             <Route path="/rules" element={<RulesPage />} />
             <Route path="/rules/algorithm" element={<AlgorithmPage />} />
             <Route path="/faq" element={<FAQPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route
               path="/auth/set-password"
               element={<AuthPasswordPage mode="setup" />}
@@ -97,10 +96,16 @@ const App = () => {
                 <Route path="/groups" element={<GroupsPage />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/admin" element={<AdminPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
               </>
             )}
 
-            {!loading && <Route path="*" element={<NotFoundPage />} />}
+            {!loading && !signedIn && (
+              <Route path="*" element={<Navigate to="/" replace />} />
+            )}
+            {!loading && signedIn && (
+              <Route path="*" element={<NotFoundPage />} />
+            )}
           </Routes>
         </Suspense>
       </main>

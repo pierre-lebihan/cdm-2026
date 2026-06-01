@@ -63,7 +63,7 @@ const menuItems = [
     label: 'Analytics',
     icon: BarChart3,
     path: '/analytics',
-    auth: false,
+    auth: true,
     admin: false,
   },
   {
