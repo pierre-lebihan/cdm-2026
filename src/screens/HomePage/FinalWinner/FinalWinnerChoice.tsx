@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, useEffect } from 'react'
 import find from 'lodash/find'
 import { ChevronDown, Search } from 'lucide-react'
 import Flag from '../../../components/Flag'
-import { useTeams } from '../../../hooks/teams'
+import { getFinalWinnerEligibleTeams, useTeams } from '../../../hooks/teams'
 
 interface FinalWinnerChoiceProps {
   userTeam: string | null | undefined
@@ -16,17 +16,20 @@ const FinalWinnerChoice = ({
   onTeamSelect,
 }: FinalWinnerChoiceProps) => {
   const teams = useTeams()
-  const selectedTeam = find(teams, (t) => t.id === userTeam)
+  const eligibleTeams = useMemo(() => {
+    return getFinalWinnerEligibleTeams(teams)
+  }, [teams])
+  const selectedTeam = find(eligibleTeams, (t) => t.id === userTeam)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const filteredTeams = useMemo(() => {
-    if (!search) return teams
+    if (!search) return eligibleTeams
     const q = search.toLowerCase()
-    return teams.filter((t) => t.name.toLowerCase().includes(q))
-  }, [teams, search])
+    return eligibleTeams.filter((t) => t.name.toLowerCase().includes(q))
+  }, [eligibleTeams, search])
 
   useEffect(() => {
     if (!open) return
@@ -69,7 +72,9 @@ const FinalWinnerChoice = ({
           onClick={() => setOpen(!open)}
           className="w-full flex items-center justify-between py-2.5 px-3.5 border-[1.5px] border-gray-200 rounded-xl text-sm bg-white transition-all hover:border-gray-300 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span className={selectedTeam ? 'text-navy font-medium' : 'text-gray-400'}>
+          <span
+            className={selectedTeam ? 'text-navy font-medium' : 'text-gray-400'}
+          >
             {selectedTeam ? selectedTeam.name : 'Sélectionner une équipe'}
           </span>
           <ChevronDown
@@ -111,7 +116,9 @@ const FinalWinnerChoice = ({
                     <span>{team.name}</span>
                   </div>
                   {team.winOdd && (
-                    <span className={`text-xs ${team.id === userTeam ? 'text-indigo-600' : 'text-gray-400'}`}>
+                    <span
+                      className={`text-xs ${team.id === userTeam ? 'text-indigo-600' : 'text-gray-400'}`}
+                    >
                       {team.winOdd}
                     </span>
                   )}

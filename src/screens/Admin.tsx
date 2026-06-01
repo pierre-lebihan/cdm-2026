@@ -6,7 +6,11 @@ import { useAuth } from '../contexts/AuthContext'
 import { useIsUserAdmin } from '../hooks/user'
 import { useMatches, type NormalizedMatch } from '../hooks/matches'
 import { useCompetition } from '../contexts/CompetitionContext'
-import { useTeams, type NormalizedTeam } from '../hooks/teams'
+import {
+  getFinalWinnerEligibleTeams,
+  useTeams,
+  type NormalizedTeam,
+} from '../hooks/teams'
 import Flag from 'components/Flag'
 import Loader from 'components/Loader'
 import { formatTournamentPhaseLabel } from '../lib/matchEnums'
@@ -70,6 +74,17 @@ function formatAdminPoints(points: number | null | undefined): string {
   return new Intl.NumberFormat('fr-FR', {
     maximumFractionDigits: 0,
   }).format(Math.round(points))
+}
+
+function isFinalWinnerTeam(
+  team: NormalizedTeam,
+  finalWinnerTeam: string | null | undefined,
+): boolean {
+  if (!finalWinnerTeam) {
+    return false
+  }
+
+  return team.id === finalWinnerTeam
 }
 
 function jsonNumberField(value: unknown, key: string): number {
@@ -439,20 +454,35 @@ const Admin = () => {
       .from('competitions')
       .update({ final_winner_team: winnerValue })
       .eq('id', activeCompetitionId)
-    setSavingFinalWinner(false)
 
     if (error) {
+      setSavingFinalWinner(false)
       toast.error(`Erreur: ${error.message}`)
       return
     }
 
+    if (winnerValue !== null) {
+      const { error: teamError } = await supabase
+        .from('teams')
+        .update({ elimination: false })
+        .eq('id', winnerValue)
+
+      if (teamError) {
+        setSavingFinalWinner(false)
+        toast.error(`Erreur: ${teamError.message}`)
+        return
+      }
+    }
+
+    setSavingFinalWinner(false)
     await refreshCompetitions()
+    bumpTeamsList()
     toast.success(
       winnerValue
         ? 'Vainqueur final mis à jour — bonus recalculés'
         : 'Vainqueur final purgé — bonus retirés',
     )
-  }, [activeCompetitionId, finalWinnerTeam, refreshCompetitions])
+  }, [activeCompetitionId, finalWinnerTeam, refreshCompetitions, bumpTeamsList])
 
   const handleClearFinalWinner = useCallback(async () => {
     if (finalWinnerTeam === '') return
@@ -476,6 +506,14 @@ const Admin = () => {
 
   const handleTeamEliminationChange = useCallback(
     async (team: NormalizedTeam, eliminated: boolean) => {
+      if (
+        eliminated &&
+        isFinalWinnerTeam(team, activeCompetition?.final_winner_team)
+      ) {
+        toast.error("Impossible d'éliminer le vainqueur officiel")
+        return
+      }
+
       const { error } = await supabase
         .from('teams')
         .update({ elimination: eliminated })
@@ -493,7 +531,7 @@ const Admin = () => {
       )
       bumpTeamsList()
     },
-    [bumpTeamsList],
+    [activeCompetition?.final_winner_team, bumpTeamsList],
   )
 
   const handleRecalculateAllScores = useCallback(async () => {
@@ -567,7 +605,8 @@ const Admin = () => {
     return acc
   }, {})
 
-  const selectedFinalWinnerTeam = teams.find((team) => {
+  const eligibleFinalWinnerTeams = getFinalWinnerEligibleTeams(teams)
+  const selectedFinalWinnerTeam = eligibleFinalWinnerTeams.find((team) => {
     return team.id === finalWinnerTeam
   })
 
@@ -749,7 +788,7 @@ const Admin = () => {
               onChange={(e) => setFinalWinnerTeam(e.target.value)}
             >
               <option value="">Aucun vainqueur officiel</option>
-              {teams.map((team) => (
+              {eligibleFinalWinnerTeams.map((team) => (
                 <option key={team.id} value={team.id}>
                   {team.name} · {formatAdminPoints(team.winOdd)} pts
                 </option>

@@ -28,6 +28,30 @@ function normalizeTeam(row: TeamRow | null): NormalizedTeam | null {
   }
 }
 
+function isPlaceholderTeam(team: NormalizedTeam): boolean {
+  const normalizedName = team.name.trim().toLowerCase()
+
+  if (team.code === 'tbd') {
+    return true
+  }
+
+  return normalizedName === 'à définir' || normalizedName === 'a definir'
+}
+
+export function getFinalWinnerEligibleTeams(
+  teams: NormalizedTeam[],
+): NormalizedTeam[] {
+  const eligibleTeams: NormalizedTeam[] = []
+
+  for (const team of teams) {
+    if (!isPlaceholderTeam(team)) {
+      eligibleTeams.push(team)
+    }
+  }
+
+  return eligibleTeams
+}
+
 export function useTeam(id: string | null | undefined): NormalizedTeam | null {
   const [team, setTeam] = useState<NormalizedTeam | null>(null)
 
