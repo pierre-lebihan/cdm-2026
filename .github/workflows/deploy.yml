@@ -47,32 +47,6 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
-      - name: Empty avatars storage bucket
-        run: |
-          set -euo pipefail
-
-          storage_admin_key="$(
-            curl --fail-with-body --silent --show-error \
-              "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_ID}/api-keys?reveal=true" \
-              --header "Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}" \
-              | jq -r '[.[] | select((.type == "legacy" and .name == "service_role") or .type == "secret") | .api_key | select(. != null and . != "")][0] // empty'
-          )"
-
-          if [ -z "$storage_admin_key" ]; then
-            echo "Unable to retrieve a Supabase secret or service_role key" >&2
-            exit 1
-          fi
-
-          echo "::add-mask::$storage_admin_key"
-
-          curl --fail-with-body --silent --show-error \
-            --request POST \
-            "https://${SUPABASE_PROJECT_ID}.supabase.co/storage/v1/bucket/avatars/empty" \
-            --header "apikey: ${storage_admin_key}" \
-            --header "Authorization: Bearer ${storage_admin_key}"
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
       - run: supabase functions deploy update-results --no-verify-jwt
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
