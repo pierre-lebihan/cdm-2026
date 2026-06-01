@@ -5,8 +5,6 @@ DELETE FROM public.group_members;
 DELETE FROM public.groups;
 DELETE FROM public.bets;
 DELETE FROM public.competition_profiles;
-DELETE FROM storage.objects
-WHERE bucket_id = 'avatars';
 DELETE FROM public.profiles;
 DELETE FROM auth.users;
 
