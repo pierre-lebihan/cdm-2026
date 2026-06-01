@@ -107,7 +107,7 @@ function UserWinnerStatus({
       ? "Son vainqueur final n'a pas gagné : 0 point"
       : isEliminated
         ? 'Son vainqueur final est éliminé : 0 point'
-        : `Ce joueur peut gagner ${formatWinnerPoints(potentialPoints)} points`
+        : `Ce joueur peut encore gagner des points via le vainqueur final`
   const description = revealTeam
     ? `${team.name} ${
         isCorrectWinner
