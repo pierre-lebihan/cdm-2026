@@ -82,3 +82,18 @@ export function isIosDevice(): boolean {
 
   return /iPhone|iPad|iPod/.test(userAgent)
 }
+
+export function isAndroidDevice(): boolean {
+  return getUserAgent().includes('Android')
+}
+
+// On Android, an in-app webview can hand the page off to Chrome via an
+// `intent://` URL. This lets us escape the webview automatically so the Google
+// OAuth flow can run in a real browser. iOS offers no equivalent API.
+export function openInChromeAndroid(): void {
+  const { href, host, pathname, search, hash } = window.location
+  const fallback = encodeURIComponent(href)
+  const intentUrl = `intent://${host}${pathname}${search}${hash}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallback};end`
+
+  window.location.href = intentUrl
+}

@@ -1,14 +1,6 @@
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Copy,
-  KeyRound,
-  Mail,
-  RotateCcw,
-  TriangleAlert,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, KeyRound, Mail, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import {
   useCreatePasswordSetupAccount,
   useEmailExists,
@@ -18,9 +10,9 @@ import {
 } from '../../hooks/user'
 import { useCompetitionDisplayName } from '../../hooks/competition'
 import {
-  getInAppBrowserName,
+  isAndroidDevice,
   isInAppBrowser,
-  isIosDevice,
+  openInChromeAndroid,
 } from '../../lib/inAppBrowser'
 
 type ConnectionStep = 'email' | 'display_name' | 'password' | 'created'
@@ -96,26 +88,11 @@ function reloadCurrentPage() {
   window.location.reload()
 }
 
-async function copyCurrentUrl(): Promise<void> {
-  await navigator.clipboard.writeText(window.location.href)
-}
-
-function getBrowserHint(): string {
-  if (isIosDevice()) {
-    return 'Touche le menu « ··· » en haut à droite, puis « Ouvrir dans Safari ».'
-  }
-
-  return 'Touche le menu « ⋮ » en haut à droite, puis « Ouvrir dans Chrome ».'
-}
-
-function getInAppBrowserLabel(): string {
-  const name = getInAppBrowserName()
-
-  if (name) {
-    return `le navigateur intégré de ${name}`
-  }
-
-  return 'un navigateur intégré'
+function showOpenInSafariToast(): void {
+  toast(
+    'Pour continuer avec Google, ouvre cette page dans Safari : touche le menu « ··· » en haut à droite, puis « Ouvrir dans Safari ».',
+    { duration: 7000, icon: '🌐' },
+  )
 }
 
 const ConnectionModal = () => {
@@ -135,18 +112,19 @@ const ConnectionModal = () => {
   const [resetSubmitting, setResetSubmitting] = useState(false)
   const [resetSent, setResetSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [linkCopied, setLinkCopied] = useState(false)
 
-  const inAppBrowser = isInAppBrowser()
-
-  async function handleCopyLink() {
-    try {
-      await copyCurrentUrl()
-      setLinkCopied(true)
-      window.setTimeout(() => setLinkCopied(false), 2500)
-    } catch {
-      setError("Impossible de copier le lien. Copie l'adresse manuellement.")
+  function handleGoogleClick() {
+    if (!isInAppBrowser()) {
+      authenticateWithGoogle()
+      return
     }
+
+    if (isAndroidDevice()) {
+      openInChromeAndroid()
+      return
+    }
+
+    showOpenInSafariToast()
   }
 
   async function handleEmailSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -252,34 +230,10 @@ const ConnectionModal = () => {
           : `Connectez-vous pour pronostiquer les matchs de ${competitionLabel}.`}
       </p>
 
-      {inAppBrowser ? (
-        <div className="text-left bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex flex-col gap-2">
-          <p className="m-0 flex items-start gap-2 text-sm font-semibold text-amber-900">
-            <TriangleAlert size={18} className="shrink-0 mt-0.5" />
-            <span>
-              Tu utilises {getInAppBrowserLabel()}. La connexion Google n&apos;y
-              fonctionne pas.
-            </span>
-          </p>
-          <p className="m-0 text-xs text-amber-800">
-            Ouvre cette page dans ton navigateur : {getBrowserHint()} Tu peux
-            aussi te connecter par email juste en dessous.
-          </p>
-          <button
-            type="button"
-            className="self-start inline-flex items-center gap-2 py-2 px-3 rounded-lg bg-amber-600 text-white text-xs font-semibold transition-all hover:opacity-90"
-            onClick={handleCopyLink}
-          >
-            {linkCopied ? <Check size={14} /> : <Copy size={14} />}
-            <span>{linkCopied ? 'Lien copié !' : 'Copier le lien'}</span>
-          </button>
-        </div>
-      ) : null}
-
       <button
         type="button"
         className="flex items-center justify-center gap-2.5 py-3 px-6 rounded-xl border-[1.5px] border-gray-200 bg-white text-sm font-semibold text-navy-dark cursor-pointer transition-all hover:border-navy hover:shadow-lg mx-auto"
-        onClick={authenticateWithGoogle}
+        onClick={handleGoogleClick}
       >
         <GoogleIcon />
         <span>Continuer avec Google</span>
