@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Tables } from '../lib/database.types'
+import { captureEvent } from '../lib/posthog'
 
 type GroupRow = Tables<'groups'>
 
@@ -26,17 +27,24 @@ export function useCreateGroup() {
     })
 
     if (error) {
+      captureEvent('group_create_failed', {
+        name_length: group.name.length,
+      })
       toast.error('Erreur lors de la création du groupe')
       return
     }
 
     await applyInGroup(joinKey)
 
+    captureEvent('group_created', {
+      name_length: group.name.length,
+      join_key_length: joinKey.length,
+    })
     toast.success(`Groupe ${group.name} créé avec le code ${joinKey}.`)
   }
 }
 
-export function useApplyInGroup() {
+export function useApplyInGroup(): [(joinKey: string) => Promise<void>] {
   const { user } = useAuth()
 
   const applyFn = useCallback(
@@ -47,6 +55,9 @@ export function useApplyInGroup() {
         .eq('join_key', joinKey)
 
       if (!groups?.length) {
+        captureEvent('group_join_code_not_found', {
+          join_key_length: joinKey.length,
+        })
         toast.error(`Aucune tribu avec le code ${joinKey} n'existe`)
         return
       }
@@ -61,6 +72,9 @@ export function useApplyInGroup() {
         .maybeSingle()
 
       if (existing) {
+        captureEvent('group_join_duplicate', {
+          group_id: group.id,
+        })
         toast(`Vous appartenez déjà à la tribu ${group.name}`)
         return
       }
@@ -72,16 +86,22 @@ export function useApplyInGroup() {
       })
 
       if (error) {
+        captureEvent('group_join_request_failed', {
+          group_id: group.id,
+        })
         toast.error("Erreur lors de l'inscription")
         return
       }
 
+      captureEvent('group_join_requested', {
+        group_id: group.id,
+      })
       toast.success(`Inscription dans la tribu ${group.name} !`)
     },
     [user?.id],
   )
 
-  return [applyFn] as const
+  return [applyFn]
 }
 
 function normalizeGroupsWithMembers(
@@ -100,11 +120,11 @@ function normalizeGroupsWithMembers(
     return {
       ...group,
       memberIds: membersList
-        .filter((m: any) => m.status === 'member')
-        .map((m: any) => m.user_id),
+        .filter((m) => m.status === 'member')
+        .map((m) => m.user_id),
       awaitingIds: membersList
-        .filter((m: any) => m.status === 'awaiting')
-        .map((m: any) => m.user_id),
+        .filter((m) => m.status === 'awaiting')
+        .map((m) => m.user_id),
     }
   })
 }
@@ -169,10 +189,12 @@ async function fetchGroupsForUser(
 
   const { data: groupsWithMembers, error: groupsError } = await supabase
     .from('groups')
-    .select(`
+    .select(
+      `
       *,
       group_members(user_id, status)
-    `)
+    `,
+    )
     .in('id', groupIds)
 
   if (groupsError) {
@@ -194,10 +216,18 @@ export function useRenameGroup() {
       .eq('id', groupId)
 
     if (error) {
+      captureEvent('group_rename_failed', {
+        group_id: groupId,
+        name_length: name.length,
+      })
       toast.error('Erreur lors du renommage de la tribu')
       return false
     }
 
+    captureEvent('group_renamed', {
+      group_id: groupId,
+      name_length: name.length,
+    })
     toast.success('Tribu renommée')
     return true
   }, [])
@@ -211,10 +241,16 @@ export function useValidApply(groupId: string, userId: string) {
     })
 
     if (error) {
+      captureEvent('group_apply_validation_failed', {
+        group_id: groupId,
+      })
       toast.error(error.message)
       return
     }
 
+    captureEvent('group_apply_validated', {
+      group_id: groupId,
+    })
     toast.success('Joueur validé')
   }, [groupId, userId])
 }

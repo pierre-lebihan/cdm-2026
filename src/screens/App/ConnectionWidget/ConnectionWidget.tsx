@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useIsUserConnected } from '../../../hooks/user'
 import ConnectionModal from '../ConnectionModal'
 import User from './User'
+import { captureEvent } from '../../../lib/posthog'
 
 function handleDialogBackdropClick(
   e: React.MouseEvent<HTMLDialogElement>,
@@ -35,7 +36,19 @@ const ConnectionWidget = () => {
   }, [modalOpened])
 
   const closeModalRef = useRef<() => void>(() => {})
-  closeModalRef.current = () => setModalOpened(false)
+  closeModalRef.current = () => {
+    captureEvent('auth_modal_closed')
+    setModalOpened(false)
+  }
+
+  const handleRequestCloseModal = () => {
+    setModalOpened(false)
+  }
+
+  const handleOpenModal = () => {
+    captureEvent('auth_modal_opened')
+    setModalOpened(true)
+  }
 
   return (
     <>
@@ -44,7 +57,7 @@ const ConnectionWidget = () => {
           ref={dialogRef}
           className="fixed inset-0 m-auto w-[90vw] max-w-sm rounded-2xl bg-white p-0 shadow-xl backdrop:bg-black/40"
           onClose={() => closeModalRef.current?.()}
-          onClick={(e) => handleDialogBackdropClick(e, () => closeModalRef.current?.())}
+          onClick={(e) => handleDialogBackdropClick(e, handleRequestCloseModal)}
         >
           <ConnectionModal />
         </dialog>,
@@ -57,7 +70,7 @@ const ConnectionWidget = () => {
         <button
           type="button"
           className="inline-flex items-center gap-2 font-semibold rounded-full border-none cursor-pointer transition-all duration-150 bg-navy text-white py-1.5 px-4 text-xs hover:bg-navy-light"
-          onClick={() => setModalOpened(true)}
+          onClick={handleOpenModal}
         >
           Connexion
         </button>

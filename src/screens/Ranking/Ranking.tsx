@@ -5,6 +5,7 @@ import { useGroupsForUserMember } from '../../hooks/groups'
 import GroupRanking from './GroupRanking/GroupRanking'
 import Loader from '../../components/Loader'
 import { useAllOpponents } from '../../hooks/opponents'
+import { captureEvent } from '../../lib/posthog'
 
 const Ranking = () => {
   const navigate = useNavigate()
@@ -24,6 +25,10 @@ const Ranking = () => {
 
   const groups = useGroupsForUserMember()
   const handleTabChange = (value: number) => {
+    captureEvent('ranking_tab_changed', {
+      tab_index: value,
+      scope: value === 0 ? 'global' : 'group',
+    })
     setSelectedTab(value)
     navigate(`${location.pathname}?tab=${value}`)
   }

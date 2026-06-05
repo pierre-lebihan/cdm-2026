@@ -14,6 +14,7 @@ import {
   isInAppBrowser,
   openInChromeAndroid,
 } from '../../lib/inAppBrowser'
+import { captureEvent } from '../../lib/posthog'
 
 type ConnectionStep = 'email' | 'display_name' | 'password' | 'created'
 
@@ -114,6 +115,11 @@ const ConnectionModal = () => {
   const [error, setError] = useState<string | null>(null)
 
   function handleGoogleClick() {
+    captureEvent('auth_google_button_clicked', {
+      in_app_browser: isInAppBrowser(),
+      android: isAndroidDevice(),
+    })
+
     if (!isInAppBrowser()) {
       authenticateWithGoogle()
       return
@@ -142,6 +148,9 @@ const ConnectionModal = () => {
     setSubmitting(true)
     try {
       const exists = await checkEmailExists(nextEmail)
+      captureEvent('auth_email_checked', {
+        account_exists: exists,
+      })
       if (exists) {
         setStep('password')
       } else {
@@ -170,6 +179,7 @@ const ConnectionModal = () => {
     setSubmitting(true)
     try {
       await createPasswordSetupAccount(email, nextDisplayName)
+      captureEvent('auth_password_setup_email_sent')
       setStep('created')
     } catch (err) {
       setError(getEmailSubmitError(err))
@@ -187,6 +197,7 @@ const ConnectionModal = () => {
     try {
       await authenticateWithPassword(email, password)
     } catch (err) {
+      captureEvent('auth_password_sign_in_failed')
       setError(getLoginError(err))
     } finally {
       setPasswordSubmitting(false)
@@ -200,6 +211,7 @@ const ConnectionModal = () => {
     setResetSubmitting(true)
     try {
       await sendPasswordReset(email)
+      captureEvent('auth_password_reset_email_sent')
       setResetSent(true)
     } catch (err) {
       setError(
@@ -213,6 +225,9 @@ const ConnectionModal = () => {
   }
 
   function handleBackToEmail() {
+    captureEvent('auth_back_to_email_clicked', {
+      from_step: step,
+    })
     setStep('email')
     setPassword('')
     setDisplayName('')

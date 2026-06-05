@@ -5,6 +5,9 @@ declare const __APP_BUILD_ID__: string
 
 interface ImportMetaEnv {
   readonly VITE_ONESIGNAL_APP_ID?: string
+  readonly VITE_POSTHOG_HOST?: string
+  readonly VITE_POSTHOG_KEY?: string
+  readonly VITE_WEBSITE_URL?: string
 }
 
 interface ImportMeta {

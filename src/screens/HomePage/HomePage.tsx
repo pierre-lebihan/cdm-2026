@@ -21,6 +21,7 @@ import ConnectionModal from '../App/ConnectionModal'
 import OnboardingModal from '../App/OnboardingModal'
 import Mascot from '../../components/Mascot'
 import { MASCOT_LIST } from '../../lib/mascots'
+import { captureEvent } from '../../lib/posthog'
 
 const ONBOARDING_STORAGE_KEY = 'mpga-onboarding-seen'
 const FINAL_WINNER_ELEMENT_ID = 'final-winner'
@@ -184,6 +185,7 @@ const HomePageConnected = () => {
   }, [location.hash])
 
   const handleCloseOnboarding = () => {
+    captureEvent('onboarding_closed')
     setOnboardingOpen(false)
     try {
       window.localStorage.setItem(ONBOARDING_STORAGE_KEY, '1')
@@ -193,7 +195,16 @@ const HomePageConnected = () => {
   }
 
   const handleReplayOnboarding = () => {
+    captureEvent('onboarding_replay_clicked')
     setOnboardingOpen(true)
+  }
+
+  const handleShortcutClick = (path: string, label: string) => {
+    captureEvent('home_shortcut_clicked', {
+      path,
+      label,
+    })
+    navigate(path)
   }
 
   return (
@@ -245,7 +256,7 @@ const HomePageConnected = () => {
         <button
           type="button"
           className="flex-1 min-w-[140px] max-w-[200px] bg-white rounded-[14px] p-4 text-center shadow-card cursor-pointer transition-all border-none hover:shadow-card-hover hover:-translate-y-px"
-          onClick={() => navigate('/rules')}
+          onClick={() => handleShortcutClick('/rules', 'Règles')}
         >
           <div className="text-2xl mb-1.5">📋</div>
           <div className="text-xs font-semibold text-navy">Règles</div>
@@ -253,7 +264,7 @@ const HomePageConnected = () => {
         <button
           type="button"
           className="flex-1 min-w-[140px] max-w-[200px] bg-white rounded-[14px] p-4 text-center shadow-card cursor-pointer transition-all border-none hover:shadow-card-hover hover:-translate-y-px"
-          onClick={() => navigate('/matches')}
+          onClick={() => handleShortcutClick('/matches', 'Pronostics')}
         >
           <div className="text-2xl mb-1.5">⚽</div>
           <div className="text-xs font-semibold text-navy">Pronostics</div>
@@ -261,7 +272,7 @@ const HomePageConnected = () => {
         <button
           type="button"
           className="flex-1 min-w-[140px] max-w-[200px] bg-white rounded-[14px] p-4 text-center shadow-card cursor-pointer transition-all border-none hover:shadow-card-hover hover:-translate-y-px"
-          onClick={() => navigate('/ranking')}
+          onClick={() => handleShortcutClick('/ranking', 'Classement')}
         >
           <div className="text-2xl mb-1.5">🥇</div>
           <div className="text-xs font-semibold text-navy">Classement</div>
@@ -309,6 +320,16 @@ const HomePageGuest = () => {
     }
   }, [])
 
+  const handleOpenConnectionModal = () => {
+    captureEvent('guest_connection_modal_opened')
+    setModalOpen(true)
+  }
+
+  const handleCloseConnectionModal = () => {
+    captureEvent('guest_connection_modal_closed')
+    setModalOpen(false)
+  }
+
   return (
     <div
       className="relative w-full overflow-hidden"
@@ -353,7 +374,7 @@ const HomePageGuest = () => {
           <button
             type="button"
             className="py-3 px-8 rounded-xl bg-white text-navy font-semibold text-sm shadow-lg hover:bg-white/90 hover:-translate-y-px transition-all"
-            onClick={() => setModalOpen(true)}
+            onClick={handleOpenConnectionModal}
           >
             Connexion
           </button>
@@ -376,7 +397,7 @@ const HomePageGuest = () => {
         <dialog
           ref={dialogRef}
           className="fixed inset-0 m-auto w-[90vw] max-w-sm rounded-2xl bg-white p-0 shadow-xl backdrop:bg-black/40"
-          onClose={() => setModalOpen(false)}
+          onClose={handleCloseConnectionModal}
           onClick={(e) => {
             if (e.target === e.currentTarget) setModalOpen(false)
           }}

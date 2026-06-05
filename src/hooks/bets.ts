@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCompetition } from '../contexts/CompetitionContext'
 import type { BetOutcomeStatusEnum, Tables } from '../lib/database.types'
 import type { MatchPrediction } from '../lib/openrouter'
+import { captureEvent } from '../lib/posthog'
 
 type BetRow = Tables<'bets'>
 
@@ -105,9 +106,15 @@ export function useBetFromUser(
   return [bet, loading]
 }
 
-export function useBet(matchId: string | undefined): [
+export function useBet(
+  matchId: string | undefined,
+): [
   NormalizedBet | undefined,
-  (betData: { betTeamA: number; betTeamB: number; betPlayoffWinner?: 'A' | 'B' | null }) => Promise<void>,
+  (betData: {
+    betTeamA: number
+    betTeamB: number
+    betPlayoffWinner?: 'A' | 'B' | null
+  }) => Promise<void>,
   boolean,
 ] {
   const { user } = useAuth()
@@ -135,7 +142,11 @@ export function useBet(matchId: string | undefined): [
   }, [matchId, uid])
 
   const setBet = useCallback(
-    async (betData: { betTeamA: number; betTeamB: number; betPlayoffWinner?: 'A' | 'B' | null }) => {
+    async (betData: {
+      betTeamA: number
+      betTeamB: number
+      betPlayoffWinner?: 'A' | 'B' | null
+    }) => {
       if (!uid) return
       const id = `${matchId}_${uid}`
       const row = {
@@ -157,11 +168,22 @@ export function useBet(matchId: string | undefined): [
       const toastId = `bet-${matchId}`
       if (error) {
         console.error('Erreur upsert bet:', error)
+        captureEvent('bet_save_failed', {
+          match_id: matchId,
+          competition_id: activeCompetitionId,
+        })
         toast.error('Erreur lors de la sauvegarde du pronostic', {
           id: toastId,
         })
       } else if (data) {
         setBetState(data)
+        captureEvent('bet_saved', {
+          match_id: matchId,
+          competition_id: activeCompetitionId,
+          bet_team_a: betData.betTeamA,
+          bet_team_b: betData.betTeamB,
+          has_playoff_winner: betData.betPlayoffWinner != null,
+        })
         toast.success('Pronostic sauvegardé', { id: toastId })
       }
     },
@@ -188,7 +210,7 @@ export function useAllUserBets() {
       .eq('competition_id', activeCompetitionId)
       .then(({ data }) => {
         const ids = new Set(
-          (data ?? []).flatMap((b) => b.match_id ? [b.match_id] : [])
+          (data ?? []).flatMap((b) => (b.match_id ? [b.match_id] : [])),
         )
         setBettedMatchIds(ids)
       })
@@ -221,8 +243,17 @@ export async function saveBatchBets(
     .upsert(rows, { onConflict: 'id' })
 
   if (error) {
+    captureEvent('ai_batch_bets_save_failed', {
+      competition_id: competitionId,
+      predictions_count: rows.length,
+    })
     throw new Error('Erreur lors de la sauvegarde des pronostics')
   }
+
+  captureEvent('ai_batch_bets_saved', {
+    competition_id: competitionId,
+    predictions_count: rows.length,
+  })
 
   return rows.length
 }

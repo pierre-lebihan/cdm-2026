@@ -5,6 +5,7 @@ import {
   useRegisterSW,
 } from 'virtual:pwa-register/react'
 import { getLatestAppBuildId } from 'utils/appVersion'
+import { captureEvent } from '../lib/posthog'
 
 const UPDATE_CHECK_INTERVAL = 30 * 1000
 const RELOAD_FALLBACK_DELAY = 10 * 1000
@@ -419,6 +420,7 @@ class ReloadClickHandler {
   }
 
   handleClick = (): void => {
+    captureEvent('pwa_update_reload_clicked')
     forceUpdateAndReload(this.setReloading).catch(handleMandatoryReloadError)
   }
 }
@@ -614,6 +616,10 @@ export const PwaUpdatePrompt = () => {
       return
     }
 
+    captureEvent('pwa_update_available', {
+      build_id: availableBuildId,
+    })
+
     return lockPageScroll()
   }, [availableBuildId])
 
@@ -639,6 +645,9 @@ export const PwaUpdatePrompt = () => {
 
     markAutoReloadRun(availableBuildId)
     setAutoReloadBuildId(availableBuildId)
+    captureEvent('pwa_update_auto_reload_started', {
+      build_id: availableBuildId,
+    })
     forceUpdateAndReload(setReloading).catch(handleMandatoryReloadError)
   }, [availableBuildId])
 

@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useLogout } from '../../../hooks/user'
+import { captureEvent } from '../../../lib/posthog'
 
 const User = () => {
   const { user, profile } = useAuth()
@@ -10,13 +11,32 @@ const User = () => {
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
 
-  const displayName = profile?.display_name || user?.user_metadata?.full_name || ''
+  const displayName =
+    profile?.display_name || user?.user_metadata?.full_name || ''
   const photoURL = profile?.avatar_url || user?.user_metadata?.avatar_url || ''
+
+  const handleProfileClick = () => {
+    captureEvent('user_menu_profile_clicked')
+    navigate('/profile')
+    setIsOpen(false)
+  }
+
+  const handleUserMenuToggle = () => {
+    const nextIsOpen = !isOpen
+    captureEvent('user_menu_toggled', {
+      opened: nextIsOpen,
+    })
+    setIsOpen(nextIsOpen)
+  }
 
   useEffect(() => {
     if (!isOpen) return
     function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && e.target instanceof Node && !menuRef.current.contains(e.target)) {
+      if (
+        menuRef.current &&
+        e.target instanceof Node &&
+        !menuRef.current.contains(e.target)
+      ) {
         setIsOpen(false)
       }
     }
@@ -30,10 +50,15 @@ const User = () => {
         className="p-1 rounded-full hover:ring-2 hover:ring-navy/20 transition-all"
         aria-label="Menu utilisateur"
         aria-haspopup="true"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleUserMenuToggle}
       >
         {photoURL ? (
-          <img src={photoURL} alt={displayName} className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" />
+          <img
+            src={photoURL}
+            alt={displayName}
+            className="w-8 h-8 rounded-full object-cover"
+            referrerPolicy="no-referrer"
+          />
         ) : (
           <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-500">
             {displayName.charAt(0).toUpperCase()}
@@ -45,7 +70,7 @@ const User = () => {
         <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
           <button
             className="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            onClick={() => { navigate('/profile'); setIsOpen(false) }}
+            onClick={handleProfileClick}
           >
             Profil
           </button>

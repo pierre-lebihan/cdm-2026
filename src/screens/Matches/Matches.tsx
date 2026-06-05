@@ -20,6 +20,7 @@ import ScoringHelpModal from './MatchToBet/ScoringHelpModal'
 import { useSelectedWinner } from '../../hooks/winner'
 import { useTeams, type NormalizedTeam } from '../../hooks/teams'
 import Flag from '../../components/Flag'
+import { captureEvent } from '../../lib/posthog'
 
 interface ScoringHelpButtonProps {
   onClick: () => void
@@ -199,8 +200,6 @@ const Matches = () => {
   const [aiModalOpen, setAiModalOpen] = useState(false)
   const [scoringHelpOpen, setScoringHelpOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
-  const handleOpenScoringHelp = setScoringHelpOpen.bind(null, true)
-  const handleCloseScoringHelp = setScoringHelpOpen.bind(null, false)
 
   const urlParams = useMemo(
     () => new URLSearchParams(location.search),
@@ -212,11 +211,15 @@ const Matches = () => {
   const [comparingDate, setComparingDate] = useState(Date.now())
 
   const handleTabChange = (value: number) => {
+    captureEvent('matches_tab_changed', {
+      tab: value === 0 ? 'upcoming' : 'finished',
+    })
     setSelectedTab(value)
     navigate(`${location.pathname}?tab=${value}`)
   }
 
   const handleOpenAiModal = useCallback(() => {
+    captureEvent('ai_bet_button_clicked')
     setAiModalOpen(true)
   }, [])
   const handleCloseAiModal = useCallback(() => {
@@ -226,6 +229,16 @@ const Matches = () => {
     setRefreshKey((k) => k + 1)
     refreshBets()
   }, [refreshBets])
+
+  const handleOpenScoringHelp = () => {
+    captureEvent('scoring_help_opened')
+    setScoringHelpOpen(true)
+  }
+
+  const handleCloseScoringHelp = () => {
+    captureEvent('scoring_help_closed')
+    setScoringHelpOpen(false)
+  }
 
   useEffect(() => {
     const handle = setInterval(() => setComparingDate(Date.now()), 5000)

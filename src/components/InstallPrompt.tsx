@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Download, Share, X } from 'lucide-react'
 import { useHideCrisp } from '../hooks/useHideCrisp'
+import { captureEvent } from '../lib/posthog'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -74,15 +75,38 @@ export default function InstallPrompt({ enabled = true }: InstallPromptProps) {
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [enabled])
 
+  useEffect(() => {
+    if (!enabled || dismissed) {
+      return
+    }
+
+    if (showChromePrompt) {
+      captureEvent('pwa_install_prompt_shown', {
+        platform: 'browser',
+      })
+      return
+    }
+
+    if (showIosPrompt) {
+      captureEvent('pwa_install_prompt_shown', {
+        platform: 'ios',
+      })
+    }
+  }, [enabled, dismissed, showChromePrompt, showIosPrompt])
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) return
 
+    captureEvent('pwa_install_prompt_accepted')
     await deferredPrompt.prompt()
     setDeferredPrompt(null)
     setShowChromePrompt(false)
   }
 
   const handleDismiss = () => {
+    captureEvent('pwa_install_prompt_dismissed', {
+      platform: showIosPrompt ? 'ios' : 'browser',
+    })
     setDismissed(true)
     setShowChromePrompt(false)
     setShowIosPrompt(false)

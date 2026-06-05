@@ -15,6 +15,8 @@ import PromptCoordinator from 'components/PromptCoordinator'
 import PwaUpdatePrompt from 'components/PwaUpdatePrompt'
 import { OneSignalSubscriber } from 'components/OneSignalSubscriber'
 import SeoMetadata from 'components/SeoMetadata'
+import PostHogTracker from 'components/PostHogTracker'
+import { captureEvent } from '../../lib/posthog'
 
 const AnalyticsPage = lazy(() => import('../Analytics'))
 const AuthPasswordPage = lazy(() => import('../AuthPasswordPage'))
@@ -35,15 +37,24 @@ const App = () => {
   const isHomePage = location.pathname === '/'
   const hideHeader = isHomePage && !signedIn
 
+  const handleMenuToggle = () => {
+    const nextMenuOpen = !menuOpen
+    captureEvent('navigation_menu_toggled', {
+      opened: nextMenuOpen,
+    })
+    setMenuOpen(nextMenuOpen)
+  }
+
   return (
     <>
+      <PostHogTracker />
       <SeoMetadata />
       {!hideHeader && (
         <header className="fixed top-0 left-0 right-0 z-[1100] h-14 flex items-center justify-between px-4 bg-cream/[0.88] backdrop-blur-sm border-b border-black/[0.06]">
           <button
             type="button"
             aria-label="Menu"
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={handleMenuToggle}
             className="p-2 -ml-2 rounded-full text-navy hover:bg-navy/[0.06] transition-colors"
           >
             {menuOpen ? <X size={20} /> : <Menu size={20} />}

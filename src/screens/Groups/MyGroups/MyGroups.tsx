@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { Pencil, Check, X } from 'lucide-react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useRenameGroup, type GroupWithMembers } from '../../../hooks/groups'
+import { captureEvent } from '../../../lib/posthog'
 
 const MyGroups = ({
   groups,
@@ -88,6 +89,9 @@ const GroupItem = ({
   const handleCopyJoinKey = () => {
     if (!group.join_key) return
     navigator.clipboard.writeText(group.join_key).then(() => {
+      captureEvent('group_join_key_copied', {
+        group_id: group.id,
+      })
       toast.success('Code copié !', { duration: 2000 })
     })
   }
@@ -130,7 +134,9 @@ const GroupItem = ({
 
   return (
     <div className="flex items-center gap-3 py-2.5 px-3.5 rounded-[10px] bg-gray-50">
-      <span className="flex-1 text-sm font-semibold text-navy">{group.name}</span>
+      <span className="flex-1 text-sm font-semibold text-navy">
+        {group.name}
+      </span>
       {isAdmin && (
         <button
           type="button"

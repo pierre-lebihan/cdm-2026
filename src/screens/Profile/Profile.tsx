@@ -10,6 +10,7 @@ import {
 } from '../../lib/pushNotificationState'
 import { isLocalhostOrigin } from '../../lib/onesignal'
 import EditProfile from './EditProfile'
+import { captureEvent } from '../../lib/posthog'
 
 const Profile = () => {
   const { user, profile, updatePassword } = useAuth()
@@ -103,8 +104,10 @@ const Profile = () => {
                   try {
                     await optOutPushSubscription()
                     await refreshPush()
+                    captureEvent('push_profile_disabled')
                     toast.success('Notifications désactivées pour ce site')
                   } catch (err: unknown) {
+                    captureEvent('push_profile_disable_failed')
                     console.error(err)
                     toast.error('Impossible de mettre à jour les notifications')
                   }
@@ -129,8 +132,14 @@ const Profile = () => {
                   try {
                     await optInPushSubscription()
                     await refreshPush()
+                    captureEvent('push_profile_enabled', {
+                      previous_state: pushState,
+                    })
                     toast.success('Préférences enregistrées')
                   } catch (err: unknown) {
+                    captureEvent('push_profile_enable_failed', {
+                      previous_state: pushState,
+                    })
                     console.error(err)
                     toast.error('Impossible d’activer les notifications')
                   }

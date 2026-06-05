@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import Mascot from '../../components/Mascot'
 import type { MascotId } from '../../lib/mascots'
 import { useHideCrisp } from '../../hooks/useHideCrisp'
+import { captureEvent } from '../../lib/posthog'
 
 interface OnboardingModalProps {
   open: boolean
@@ -25,33 +26,27 @@ const STEPS: Step[] = [
     mascot: 'usa',
     title: 'Pronostique chaque match',
     subtitle: '« Listen up, partner ! »',
-    body:
-      'Avant chaque coup d\'envoi, donne ton pronostic : le score exact des deux équipes. Ton vote est sauvegardé automatiquement. Tu peux revenir le modifier autant que tu veux tant que le match n\'a pas commencé.',
+    body: "Avant chaque coup d'envoi, donne ton pronostic : le score exact des deux équipes. Ton vote est sauvegardé automatiquement. Tu peux revenir le modifier autant que tu veux tant que le match n'a pas commencé.",
     tipLabel: 'Astuce de Sam',
-    tip:
-      'Pas le temps de tout pronostiquer ? L\'IA peut le faire pour toi : repère le bouton violet en haut de la page des matchs.',
+    tip: "Pas le temps de tout pronostiquer ? L'IA peut le faire pour toi : repère le bouton violet en haut de la page des matchs.",
     bgGradient: 'from-red-50 via-white to-blue-50',
   },
   {
     mascot: 'mexico',
     title: 'Marque (et multiplie) tes points',
     subtitle: '« Sois malin, amigo ! »',
-    body:
-      'Score parfait, bon vainqueur, bon nul, écart proche : tu marques jusqu\'à 20 points de base. Puis une cote « anti-mouton » multiplie ton score : plus tu pronostiques l\'inattendu, plus le gain potentiel grimpe.',
+    body: "Score parfait, bon vainqueur, bon nul, écart proche : tu marques jusqu'à 20 points de base. Puis une cote « anti-mouton » multiplie ton score : plus tu pronostiques l'inattendu, plus le gain potentiel grimpe.",
     tipLabel: 'Astuce de Iván',
-    tip:
-      'Regarde la barre de tendance sous chaque match : elle te montre où vont les autres joueurs et la cote correspondante.',
+    tip: 'Regarde la barre de tendance sous chaque match : elle te montre où vont les autres joueurs et la cote correspondante.',
     bgGradient: 'from-emerald-50 via-amber-50 to-orange-50',
   },
   {
     mascot: 'canada',
     title: 'Rejoins ta tribu, affronte tes amis',
     subtitle: '« On va voir qui est le bûcheron ! »',
-    body:
-      'Crée une tribu ou rejoins-en une avec un code. Tu suivras le classement de ton groupe en temps réel, match après match. Que le meilleur gagne (et que les autres paient la cagnotte).',
+    body: 'Crée une tribu ou rejoins-en une avec un code. Tu suivras le classement de ton groupe en temps réel, match après match. Que le meilleur gagne (et que les autres paient la cagnotte).',
     tipLabel: 'Astuce de Pierre',
-    tip:
-      'Va dans l\'onglet Tribus pour créer la tienne ou en rejoindre une avec un code partagé par ton chef de tribu.',
+    tip: "Va dans l'onglet Tribus pour créer la tienne ou en rejoindre une avec un code partagé par ton chef de tribu.",
     bgGradient: 'from-amber-50 via-white to-emerald-50',
   },
 ]
@@ -64,6 +59,7 @@ const OnboardingModal = ({ open, onClose }: OnboardingModalProps) => {
 
   useEffect(() => {
     if (open) {
+      captureEvent('onboarding_opened')
       setStepIndex(0)
     }
   }, [open])
@@ -78,23 +74,32 @@ const OnboardingModal = ({ open, onClose }: OnboardingModalProps) => {
 
   const handleNext = () => {
     if (isLast) {
+      captureEvent('onboarding_completed')
       onClose()
       return
     }
+    captureEvent('onboarding_next_clicked', {
+      step_index: stepIndex,
+    })
     setStepIndex((idx) => idx + 1)
   }
 
   const handlePrev = () => {
     if (isFirst) return
+    captureEvent('onboarding_previous_clicked', {
+      step_index: stepIndex,
+    })
     setStepIndex((idx) => idx - 1)
   }
 
   const handleGoToMatches = () => {
+    captureEvent('onboarding_matches_clicked')
     onClose()
     navigate('/matches')
   }
 
   const handleGoToGroups = () => {
+    captureEvent('onboarding_groups_clicked')
     onClose()
     navigate('/groups')
   }
@@ -160,9 +165,7 @@ const OnboardingModal = ({ open, onClose }: OnboardingModalProps) => {
             <p className="text-[0.65rem] font-bold uppercase tracking-wider text-navy/70 mb-1">
               💡 {step.tipLabel}
             </p>
-            <p className="text-xs text-gray-600 leading-snug m-0">
-              {step.tip}
-            </p>
+            <p className="text-xs text-gray-600 leading-snug m-0">{step.tip}</p>
           </div>
 
           {isLast && (

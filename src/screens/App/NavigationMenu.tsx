@@ -13,6 +13,7 @@ import { Suspense, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useIsUserConnected, useIsUserAdmin } from '../../hooks/user'
 import { useCompetitionDisplayName } from '../../hooks/competition'
+import { captureEvent } from '../../lib/posthog'
 
 const FootballIcon = (props: LucideProps) => (
   <svg
@@ -97,6 +98,18 @@ const menuItems = [
   },
 ]
 
+function captureNavigationItemClick(
+  label: string,
+  path: string,
+  isActive: boolean,
+) {
+  captureEvent('navigation_item_clicked', {
+    label,
+    path,
+    was_active: isActive,
+  })
+}
+
 interface NavigationMenuProps {
   closeMenu: () => void
   menuOpen: boolean
@@ -122,7 +135,8 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
     (item) => (!item.auth || isConnected) && (!item.admin || isAdmin),
   )
 
-  const goTo = (to: string) => () => {
+  const goTo = (to: string, label: string, isActive: boolean) => () => {
+    captureNavigationItemClick(label, to, isActive)
     navigate(to)
     closeMenu()
   }
@@ -170,7 +184,7 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
                       ? 'bg-navy text-white font-semibold shadow-sm'
                       : 'bg-transparent text-gray-600 hover:bg-gray-50 hover:text-navy'
                   }`}
-                  onClick={goTo(item.path)}
+                  onClick={goTo(item.path, item.label, isActive)}
                 >
                   <item.icon
                     size={20}

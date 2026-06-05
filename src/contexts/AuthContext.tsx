@@ -7,6 +7,11 @@ import {
   type ReactNode,
 } from 'react'
 import { syncCrispUser } from '../lib/crisp'
+import {
+  captureEvent,
+  identifyPostHogUser,
+  resetPostHogUser,
+} from '../lib/posthog'
 import { supabase } from '../lib/supabase'
 import type { Session, User } from '@supabase/supabase-js'
 import type { Tables } from '../lib/database.types'
@@ -161,11 +166,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!session?.user) {
       syncCrispUser({ email: null, nickname: null })
+      resetPostHogUser()
       return
     }
     const email = session.user.email ?? profile?.email ?? null
     const nickname = profile?.display_name ?? null
     syncCrispUser({ email, nickname })
+    identifyPostHogUser(session.user.id, {
+      email,
+      displayName: nickname,
+      role: profile?.role ?? null,
+    })
   }, [session, profile])
 
   async function fetchOrCreateProfile(user: User) {
@@ -196,7 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data) {
       const displayName =
         data.display_name || getUserDisplayName(user, user.email || '')
-      const avatarUrl = data.avatar_url || user.user_metadata?.avatar_url || null
+      const avatarUrl =
+        data.avatar_url || user.user_metadata?.avatar_url || null
       await supabase
         .from('profiles')
         .update({
@@ -219,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithGoogle() {
+    captureEvent('auth_google_sign_in_clicked')
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -263,6 +276,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           : 'Impossible de préparer ce compte.',
       )
     }
+    captureEvent('auth_password_setup_account_created')
   }
 
   async function signInWithPassword(email: string, password: string) {
@@ -274,6 +288,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       throw new Error('Email ou mot de passe incorrect.')
     }
+    captureEvent('auth_password_sign_in_succeeded')
   }
 
   async function sendPasswordReset(email: string) {
@@ -285,16 +300,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
 
     if (error) throw error
+    captureEvent('auth_password_reset_requested')
   }
 
   async function updatePassword(password: string) {
     const { error } = await supabase.auth.updateUser({ password })
 
     if (error) throw error
+    captureEvent('auth_password_updated')
   }
 
   async function signOut() {
+    captureEvent('auth_sign_out_clicked')
     await supabase.auth.signOut()
+    resetPostHogUser()
     setProfile(null)
     setSession(null)
   }

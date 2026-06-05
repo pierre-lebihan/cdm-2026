@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import type { Tables } from '../lib/database.types'
+import { captureEvent } from '../lib/posthog'
 
 export function useGoogleLogin(): () => Promise<void> {
   const { signInWithGoogle } = useAuth()
@@ -84,6 +85,9 @@ export function useSaveProfile() {
       if (error) throw error
 
       updateProfile(data)
+      captureEvent('profile_saved', {
+        fields: Object.keys(updates),
+      })
       return data
     },
     [user?.id, updateProfile],
@@ -111,6 +115,10 @@ export function useUploadAvatar() {
       if (uploadError) throw uploadError
 
       const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      captureEvent('profile_avatar_uploaded', {
+        file_type: file.type,
+        input_size: file.size,
+      })
       return data.publicUrl
     },
     [user?.id],

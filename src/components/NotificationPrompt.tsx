@@ -6,6 +6,7 @@ import {
   optInPushSubscription,
   type PushNotificationUiState,
 } from '../lib/pushNotificationState'
+import { captureEvent } from '../lib/posthog'
 
 interface NotificationPromptProps {
   userId: string
@@ -36,10 +37,13 @@ export default function NotificationPrompt({
   useHideCrisp(show)
 
   const handleEnable = async () => {
+    captureEvent('push_prompt_enable_clicked')
     try {
       await optInPushSubscription()
       await refresh()
+      captureEvent('push_prompt_enabled')
     } catch (err: unknown) {
+      captureEvent('push_prompt_enable_failed')
       console.error('Notification prompt', err)
     } finally {
       onHandled()
@@ -47,6 +51,9 @@ export default function NotificationPrompt({
   }
 
   const handleDismiss = () => {
+    captureEvent('push_prompt_dismissed', {
+      ios_needs_install: iosNeedsInstall,
+    })
     dismissNotificationPrompt(userId)
     onHandled()
   }

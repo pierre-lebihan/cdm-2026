@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useGroupsForUserMember, type GroupWithMembers } from '../hooks/groups'
 import Loader from '../components/Loader'
+import { captureEvent } from '../lib/posthog'
 
 function getSelectedGroup(
   groups: GroupWithMembers[],
@@ -52,6 +53,9 @@ const Analytics = () => {
       )
 
       if (invokeErr || !data?.url) {
+        captureEvent('analytics_dashboard_load_failed', {
+          group_id: selectedGroupId,
+        })
         let serverDetail: string | null = null
         const ctxResponse = invokeErr?.context?.response
         if (ctxResponse && typeof ctxResponse.text === 'function') {
@@ -80,6 +84,9 @@ const Analytics = () => {
         return
       }
 
+      captureEvent('analytics_dashboard_loaded', {
+        group_id: selectedGroupId,
+      })
       setIframeSrc(data.url)
       setLoading(false)
     }
@@ -108,7 +115,12 @@ const Analytics = () => {
                 ? 'bg-indigo-100 text-indigo-700 font-semibold'
                 : 'text-gray-500 hover:text-navy'
             }`}
-            onClick={() => setSelectedGroupId(g.id)}
+            onClick={() => {
+              captureEvent('analytics_group_selected', {
+                group_id: g.id,
+              })
+              setSelectedGroupId(g.id)
+            }}
           >
             {g.name}
           </button>
@@ -124,10 +136,7 @@ const Analytics = () => {
       {!error && loading && <Loader />}
 
       {!error && !loading && iframeSrc && (
-        <div
-          className="relative"
-          style={{ minHeight: 'calc(100vh - 120px)' }}
-        >
+        <div className="relative" style={{ minHeight: 'calc(100vh - 120px)' }}>
           <iframe
             key={iframeSrc}
             src={iframeSrc}

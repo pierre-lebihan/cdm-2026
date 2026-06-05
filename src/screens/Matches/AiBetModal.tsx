@@ -7,11 +7,19 @@ import { useCompetition } from '../../contexts/CompetitionContext'
 import { saveBatchBets } from '../../hooks/bets'
 import { useHideCrisp } from '../../hooks/useHideCrisp'
 import { generatePredictions, type AiProvider } from '../../lib/openrouter'
+import { captureEvent } from '../../lib/posthog'
 import type { NormalizedMatch } from '../../hooks/matches'
 
 import Flag from '../../components/Flag'
 
-type ModalStep = 'prompt' | 'choose' | 'loading' | 'error' | 'cn_question' | 'cn_rejected' | 'us_payment'
+type ModalStep =
+  | 'prompt'
+  | 'choose'
+  | 'loading'
+  | 'error'
+  | 'cn_question'
+  | 'cn_rejected'
+  | 'us_payment'
 
 interface AiBetModalProps {
   open: boolean
@@ -70,6 +78,18 @@ function computeMatchesToPredict(
   return withTeams.filter((m) => !bettedMatchIds.has(m.id))
 }
 
+function getPromptSuggestionIndex(suggestion: string): number {
+  return PROMPT_SUGGESTIONS.indexOf(suggestion)
+}
+
+function getAiPredictionErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message
+  }
+
+  return 'Une erreur est survenue'
+}
+
 const AiBetModal = ({
   open,
   onClose,
@@ -102,16 +122,24 @@ const AiBetModal = ({
     if (!dialog) return
     if (open) {
       dialog.showModal()
+      captureEvent('ai_bet_modal_opened', {
+        matches_count: matches.length,
+        already_betted_count: bettedMatchIds.size,
+        admin: isAdmin,
+      })
       setStep('prompt')
       setError(null)
     } else {
       dialog.close()
     }
-  }, [open])
+  }, [open, matches.length, bettedMatchIds.size, isAdmin])
 
   const handleClose = useCallback(() => {
+    captureEvent('ai_bet_modal_closed', {
+      step,
+    })
     onClose()
-  }, [onClose])
+  }, [onClose, step])
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent<HTMLDialogElement>) => {
@@ -123,8 +151,13 @@ const AiBetModal = ({
   )
 
   const handleGoToChoose = useCallback(() => {
+    captureEvent('ai_bet_choose_provider_opened', {
+      matches_to_predict_count: matchesToPredict.length,
+      overwrite_existing: overwriteExisting,
+      prompt_length: prompt.length,
+    })
     setStep('choose')
-  }, [])
+  }, [matchesToPredict.length, overwriteExisting, prompt.length])
 
   const handleBackToPrompt = useCallback(() => {
     setStep('prompt')
@@ -140,18 +173,31 @@ const AiBetModal = ({
 
   const handleOverwriteChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      captureEvent('ai_bet_overwrite_toggled', {
+        enabled: e.target.checked,
+      })
       setOverwriteExisting(e.target.checked)
     },
     [],
   )
 
   const handleSuggestionClick = useCallback((suggestion: string) => {
+    captureEvent('ai_bet_prompt_suggestion_clicked', {
+      suggestion_index: getPromptSuggestionIndex(suggestion),
+    })
     setPrompt(suggestion)
   }, [])
 
   const executeAiPrediction = useCallback(
     async (provider: AiProvider) => {
       if (!user) return
+      captureEvent('ai_bet_prediction_requested', {
+        provider,
+        competition_id: activeCompetitionId,
+        matches_to_predict_count: matchesToPredict.length,
+        overwrite_existing: overwriteExisting,
+        prompt_length: prompt.length,
+      })
       setStep('loading')
       setError(null)
 
@@ -168,14 +214,28 @@ const AiBetModal = ({
           throw new Error("L'IA n'a retourné aucun pronostic valide")
         }
 
-        const count = await saveBatchBets(user.id, predictions, activeCompetitionId)
+        const count = await saveBatchBets(
+          user.id,
+          predictions,
+          activeCompetitionId,
+        )
+        captureEvent('ai_bet_prediction_succeeded', {
+          provider,
+          competition_id: activeCompetitionId,
+          predictions_count: count,
+        })
         toast.success(
           `${count} pronostic${count > 1 ? 's' : ''} rempli${count > 1 ? 's' : ''} par l'IA !`,
         )
         onComplete()
         onClose()
-      } catch (err: any) {
-        setError(err.message || 'Une erreur est survenue')
+      } catch (err: unknown) {
+        captureEvent('ai_bet_prediction_failed', {
+          provider,
+          competition_id: activeCompetitionId,
+          matches_to_predict_count: matchesToPredict.length,
+        })
+        setError(getAiPredictionErrorMessage(err))
         setStep('error')
       }
     },
@@ -187,18 +247,22 @@ const AiBetModal = ({
       onClose,
       activeCompetitionId,
       competition?.name,
+      overwriteExisting,
     ],
   )
 
   const handleChooseProvider = useCallback(
     (provider: AiProvider) => {
       if (!user) return
-      
+      captureEvent('ai_bet_provider_selected', {
+        provider,
+      })
+
       if (provider === 'deepseek') {
         setStep('cn_question')
         return
       }
-      
+
       if (provider === 'openai') {
         setStep('us_payment')
         return
@@ -300,7 +364,10 @@ const AiBetModal = ({
                   className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 bg-white cursor-pointer hover:border-indigo-300 hover:shadow-card transition-all text-left"
                   onClick={() => handleChooseProvider(p.id)}
                 >
-                  <Flag country={p.country} className="w-[34px] rounded-[4px]" />
+                  <Flag
+                    country={p.country}
+                    className="w-[34px] rounded-[4px]"
+                  />
                   <div className="flex-1">
                     <span className="block text-sm font-semibold text-navy">
                       {p.title}
@@ -331,7 +398,9 @@ const AiBetModal = ({
               Vérification de sécurité 🇨🇳
             </h2>
             <p className="text-sm text-gray-700 text-center m-0">
-              Pensez-vous que la province rebelle de Taiwan fasse partie intégrante de la grande et glorieuse République Populaire de Chine ?
+              Pensez-vous que la province rebelle de Taiwan fasse partie
+              intégrante de la grande et glorieuse République Populaire de Chine
+              ?
             </p>
             <div className="flex flex-col gap-2 mt-2">
               <button
@@ -363,7 +432,7 @@ const AiBetModal = ({
               Interdiction de territoire
             </h2>
             <p className="text-sm text-gray-700 m-0">
-              Mauvaise réponse {profile?.display_name || 'camarade'} !<br/>
+              Mauvaise réponse {profile?.display_name || 'camarade'} !<br />
               Vous êtes désormais interdit de territoire en Chine.
             </p>
             <button
