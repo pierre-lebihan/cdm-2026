@@ -13,16 +13,22 @@ const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST
 let initialized = false
 let identifiedUserId: string | null = null
 
-function hasPostHogKey(): boolean {
-  return Boolean(POSTHOG_KEY)
+function getPostHogKey(): string | null {
+  if (!POSTHOG_KEY || POSTHOG_KEY.startsWith('phx_')) {
+    return null
+  }
+
+  return POSTHOG_KEY
 }
 
 export function initPostHog() {
-  if (initialized || !hasPostHogKey()) {
+  const postHogKey = getPostHogKey()
+
+  if (initialized || !postHogKey) {
     return
   }
 
-  posthog.init(POSTHOG_KEY, {
+  posthog.init(postHogKey, {
     api_host: POSTHOG_HOST || 'https://eu.i.posthog.com',
     capture_pageview: false,
     person_profiles: 'identified_only',
@@ -31,7 +37,7 @@ export function initPostHog() {
 }
 
 export function isPostHogEnabled(): boolean {
-  return initialized && hasPostHogKey()
+  return initialized && Boolean(getPostHogKey())
 }
 
 export function captureEvent(eventName: string, properties?: Properties) {

@@ -91,6 +91,15 @@ jobs:
 
       - run: npm ci
 
+      - name: Validate PostHog frontend key
+        run: |
+          if [ -n "$VITE_POSTHOG_KEY" ] && printf '%s' "$VITE_POSTHOG_KEY" | grep -q '^phx_'; then
+            echo "VITE_POSTHOG_KEY must be a PostHog project API key, not a personal API key."
+            exit 1
+          fi
+        env:
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
