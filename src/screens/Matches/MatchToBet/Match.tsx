@@ -2,9 +2,9 @@ import conformsTo from 'lodash/conformsTo'
 import isNumber from 'lodash/isNumber'
 import { useEffect, useRef, useState } from 'react'
 import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
 import { useBet, useBetsFromGame } from '../../../hooks/bets'
 import { useAuth } from '../../../contexts/AuthContext'
+import { useLanguage } from '../../../contexts/LanguageContext'
 import InformationMatch from './InformationMatch'
 import BettingFeel, {
   BettingPotentialGain,
@@ -20,6 +20,7 @@ const SAVE_DEBOUNCE_MS = 800
 
 const Match = ({ match }) => {
   const { user } = useAuth()
+  const { dateLocale, t } = useLanguage()
   const [bet, saveBet, betLoading] = useBet(match.id)
   const [allBets, betsLoading] = useBetsFromGame(match.id, Boolean(user?.id))
   const [currentBet, setCurrentBet] = useState(bet)
@@ -160,7 +161,9 @@ const Match = ({ match }) => {
   const dateTime = match.dateTime
     ? new Date(match.dateTime.seconds * 1000)
     : null
-  const timeStr = dateTime ? format(dateTime, 'HH:mm', { locale: fr }) : ''
+  const timeStr = dateTime
+    ? format(dateTime, 'HH:mm', { locale: dateLocale })
+    : ''
 
   return (
     <div className="w-full bg-white rounded-[14px] py-3.5 px-4 shadow-card border-none text-left flex flex-col gap-2.5 transition-all duration-150">
@@ -181,7 +184,7 @@ const Match = ({ match }) => {
             className="h-9 w-9 object-contain rounded"
           />
           <span className="text-xs font-semibold text-navy text-center leading-tight">
-            {match.teamAName ?? 'À déterminer'}
+            {match.teamAName ?? t.common.tbd}
           </span>
         </div>
 
@@ -224,7 +227,7 @@ const Match = ({ match }) => {
             className="h-9 w-9 object-contain rounded"
           />
           <span className="text-xs font-semibold text-navy text-center leading-tight">
-            {match.teamBName ?? 'À déterminer'}
+            {match.teamBName ?? t.common.tbd}
           </span>
         </div>
       </div>

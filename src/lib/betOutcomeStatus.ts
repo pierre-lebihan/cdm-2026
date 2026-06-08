@@ -7,7 +7,12 @@ export function matchHasPublishedScore(
   scoreA: number | null | undefined,
   scoreB: number | null | undefined,
 ): boolean {
-  return scoreA !== null && scoreA !== undefined && scoreB !== null && scoreB !== undefined
+  return (
+    scoreA !== null &&
+    scoreA !== undefined &&
+    scoreB !== null &&
+    scoreB !== undefined
+  )
 }
 
 export function betOutcomeTooltipSelf(
@@ -97,7 +102,15 @@ export function cardBgClassForUserBet(params: {
   betTeamB: number | null | undefined
   pointsWon: number | null | undefined
 }): string {
-  const { hasBet, scoreA, scoreB, outcomeStatus, betTeamA, betTeamB, pointsWon } = params
+  const {
+    hasBet,
+    scoreA,
+    scoreB,
+    outcomeStatus,
+    betTeamA,
+    betTeamB,
+    pointsWon,
+  } = params
   if (!hasBet) {
     return 'bg-gray-100 border border-gray-300'
   }

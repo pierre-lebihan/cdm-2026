@@ -9,6 +9,7 @@ import { useHideCrisp } from '../../hooks/useHideCrisp'
 import { generatePredictions, type AiProvider } from '../../lib/openrouter'
 import { captureEvent } from '../../lib/posthog'
 import type { NormalizedMatch } from '../../hooks/matches'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 import Flag from '../../components/Flag'
 
@@ -29,14 +30,6 @@ interface AiBetModalProps {
   bettedMatchIds: Set<string>
   isAdmin: boolean
 }
-
-const PROMPT_SUGGESTIONS = [
-  'Mbappé va tout casser cette année',
-  'Que des buts et du spectacle !',
-  'Je connais rien au foot, surprise-moi',
-  'Les outsiders vont créer la surprise',
-  "Cette année, c'est pour Haïti, c'est sûr !",
-]
 
 const AI_PROVIDERS: {
   id: AiProvider
@@ -78,16 +71,19 @@ function computeMatchesToPredict(
   return withTeams.filter((m) => !bettedMatchIds.has(m.id))
 }
 
-function getPromptSuggestionIndex(suggestion: string): number {
-  return PROMPT_SUGGESTIONS.indexOf(suggestion)
+function getPromptSuggestionIndex(
+  suggestion: string,
+  suggestions: string[],
+): number {
+  return suggestions.indexOf(suggestion)
 }
 
-function getAiPredictionErrorMessage(err: unknown): string {
+function getAiPredictionErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof Error) {
     return err.message
   }
 
-  return 'Une erreur est survenue'
+  return fallback
 }
 
 const AiBetModal = ({
@@ -100,6 +96,7 @@ const AiBetModal = ({
 }: AiBetModalProps) => {
   const { user, profile } = useAuth()
   const { activeCompetitionId, competition } = useCompetition()
+  const { t } = useLanguage()
   useHideCrisp(open)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [step, setStep] = useState<ModalStep>('prompt')
@@ -181,12 +178,18 @@ const AiBetModal = ({
     [],
   )
 
-  const handleSuggestionClick = useCallback((suggestion: string) => {
-    captureEvent('ai_bet_prompt_suggestion_clicked', {
-      suggestion_index: getPromptSuggestionIndex(suggestion),
-    })
-    setPrompt(suggestion)
-  }, [])
+  const handleSuggestionClick = useCallback(
+    (suggestion: string) => {
+      captureEvent('ai_bet_prompt_suggestion_clicked', {
+        suggestion_index: getPromptSuggestionIndex(
+          suggestion,
+          t.aiBet.promptSuggestions,
+        ),
+      })
+      setPrompt(suggestion)
+    },
+    [t.aiBet.promptSuggestions],
+  )
 
   const executeAiPrediction = useCallback(
     async (provider: AiProvider) => {
@@ -211,7 +214,7 @@ const AiBetModal = ({
         )
 
         if (predictions.length === 0) {
-          throw new Error("L'IA n'a retourné aucun pronostic valide")
+          throw new Error(t.aiBet.noValidPrediction)
         }
 
         const count = await saveBatchBets(
@@ -224,9 +227,7 @@ const AiBetModal = ({
           competition_id: activeCompetitionId,
           predictions_count: count,
         })
-        toast.success(
-          `${count} pronostic${count > 1 ? 's' : ''} rempli${count > 1 ? 's' : ''} par l'IA !`,
-        )
+        toast.success(`${count} ${t.aiBet.successFilledByAi}`)
         onComplete()
         onClose()
       } catch (err: unknown) {
@@ -235,7 +236,7 @@ const AiBetModal = ({
           competition_id: activeCompetitionId,
           matches_to_predict_count: matchesToPredict.length,
         })
-        setError(getAiPredictionErrorMessage(err))
+        setError(getAiPredictionErrorMessage(err, t.aiBet.unknownError))
         setStep('error')
       }
     },
@@ -248,6 +249,9 @@ const AiBetModal = ({
       activeCompetitionId,
       competition?.name,
       overwriteExisting,
+      t.aiBet.noValidPrediction,
+      t.aiBet.successFilledByAi,
+      t.aiBet.unknownError,
     ],
   )
 
@@ -294,22 +298,22 @@ const AiBetModal = ({
           <div className="flex flex-col gap-4">
             <div className="text-3xl text-center">✨</div>
             <h2 className="text-lg font-bold text-navy text-center m-0">
-              Laisse l'IA pronostiquer
+              {t.aiBet.promptTitle}
             </h2>
             <p className="text-sm text-gray-500 text-center m-0">
-              Écris tes préférences et l'IA remplira tes pronostics
+              {t.aiBet.promptSubtitle}
             </p>
 
             <textarea
               className="w-full py-2.5 px-3.5 border-[1.5px] border-gray-200 rounded-[10px] text-sm outline-none transition-colors bg-white focus:border-indigo-500 placeholder:text-gray-300 resize-none"
-              placeholder="Ex: Je pense que la France va gagner..."
+              placeholder={t.aiBet.promptPlaceholder}
               value={prompt}
               onChange={handlePromptChange}
               rows={3}
             />
 
             <div className="flex flex-wrap gap-2">
-              {PROMPT_SUGGESTIONS.map((s) => (
+              {t.aiBet.promptSuggestions.map((s) => (
                 <button
                   key={s}
                   className="text-xs py-1.5 px-3 rounded-full border border-gray-200 bg-gray-50 text-gray-600 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
@@ -328,13 +332,15 @@ const AiBetModal = ({
                   onChange={handleOverwriteChange}
                   className="accent-indigo-500"
                 />
-                <span>Écraser mes pronostics existants</span>
+                <span>{t.aiBet.overwriteExisting}</span>
               </label>
             )}
 
             <p className="text-xs text-gray-400 text-center m-0">
-              {matchesToPredict.length} match
-              {matchesToPredict.length > 1 ? 's' : ''} à pronostiquer
+              {matchesToPredict.length}{' '}
+              {matchesToPredict.length > 1
+                ? t.aiBet.countSuffixPlural
+                : t.aiBet.countSuffixSingular}
             </p>
 
             <button
@@ -342,7 +348,7 @@ const AiBetModal = ({
               onClick={handleGoToChoose}
               disabled={matchesToPredict.length === 0}
             >
-              Choisir mon IA
+              {t.aiBet.chooseProvider}
               <ArrowRight size={16} />
             </button>
           </div>
@@ -351,10 +357,10 @@ const AiBetModal = ({
         {step === 'choose' && (
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-bold text-navy text-center m-0">
-              Choisis ton IA
+              {t.aiBet.chooseProviderTitle}
             </h2>
             <p className="text-sm text-gray-500 text-center m-0">
-              Chaque IA a sa propre vision du football
+              {t.aiBet.chooseProviderSubtitle}
             </p>
 
             <div className="flex flex-col gap-2">
@@ -387,7 +393,7 @@ const AiBetModal = ({
               className="inline-flex items-center justify-center gap-2 font-semibold rounded-full border-none cursor-pointer bg-transparent text-gray-500 py-2 px-4 text-sm hover:text-navy hover:bg-navy/[0.04] transition-colors"
               onClick={handleBackToPrompt}
             >
-              ← Retour
+              {t.aiBet.back}
             </button>
           </div>
         )}
@@ -395,32 +401,30 @@ const AiBetModal = ({
         {step === 'cn_question' && (
           <div className="flex flex-col gap-4">
             <h2 className="text-lg font-bold text-navy text-center m-0">
-              Vérification de sécurité 🇨🇳
+              {t.aiBet.securityTitle}
             </h2>
             <p className="text-sm text-gray-700 text-center m-0">
-              Pensez-vous que la province rebelle de Taiwan fasse partie
-              intégrante de la grande et glorieuse République Populaire de Chine
-              ?
+              {t.aiBet.securityQuestion}
             </p>
             <div className="flex flex-col gap-2 mt-2">
               <button
                 className="w-full py-2.5 px-4 rounded-xl border-none cursor-pointer bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
                 onClick={() => executeAiPrediction('deepseek')}
               >
-                Oui, bien sûr !
+                {t.aiBet.securityYes}
               </button>
               <button
                 className="w-full py-2.5 px-4 rounded-xl border border-red-200 bg-red-50 text-red-600 font-semibold cursor-pointer hover:bg-red-100 transition-colors"
                 onClick={() => setStep('cn_rejected')}
               >
-                Non
+                {t.aiBet.securityNo}
               </button>
             </div>
             <button
               className="mt-2 inline-flex items-center justify-center gap-2 font-semibold rounded-full border-none cursor-pointer bg-transparent text-gray-500 py-2 px-4 text-sm hover:text-navy hover:bg-navy/[0.04] transition-colors"
               onClick={handleGoToChoose}
             >
-              ← Retour
+              {t.aiBet.back}
             </button>
           </div>
         )}
@@ -429,17 +433,18 @@ const AiBetModal = ({
           <div className="flex flex-col items-center gap-4 py-4 text-center">
             <div className="text-4xl">🚨</div>
             <h2 className="text-lg font-bold text-red-600 m-0">
-              Interdiction de territoire
+              {t.aiBet.rejectedTitle}
             </h2>
             <p className="text-sm text-gray-700 m-0">
-              Mauvaise réponse {profile?.display_name || 'camarade'} !<br />
-              Vous êtes désormais interdit de territoire en Chine.
+              {t.aiBet.rejectedTextPrefix}{' '}
+              {profile?.display_name || t.common.anonymous} !<br />
+              {t.aiBet.rejectedTextSuffix}
             </p>
             <button
               className="mt-4 inline-flex items-center justify-center gap-2 font-semibold rounded-full border-none cursor-pointer bg-gray-100 text-gray-600 py-2 px-5 text-sm hover:bg-gray-200 transition-colors"
               onClick={handleGoToChoose}
             >
-              Changer d'IA
+              {t.aiBet.rejectedButton}
             </button>
           </div>
         )}
@@ -448,11 +453,9 @@ const AiBetModal = ({
           <div className="flex flex-col gap-4 text-center">
             <div className="text-4xl">🦅</div>
             <h2 className="text-lg font-bold text-navy m-0">
-              Frais de douanes
+              {t.aiBet.customsTitle}
             </h2>
-            <p className="text-sm text-gray-700 m-0">
-              Veuillez payer 50€ de frais de douanes avant !
-            </p>
+            <p className="text-sm text-gray-700 m-0">{t.aiBet.customsText}</p>
             <div className="flex flex-col gap-2 mt-2">
               <a
                 href="https://soutenir.amnesty.fr/b/mon-don"
@@ -461,13 +464,13 @@ const AiBetModal = ({
                 className="w-full py-2.5 px-4 rounded-xl border-none cursor-pointer bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors no-underline block"
                 onClick={handleClose}
               >
-                Payer (50€)
+                {t.aiBet.customsButton}
               </a>
               <button
                 className="w-full py-2.5 px-4 rounded-xl border border-gray-200 bg-white text-gray-600 font-semibold cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={handleGoToChoose}
               >
-                Retour
+                {t.aiBet.back}
               </button>
             </div>
           </div>
@@ -477,13 +480,11 @@ const AiBetModal = ({
           <div className="flex flex-col items-center gap-4 py-8">
             <div className="w-8 h-8 border-[3px] border-gray-200 border-t-indigo-500 rounded-full animate-spin" />
             <h2 className="text-lg font-bold text-navy m-0">
-              L'IA réfléchit...
+              {t.aiBet.loadingTitle}
             </h2>
-            <p className="text-sm text-gray-500 m-0">
-              Analyse des équipes et génération des pronostics
-            </p>
+            <p className="text-sm text-gray-500 m-0">{t.aiBet.loadingText}</p>
             <p className="text-xs text-gray-400 m-0">
-              Ça peut prendre quelques secondes
+              {t.aiBet.loadingSubtitle}
             </p>
           </div>
         )}
@@ -491,13 +492,15 @@ const AiBetModal = ({
         {step === 'error' && (
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="text-3xl">😬</div>
-            <h2 className="text-lg font-bold text-navy m-0">Oups !</h2>
+            <h2 className="text-lg font-bold text-navy m-0">
+              {t.aiBet.errorTitle}
+            </h2>
             <p className="text-sm text-gray-500 m-0">{error}</p>
             <button
               className="inline-flex items-center justify-center gap-2 font-semibold rounded-full border-none cursor-pointer transition-all duration-150 bg-navy text-white py-2 px-5 text-sm hover:bg-navy-light"
               onClick={handleBackToPrompt}
             >
-              Réessayer
+              {t.common.retry}
             </button>
           </div>
         )}

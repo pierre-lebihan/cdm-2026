@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import PasswordForm from 'components/PasswordForm'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
+import type { TranslationDictionary } from '../lib/i18n'
 
 type AuthPasswordMode = 'setup' | 'reset'
 
@@ -10,37 +12,47 @@ interface AuthPasswordPageProps {
   mode: AuthPasswordMode
 }
 
-function getPageTitle(mode: AuthPasswordMode): string {
+function getPageTitle(
+  mode: AuthPasswordMode,
+  t: TranslationDictionary,
+): string {
   if (mode === 'setup') {
-    return 'Configure ton mot de passe'
+    return t.authPassword.setupTitle
   }
 
-  return 'Nouveau mot de passe'
+  return t.authPassword.resetTitle
 }
 
-function getPageDescription(mode: AuthPasswordMode): string {
+function getPageDescription(
+  mode: AuthPasswordMode,
+  t: TranslationDictionary,
+): string {
   if (mode === 'setup') {
-    return 'Choisis le mot de passe qui servira pour tes prochaines connexions.'
+    return t.authPassword.setupDescription
   }
 
-  return 'Définis un nouveau mot de passe pour récupérer ton compte.'
+  return t.authPassword.resetDescription
 }
 
-function getSuccessMessage(mode: AuthPasswordMode): string {
+function getSuccessMessage(
+  mode: AuthPasswordMode,
+  t: TranslationDictionary,
+): string {
   if (mode === 'setup') {
-    return 'Mot de passe configuré'
+    return t.authPassword.setupSuccess
   }
 
-  return 'Mot de passe réinitialisé'
+  return t.authPassword.resetSuccess
 }
 
 const AuthPasswordPage = ({ mode }: AuthPasswordPageProps) => {
   const { user, loading, updatePassword } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
 
   async function handlePasswordSubmit(password: string) {
     await updatePassword(password)
-    toast.success(getSuccessMessage(mode))
+    toast.success(getSuccessMessage(mode, t))
     navigate('/')
   }
 
@@ -48,7 +60,7 @@ const AuthPasswordPage = ({ mode }: AuthPasswordPageProps) => {
     return (
       <div className="max-w-[420px] mx-auto py-10 px-4">
         <div className="bg-white rounded-2xl p-6 shadow-card text-center">
-          <p className="text-sm text-gray-400 m-0">Chargement…</p>
+          <p className="text-sm text-gray-400 m-0">{t.profile.loading}</p>
         </div>
       </div>
     )
@@ -62,17 +74,17 @@ const AuthPasswordPage = ({ mode }: AuthPasswordPageProps) => {
             <KeyRound size={22} />
           </div>
           <h1 className="text-xl font-extrabold text-navy m-0 mb-2">
-            Lien invalide ou expiré
+            {t.authPassword.invalidTitle}
           </h1>
           <p className="text-sm text-gray-500 m-0 mb-5 leading-snug">
-            Redemande un email de gestion du mot de passe pour continuer.
+            {t.authPassword.invalidDescription}
           </p>
           <button
             type="button"
             className="inline-flex justify-center py-2.5 px-5 bg-navy text-cream font-semibold rounded-lg hover:bg-navy/90 transition-colors"
             onClick={() => navigate('/')}
           >
-            Retour à la connexion
+            {t.auth.backToLogin}
           </button>
         </div>
       </div>
@@ -86,14 +98,14 @@ const AuthPasswordPage = ({ mode }: AuthPasswordPageProps) => {
           <KeyRound size={22} />
         </div>
         <h1 className="text-xl font-extrabold text-navy text-center m-0 mb-2">
-          {getPageTitle(mode)}
+          {getPageTitle(mode, t)}
         </h1>
         <p className="text-sm text-gray-500 text-center m-0 mb-5 leading-snug">
-          {getPageDescription(mode)}
+          {getPageDescription(mode, t)}
         </p>
         <PasswordForm
-          submitLabel="Enregistrer le mot de passe"
-          submittingLabel="Enregistrement…"
+          submitLabel={t.authPassword.savePassword}
+          submittingLabel={t.authPassword.savingPassword}
           onSubmit={handlePasswordSubmit}
         />
       </div>

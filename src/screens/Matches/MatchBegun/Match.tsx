@@ -1,4 +1,5 @@
 import { useBet, useBetsFromGame } from '../../../hooks/bets'
+import { useLanguage } from '../../../contexts/LanguageContext'
 import Flag from '../../../components/Flag'
 import PointsWon from './PointsWon'
 import { isNumber } from 'lodash'
@@ -20,6 +21,7 @@ const Match = ({
   match: any
   clickable?: boolean
 }) => {
+  const { t } = useLanguage()
   const [currentBet, , betLoading] = useBet(match.id)
   const [allBets, betsLoading] = useBetsFromGame(match.id, true)
   const navigate = useNavigate()
@@ -86,14 +88,14 @@ const Match = ({
             className="h-9 w-9 object-contain rounded"
           />
           <span className="text-[0.7rem] font-semibold text-navy text-center leading-tight">
-            {match.teamAName ?? 'À déterminer'}
+            {match.teamAName ?? t.common.tbd}
           </span>
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
           <div className="flex flex-col items-center gap-1">
             <span className="text-[0.6rem] text-gray-500 font-semibold uppercase tracking-wide whitespace-nowrap">
-              Score final
+              {t.matches.scoreFinal}
             </span>
             <span className="inline-block text-lg font-extrabold text-navy bg-white py-1 px-2.5 rounded-[10px] border border-gray-200 whitespace-nowrap">
               {match.scores.A} – {match.scores.B}
@@ -102,7 +104,7 @@ const Match = ({
 
           <div className="flex flex-col items-center gap-1">
             <span className="text-[0.6rem] text-gray-400 font-semibold uppercase tracking-wide whitespace-nowrap">
-              Prono
+              {t.scoring.prediction}
             </span>
             <span className="inline-block text-lg font-extrabold text-navy/70 bg-gray-100 py-1 px-2.5 rounded-[10px] whitespace-nowrap">
               {hasBet
@@ -118,7 +120,7 @@ const Match = ({
             className="h-9 w-9 object-contain rounded"
           />
           <span className="text-[0.7rem] font-semibold text-navy text-center leading-tight">
-            {match.teamBName ?? 'À déterminer'}
+            {match.teamBName ?? t.common.tbd}
           </span>
         </div>
       </div>
@@ -127,12 +129,12 @@ const Match = ({
         <div className="flex flex-wrap gap-2">
           {playoffWinnerName && (
             <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-[0.7rem] font-bold text-amber-900">
-              Vainqueur final : {playoffWinnerName}
+              {t.scoring.finalWinner} : {playoffWinnerName}
             </span>
           )}
           {betPlayoffWinnerName && (
             <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-[0.7rem] font-bold text-indigo-700">
-              Ton vainqueur si nul : {betPlayoffWinnerName}
+              {t.matches.playoffWinnerInDraw} : {betPlayoffWinnerName}
             </span>
           )}
         </div>

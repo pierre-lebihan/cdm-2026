@@ -74,8 +74,8 @@ export function computeScoringBreakdown(
   if (betFormat === 'regulation_1x2') {
     gagnant = betResult === realResult ? 8 : 0
   } else {
-    const effReal = realResult !== 'N' ? realResult : playoffWinner ?? null
-    const effBet = betResult !== 'N' ? betResult : betPlayoffWinner ?? null
+    const effReal = realResult !== 'N' ? realResult : (playoffWinner ?? null)
+    const effBet = betResult !== 'N' ? betResult : (betPlayoffWinner ?? null)
     gagnant = effReal !== null && effBet === effReal ? 8 : 0
   }
 

@@ -56,20 +56,11 @@ const Flag = memo<FlagProps>(({ country, tooltipText, className, style }) => {
   if (!flag) return <FlagPlaceholder className={className} style={style} />
 
   const imgElement = (
-    <img
-      src={flag}
-      alt={country}
-      className={className}
-      style={style}
-    />
+    <img src={flag} alt={country} className={className} style={style} />
   )
 
   if (tooltipText) {
-    return (
-      <Tooltip content={tooltipText}>
-        {imgElement}
-      </Tooltip>
-    )
+    return <Tooltip content={tooltipText}>{imgElement}</Tooltip>
   }
 
   return imgElement

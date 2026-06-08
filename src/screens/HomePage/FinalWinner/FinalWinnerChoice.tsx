@@ -3,6 +3,7 @@ import find from 'lodash/find'
 import { ChevronDown, Search } from 'lucide-react'
 import Flag from '../../../components/Flag'
 import { getFinalWinnerEligibleTeams, useTeams } from '../../../hooks/teams'
+import { useLanguage } from '../../../contexts/LanguageContext'
 
 interface FinalWinnerChoiceProps {
   userTeam: string | null | undefined
@@ -15,6 +16,7 @@ const FinalWinnerChoice = ({
   disabled,
   onTeamSelect,
 }: FinalWinnerChoiceProps) => {
+  const { t } = useLanguage()
   const teams = useTeams()
   const eligibleTeams = useMemo(() => {
     return getFinalWinnerEligibleTeams(teams)
@@ -75,7 +77,7 @@ const FinalWinnerChoice = ({
           <span
             className={selectedTeam ? 'text-navy font-medium' : 'text-gray-400'}
           >
-            {selectedTeam ? selectedTeam.name : 'Sélectionner une équipe'}
+            {selectedTeam ? selectedTeam.name : t.finalWinner.selectTeam}
           </span>
           <ChevronDown
             size={16}
@@ -92,7 +94,7 @@ const FinalWinnerChoice = ({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher..."
+                placeholder={t.finalWinner.searchPlaceholder}
                 className="flex-1 text-sm outline-none bg-transparent placeholder:text-gray-300"
               />
             </div>
@@ -126,7 +128,7 @@ const FinalWinnerChoice = ({
               ))}
               {filteredTeams.length === 0 && (
                 <p className="text-center text-xs text-gray-400 py-3">
-                  Aucune équipe trouvée
+                  {t.finalWinner.noTeamFound}
                 </p>
               )}
             </div>
@@ -136,7 +138,7 @@ const FinalWinnerChoice = ({
 
       {selectedTeam?.winOdd && (
         <p className="text-xs font-semibold text-indigo-500 mt-2">
-          Cote : {Math.round(selectedTeam.winOdd / 10) * 10}
+          {t.finalWinner.odd} : {Math.round(selectedTeam.winOdd / 10) * 10}
         </p>
       )}
     </div>

@@ -22,6 +22,8 @@ import OnboardingModal from '../App/OnboardingModal'
 import Mascot from '../../components/Mascot'
 import { MASCOT_LIST } from '../../lib/mascots'
 import { captureEvent } from '../../lib/posthog'
+import { useLanguage } from '../../contexts/LanguageContext'
+import LanguageSelector from 'components/LanguageSelector'
 
 const ONBOARDING_STORAGE_KEY = 'mpga-onboarding-seen'
 const FINAL_WINNER_ELEMENT_ID = 'final-winner'
@@ -130,6 +132,7 @@ const scrollToFinalWinner = () => {
 
 const WinnerChoice = () => {
   const competitionData = useCompetitionData()
+  const { t } = useLanguage()
 
   const launchBetOk = useMemo(() => {
     if (!competitionData?.launch_bet) return true
@@ -141,9 +144,7 @@ const WinnerChoice = () => {
   if (!launchBetOk) {
     return (
       <div className="bg-white rounded-2xl p-5 shadow-card text-center">
-        <p className="text-gray-500 text-sm">
-          Le pronostic du vainqueur final sera bientôt accessible !
-        </p>
+        <p className="text-gray-500 text-sm">{t.home.winnerSoon}</p>
       </div>
     )
   }
@@ -159,6 +160,7 @@ const HomePageConnected = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const competitionTitle = useCompetitionDisplayName()
+  const { t } = useLanguage()
   const [onboardingOpen, setOnboardingOpen] = useState(false)
 
   useEffect(() => {
@@ -219,8 +221,7 @@ const HomePageConnected = () => {
           {competitionTitle}
         </h1>
         <p className="text-sm text-gray-500 leading-relaxed">
-          Pronostiquez les résultats des matches, marquez des points et
-          affrontez vos amis et votre famille dans votre tribu !
+          {t.home.connectedLead}
         </p>
       </div>
 
@@ -241,14 +242,14 @@ const HomePageConnected = () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-navy m-0 leading-snug">
-            Découvre comment jouer
+            {t.home.onboardingCta}
           </p>
           <p className="text-xs text-gray-500 m-0 leading-snug">
-            Sam, Iván et Pierre t'expliquent en 3 étapes
+            {t.home.onboardingSubtitle}
           </p>
         </div>
         <span className="text-xs font-semibold text-indigo-600 shrink-0 group-hover:underline">
-          Lancer →
+          {t.home.playOnboarding}
         </span>
       </button>
 
@@ -256,26 +257,36 @@ const HomePageConnected = () => {
         <button
           type="button"
           className="flex-1 min-w-[140px] max-w-[200px] bg-white rounded-[14px] p-4 text-center shadow-card cursor-pointer transition-all border-none hover:shadow-card-hover hover:-translate-y-px"
-          onClick={() => handleShortcutClick('/rules', 'Règles')}
+          onClick={() => handleShortcutClick('/rules', t.home.shortcutRules)}
         >
           <div className="text-2xl mb-1.5">📋</div>
-          <div className="text-xs font-semibold text-navy">Règles</div>
+          <div className="text-xs font-semibold text-navy">
+            {t.home.shortcutRules}
+          </div>
         </button>
         <button
           type="button"
           className="flex-1 min-w-[140px] max-w-[200px] bg-white rounded-[14px] p-4 text-center shadow-card cursor-pointer transition-all border-none hover:shadow-card-hover hover:-translate-y-px"
-          onClick={() => handleShortcutClick('/matches', 'Pronostics')}
+          onClick={() =>
+            handleShortcutClick('/matches', t.home.shortcutMatches)
+          }
         >
           <div className="text-2xl mb-1.5">⚽</div>
-          <div className="text-xs font-semibold text-navy">Pronostics</div>
+          <div className="text-xs font-semibold text-navy">
+            {t.home.shortcutMatches}
+          </div>
         </button>
         <button
           type="button"
           className="flex-1 min-w-[140px] max-w-[200px] bg-white rounded-[14px] p-4 text-center shadow-card cursor-pointer transition-all border-none hover:shadow-card-hover hover:-translate-y-px"
-          onClick={() => handleShortcutClick('/ranking', 'Classement')}
+          onClick={() =>
+            handleShortcutClick('/ranking', t.home.shortcutRanking)
+          }
         >
           <div className="text-2xl mb-1.5">🥇</div>
-          <div className="text-xs font-semibold text-navy">Classement</div>
+          <div className="text-xs font-semibold text-navy">
+            {t.home.shortcutRanking}
+          </div>
         </button>
       </div>
 
@@ -290,6 +301,7 @@ const HomePageConnected = () => {
 
 const HomePageGuest = () => {
   const competitionTitle = useCompetitionDisplayName()
+  const { t } = useLanguage()
 
   const [modalOpen, setModalOpen] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -360,14 +372,16 @@ const HomePageGuest = () => {
         className="absolute top-3 left-3 z-10 w-auto max-w-[min(200px,45vw)] max-h-24 object-contain object-left-top drop-shadow-lg select-none sm:top-4 sm:left-4 sm:max-w-[min(240px,50vw)] sm:max-h-28"
         draggable={false}
       />
+      <div className="absolute top-3 right-3 z-20 sm:top-4 sm:right-4">
+        <LanguageSelector />
+      </div>
 
       <div className="absolute bottom-0 left-0 right-0 px-6 pb-10 text-white text-center">
         <h1 className="text-3xl font-extrabold mb-2 drop-shadow-lg">
           {competitionTitle}
         </h1>
         <p className="text-sm text-white/75 mb-7 leading-relaxed max-w-[340px] mx-auto">
-          Pronostiquez les résultats des matches, marquez des points et
-          affrontez vos amis dans votre tribu !
+          {t.home.guestLead}
         </p>
 
         <div className="flex flex-col items-center gap-3">
@@ -376,19 +390,19 @@ const HomePageGuest = () => {
             className="py-3 px-8 rounded-xl bg-white text-navy font-semibold text-sm shadow-lg hover:bg-white/90 hover:-translate-y-px transition-all"
             onClick={handleOpenConnectionModal}
           >
-            Connexion
+            {t.common.connection}
           </button>
           <Link
             to="/rules"
             className="text-xs text-white/60 hover:text-white/90 transition-colors underline underline-offset-2"
           >
-            Voir les règles
+            {t.home.viewRules}
           </Link>
           <Link
             to="/legal"
             className="text-[0.7rem] text-white/45 hover:text-white/80 transition-colors underline underline-offset-2"
           >
-            Confidentialité et conditions
+            {t.home.legalLink}
           </Link>
         </div>
       </div>

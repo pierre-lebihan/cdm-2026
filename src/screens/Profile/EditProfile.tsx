@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 import { Camera, Check, Pencil, X } from 'lucide-react'
 import { useSaveProfile, useUploadAvatar } from '../../hooks/user'
 import { compressAvatarImage } from '../../lib/imageCompression'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 const MAX_INPUT_BYTES = 15 * 1024 * 1024
 
@@ -25,6 +26,7 @@ const EditProfile = ({
   photoURL: string
   email: string
 }) => {
+  const { t } = useLanguage()
   const saveProfile = useSaveProfile()
   const uploadAvatar = useUploadAvatar()
 
@@ -44,11 +46,11 @@ const EditProfile = ({
     setSavingName(true)
     try {
       await saveProfile({ display_name: trimmed })
-      toast.success('Nom mis à jour')
+      toast.success(t.profile.nameUpdated)
       setEditingName(false)
     } catch (err) {
       console.error(err)
-      toast.error('Erreur lors de la mise à jour du nom')
+      toast.error(t.profile.nameUpdateError)
     } finally {
       setSavingName(false)
     }
@@ -71,12 +73,12 @@ const EditProfile = ({
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      toast.error('Format de fichier non supporté')
+      toast.error(t.profile.fileFormatError)
       return
     }
 
     if (file.size > MAX_INPUT_BYTES) {
-      toast.error('Image trop lourde (15 Mo max)')
+      toast.error(t.profile.imageTooHeavy)
       return
     }
 
@@ -85,10 +87,10 @@ const EditProfile = ({
       const compressed = await compressAvatarImage(file)
       const url = await uploadAvatar(compressed)
       await saveProfile({ avatar_url: url })
-      toast.success('Photo mise à jour')
+      toast.success(t.profile.photoUpdated)
     } catch (err) {
       console.error(err)
-      toast.error('Erreur lors de la mise à jour de la photo')
+      toast.error(t.profile.photoUpdateError)
     } finally {
       setUploading(false)
     }
@@ -114,8 +116,8 @@ const EditProfile = ({
           onClick={handleAvatarClick}
           disabled={uploading}
           className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-navy text-cream flex items-center justify-center shadow-card hover:bg-navy/90 disabled:opacity-50 disabled:cursor-not-allowed"
-          title="Changer la photo"
-          aria-label="Changer la photo de profil"
+          title={t.profile.avatarChange}
+          aria-label={t.profile.avatarChange}
         >
           <Camera size={14} />
         </button>
@@ -130,7 +132,7 @@ const EditProfile = ({
 
       {uploading && (
         <p className="text-xs text-gray-400 m-0 mb-2">
-          Compression et envoi de la photo…
+          {t.profile.avatarUploading}
         </p>
       )}
 
@@ -152,7 +154,7 @@ const EditProfile = ({
             onClick={handleSaveName}
             disabled={!isNameValid || savingName}
             className="p-1.5 rounded-md text-green-700 bg-green-100 hover:bg-green-200 disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Enregistrer"
+            title={t.common.save}
           >
             <Check size={16} />
           </button>
@@ -161,7 +163,7 @@ const EditProfile = ({
             onClick={handleCancelName}
             disabled={savingName}
             className="p-1.5 rounded-md text-gray-600 bg-gray-200 hover:bg-gray-300"
-            title="Annuler"
+            title={t.common.cancel}
           >
             <X size={16} />
           </button>
@@ -176,8 +178,8 @@ const EditProfile = ({
               setEditingName(true)
             }}
             className="p-1 rounded-md text-gray-500 hover:text-indigo-600 hover:bg-indigo-50"
-            title="Renommer"
-            aria-label="Renommer"
+            title={t.profile.rename}
+            aria-label={t.profile.rename}
           >
             <Pencil size={14} />
           </button>

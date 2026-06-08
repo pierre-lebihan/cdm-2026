@@ -7,6 +7,7 @@ import {
   type PushNotificationUiState,
 } from '../lib/pushNotificationState'
 import { captureEvent } from '../lib/posthog'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface NotificationPromptProps {
   userId: string
@@ -31,6 +32,7 @@ export default function NotificationPrompt({
   refresh,
   onHandled,
 }: NotificationPromptProps) {
+  const { t } = useLanguage()
   const iosNeedsInstall = isIos() && !isStandalonePwa()
   const show = enabled && state === 'can_enable'
 
@@ -71,17 +73,14 @@ export default function NotificationPrompt({
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-navy leading-tight">
-              Pierre te sauve du prono oublié
+              {t.prompts.notificationTitle}
             </h3>
             <p className="text-sm text-navy/70 leading-snug mt-1 m-0">
-              Un rappel 5 min avant le coup d&apos;envoi si ta grille est vide.
-              Pas de spam : Pierre a déjà assez de bois à couper.
+              {t.prompts.notificationText}
             </p>
             {iosNeedsInstall ? (
               <p className="text-xs text-navy/80 mt-2 m-0 leading-snug bg-white/70 border border-navy/10 rounded-lg p-2">
-                Sur iPhone : ajoute d&apos;abord l&apos;app à l&apos;écran
-                d&apos;accueil (Partager → sur l&apos;écran d&apos;accueil),
-                puis active les alertes depuis le profil.
+                {t.prompts.notificationIosText}
               </p>
             ) : null}
           </div>
@@ -90,7 +89,7 @@ export default function NotificationPrompt({
           type="button"
           onClick={handleDismiss}
           className="shrink-0 text-navy/40 hover:bg-white/70 hover:text-navy rounded-lg p-1 transition-colors -mt-1 -mr-1"
-          aria-label="Fermer"
+          aria-label={t.common.close}
         >
           <X size={20} />
         </button>
@@ -101,7 +100,7 @@ export default function NotificationPrompt({
           onClick={handleEnable}
           className="w-full py-2.5 bg-navy hover:bg-navy/90 text-cream font-semibold rounded-lg transition-colors shadow-sm"
         >
-          Oui, sauve mon prono
+          {t.prompts.notificationButton}
         </button>
       ) : (
         <button
@@ -109,7 +108,7 @@ export default function NotificationPrompt({
           onClick={handleDismiss}
           className="w-full py-2.5 text-navy font-semibold rounded-lg border border-navy/20 bg-white/60 hover:bg-white"
         >
-          Compris
+          {t.prompts.notificationDismiss}
         </button>
       )}
     </div>

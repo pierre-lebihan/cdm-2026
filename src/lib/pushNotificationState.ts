@@ -40,10 +40,7 @@ export async function computePushUiState(): Promise<PushNotificationUiState> {
     return 'no_sdk'
   }
   try {
-    await promiseWithTimeout(
-      initOneSignal(),
-      PUSH_STATE_INIT_TIMEOUT_MS,
-    )
+    await promiseWithTimeout(initOneSignal(), PUSH_STATE_INIT_TIMEOUT_MS)
   } catch {
     return 'error'
   }

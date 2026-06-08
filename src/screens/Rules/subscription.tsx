@@ -8,17 +8,19 @@ const Subscription = () => (
     <br />
     <h3 className="text-lg font-bold text-navy">Mode de qualification</h3>
     <p>
-      Il n&apos;y a pas d&apos;élimination, tout le monde participe aux pronostics de tous
-      les matchs. Chacun des participants garde son nombre de points acquis
-      durant toute la compétition.
+      Il n&apos;y a pas d&apos;élimination, tout le monde participe aux
+      pronostics de tous les matchs. Chacun des participants garde son nombre de
+      points acquis durant toute la compétition.
     </p>
     <h3 className="text-lg font-bold text-navy">Droits d&apos;inscription</h3>
     <p>
-      L&apos;inscription est gratuite et instantanée. Néanmoins, il est conseillé aux
-      tribus de mettre en place une cagnotte pour récompenser les vainqueurs et
-      rajouter de l&apos;enjeu.
+      L&apos;inscription est gratuite et instantanée. Néanmoins, il est
+      conseillé aux tribus de mettre en place une cagnotte pour récompenser les
+      vainqueurs et rajouter de l&apos;enjeu.
     </p>
-    <h3 className="text-lg font-bold text-navy">Date de validation des pronostics</h3>
+    <h3 className="text-lg font-bold text-navy">
+      Date de validation des pronostics
+    </h3>
     <p>
       <b>
         Les pronostics pour chaque match doivent être remplis sur le site avant

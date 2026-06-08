@@ -5,6 +5,7 @@ import {
 } from '../../../lib/bettingOdds'
 import { formatOdds } from '../../../lib/scoring'
 import type { MatchBetFormat } from '../../../lib/matchEnums'
+import { useLanguage } from '../../../contexts/LanguageContext'
 
 interface BetItem {
   betTeamA: number | null
@@ -81,13 +82,11 @@ function buildSegments(
     }))
 }
 
-const MIN_FLEX = 0.10
+const MIN_FLEX = 0.1
 
-const BetDistributionBar = ({
-  bets,
-  betFormat,
-}: BetDistributionBarProps) => {
+const BetDistributionBar = ({ bets, betFormat }: BetDistributionBarProps) => {
   const [showOdds, setShowOdds] = useState(false)
+  const { t } = useLanguage()
 
   const dist = useMemo(() => {
     if (!bets) {
@@ -116,7 +115,7 @@ const BetDistributionBar = ({
     <div className="w-full space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="text-[0.625rem] text-gray-400 font-medium uppercase tracking-wide">
-          Qui a prono quoi ?
+          {t.betting.distributionTitle}
         </span>
         <button
           type="button"
@@ -131,7 +130,7 @@ const BetDistributionBar = ({
           <span
             className={`px-2 py-0.5 transition-colors ${showOdds ? 'bg-navy text-white' : 'bg-white text-gray-400'}`}
           >
-            Cotes
+            {t.betting.odds}
           </span>
         </button>
       </div>

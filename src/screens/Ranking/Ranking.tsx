@@ -6,6 +6,7 @@ import GroupRanking from './GroupRanking/GroupRanking'
 import Loader from '../../components/Loader'
 import { useAllOpponents } from '../../hooks/opponents'
 import { captureEvent } from '../../lib/posthog'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 const Ranking = () => {
   const navigate = useNavigate()
@@ -17,6 +18,7 @@ const Ranking = () => {
   const [selectedTab, setSelectedTab] = useState(
     Number(urlParams.get('tab') || '0'),
   )
+  const { t } = useLanguage()
 
   useEffect(() => {
     const tabFromUrl = urlParams.get('tab') || '0'
@@ -39,18 +41,18 @@ const Ranking = () => {
     return (
       <div className="max-w-[600px] mx-auto py-6 px-4 text-center pt-[60px]">
         <p className="text-gray-500 text-[0.9rem]">
-          Pour voir le classement, il faut d'abord{' '}
+          {t.ranking.introPrefix}{' '}
           <Link to="/groups" className="text-indigo-500 font-semibold">
-            créer ou rejoindre une tribu
+            {t.ranking.createOrJoinGroup}
           </Link>
-          .
+          {t.ranking.introSuffix}
         </p>
       </div>
     )
   }
 
   const tabs = [
-    { label: 'Général', key: 'general' },
+    { label: t.ranking.general, key: 'general' },
     ...groups.map((g) => ({
       label: g.name,
       key: g.id,
@@ -77,7 +79,10 @@ const Ranking = () => {
 
       <div className="max-w-[600px] mx-auto p-4">
         {selectedTab === 0 ? (
-          <GroupRanking name="Général" opponentsProvided={allOpponents} />
+          <GroupRanking
+            name={t.ranking.general}
+            opponentsProvided={allOpponents}
+          />
         ) : (
           <GroupRanking
             name={groups[selectedTab - 1]?.name}

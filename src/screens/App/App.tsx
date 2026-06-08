@@ -16,6 +16,8 @@ import PwaUpdatePrompt from 'components/PwaUpdatePrompt'
 import { OneSignalSubscriber } from 'components/OneSignalSubscriber'
 import SeoMetadata from 'components/SeoMetadata'
 import PostHogTracker from 'components/PostHogTracker'
+import LanguageSelector from 'components/LanguageSelector'
+import { useLanguage } from '../../contexts/LanguageContext'
 import { captureEvent } from '../../lib/posthog'
 
 const AnalyticsPage = lazy(() => import('../Analytics'))
@@ -32,6 +34,7 @@ const AdminPage = lazy(() => import('../Admin'))
 const App = () => {
   const [menuOpen, setMenuOpen] = useState(false)
   const { loading } = useAuth()
+  const { t } = useLanguage()
   const signedIn = useIsUserConnected()
   const location = useLocation()
   const isHomePage = location.pathname === '/'
@@ -62,16 +65,17 @@ const App = () => {
           <Link
             to="/"
             className="flex items-center gap-2 text-[1.05rem] font-extrabold text-navy tracking-tight hover:opacity-80 active:scale-95 transition-all"
-            title="Retour à l'accueil"
+            title={t.nav.home}
           >
             <img
               src="/icon-192x192.png"
               alt=""
               className="w-8 h-8 rounded-md object-contain shrink-0"
             />
-            <span>Make Prono Great Again</span>
+            <span className="hidden sm:inline">Make Prono Great Again</span>
           </Link>
-          <div className="shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
+            <LanguageSelector />
             <ConnectionWidget />
           </div>
         </header>

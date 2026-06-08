@@ -19,9 +19,7 @@ const Rules = () => (
           />
         ))}
       </div>
-      <h1 className="text-2xl font-extrabold text-navy mb-2">
-        Règles du jeu
-      </h1>
+      <h1 className="text-2xl font-extrabold text-navy mb-2">Règles du jeu</h1>
       <p className="text-sm text-gray-500 m-0 mb-3">
         Sam, Iván et Pierre t'expliquent comment pronostiquer
       </p>

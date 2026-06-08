@@ -5,6 +5,7 @@ import App from './screens/App/App'
 import Loader from './components/Loader'
 import { AuthProvider } from './contexts/AuthContext'
 import { CompetitionProvider } from './contexts/CompetitionContext'
+import { LanguageProvider } from './contexts/LanguageContext'
 import './index.css'
 
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -18,11 +19,13 @@ root.render(
   <React.StrictMode>
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Suspense fallback={<Loader variant="page" size="lg" />}>
-        <CompetitionProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </CompetitionProvider>
+        <LanguageProvider>
+          <CompetitionProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </CompetitionProvider>
+        </LanguageProvider>
       </Suspense>
     </BrowserRouter>
   </React.StrictMode>,

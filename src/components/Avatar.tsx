@@ -37,7 +37,9 @@ const InlineAvatar = ({
       </div>
     )}
     {displayName && (
-      <span className="ml-2 text-sm font-semibold text-navy">{displayName}</span>
+      <span className="ml-2 text-sm font-semibold text-navy">
+        {displayName}
+      </span>
     )}
   </div>
 )

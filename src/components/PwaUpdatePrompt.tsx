@@ -6,6 +6,7 @@ import {
 } from 'virtual:pwa-register/react'
 import { getLatestAppBuildId } from 'utils/appVersion'
 import { captureEvent } from '../lib/posthog'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const UPDATE_CHECK_INTERVAL = 30 * 1000
 const RELOAD_FALLBACK_DELAY = 10 * 1000
@@ -560,6 +561,8 @@ function MandatoryUpdateOverlay({
   isReloading,
   onReloadClick,
 }: MandatoryUpdateOverlayProps) {
+  const { t } = useLanguage()
+
   return (
     <div
       className="fixed inset-0 z-[10000] flex items-center justify-center bg-navy/75 px-4 backdrop-blur-sm"
@@ -575,11 +578,10 @@ function MandatoryUpdateOverlay({
           />
         </div>
         <h2 id="pwa-update-title" className="text-xl font-extrabold">
-          Mise à jour obligatoire
+          {t.prompts.updateTitle}
         </h2>
         <p className="mt-3 text-sm leading-6 text-navy-light">
-          Une nouvelle version est disponible. Recharge l&apos;application pour
-          continuer à pronostiquer.
+          {t.prompts.updateText}
         </p>
         <button
           type="button"
@@ -587,7 +589,7 @@ function MandatoryUpdateOverlay({
           onClick={onReloadClick}
           disabled={isReloading}
         >
-          {isReloading ? 'Rechargement...' : 'Recharger maintenant'}
+          {isReloading ? t.prompts.updateLoading : t.prompts.updateButton}
         </button>
       </div>
     </div>

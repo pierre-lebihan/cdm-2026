@@ -1,6 +1,7 @@
 import { Scale, Shield, Target, UsersRound } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
+import { useLanguage } from '../../../contexts/LanguageContext'
 import {
   estimatedPotentialGain,
   mergeBetsWithDraft,
@@ -60,28 +61,29 @@ interface BettingPotentialGainProps {
 function thermoStatus(
   popularity: number,
   totalValid: number,
+  t: ReturnType<typeof useLanguage>['t'],
 ): BettingFeelStatus {
   if (totalValid < 4) {
     return {
       kind: 'cold',
-      message: 'Pas encore assez de pronos : la tendance va se préciser.',
+      message: t.betting.thermoCold,
     }
   }
   if (popularity > 0.5) {
     return {
       kind: 'safe',
-      message: 'Choix sécu : gain potentiel plus modeste.',
+      message: t.betting.thermoSafe,
     }
   }
   if (popularity < 0.28) {
     return {
       kind: 'risky',
-      message: 'Coup de poker : le gain potentiel peut grimper fort.',
+      message: t.betting.thermoRisky,
     }
   }
   return {
     kind: 'balanced',
-    message: 'Prono équilibré : ni trop sage, ni trop exotique.',
+    message: t.betting.thermoBalanced,
   }
 }
 
@@ -107,6 +109,7 @@ export function useBettingFeelData({
   betPlayoffWinner,
 }: BettingFeelInput): BettingFeelData {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const uid = user?.id
   const betsRows = bets
 
@@ -152,7 +155,7 @@ export function useBettingFeelData({
   }, [betFormat, merged, draftKey])
 
   const popularity = totalValid > 0 ? sameCount / totalValid : 0
-  const thermo = thermoStatus(popularity, totalValid)
+  const thermo = thermoStatus(popularity, totalValid, t)
   const phaseMultiplier = tournamentPhaseMultiplier(tournamentPhase)
   const gainMax = estimatedPotentialGain(
     MAX_BASE_POINTS,
@@ -172,6 +175,7 @@ export function useBettingFeelData({
 
 export const BettingPotentialGain = ({ data }: BettingPotentialGainProps) => {
   const [feelOpen, setFeelOpen] = useState(false)
+  const { t } = useLanguage()
 
   const handleToggleFeel = () => {
     setFeelOpen(!feelOpen)
@@ -186,11 +190,11 @@ export const BettingPotentialGain = ({ data }: BettingPotentialGainProps) => {
   return (
     <div className="relative flex min-h-[44px] items-start justify-center gap-1.5">
       <div
-        title={`Gain potentiel estimé : jusqu'à ${data.gainMax} points`}
+        title={`${t.betting.titlePotentialGain} ${data.gainMax} ${t.common.points}`}
         className="flex h-[44px] min-w-[76px] flex-col items-center justify-center rounded-full bg-green-500 px-2.5 text-white shadow-md ring-2 ring-cream"
       >
         <span className="text-[0.56rem] font-semibold uppercase leading-none opacity-85">
-          gain max
+          {t.betting.gainMax}
         </span>
         <span className="mt-0.5 text-base font-extrabold leading-none tabular-nums whitespace-nowrap">
           +{data.gainMax}
@@ -201,7 +205,7 @@ export const BettingPotentialGain = ({ data }: BettingPotentialGainProps) => {
           type="button"
           className="mt-1 flex h-6 w-6 items-center justify-center rounded-full bg-navy/[0.06] text-navy transition-colors hover:bg-navy hover:text-white"
           onClick={handleToggleFeel}
-          aria-label="Afficher la tendance des pronostics"
+          aria-label={t.betting.showTrend}
           aria-expanded={feelOpen}
         >
           <ThermoIcon size={14} />

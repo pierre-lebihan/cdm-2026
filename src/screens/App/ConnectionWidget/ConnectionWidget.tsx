@@ -4,6 +4,7 @@ import { useIsUserConnected } from '../../../hooks/user'
 import ConnectionModal from '../ConnectionModal'
 import User from './User'
 import { captureEvent } from '../../../lib/posthog'
+import { useLanguage } from '../../../contexts/LanguageContext'
 
 function handleDialogBackdropClick(
   e: React.MouseEvent<HTMLDialogElement>,
@@ -16,6 +17,7 @@ function handleDialogBackdropClick(
 
 const ConnectionWidget = () => {
   const isConnected = useIsUserConnected()
+  const { t } = useLanguage()
   const [modalOpened, setModalOpened] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -72,7 +74,7 @@ const ConnectionWidget = () => {
           className="inline-flex items-center gap-2 font-semibold rounded-full border-none cursor-pointer transition-all duration-150 bg-navy text-white py-1.5 px-4 text-xs hover:bg-navy-light"
           onClick={handleOpenModal}
         >
-          Connexion
+          {t.common.connection}
         </button>
       )}
     </>

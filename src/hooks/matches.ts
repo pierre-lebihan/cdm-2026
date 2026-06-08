@@ -30,7 +30,9 @@ export interface NormalizedMatch {
   competitionId: string | null
 }
 
-function normalizePlayoffWinner(value: string | null | undefined): 'A' | 'B' | null {
+function normalizePlayoffWinner(
+  value: string | null | undefined,
+): 'A' | 'B' | null {
   if (value === 'A' || value === 'B') return value
   return null
 }

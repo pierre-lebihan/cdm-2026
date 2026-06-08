@@ -1,5 +1,4 @@
 import { isPast, format, isSameDay } from 'date-fns'
-import { fr } from 'date-fns/locale'
 import map from 'lodash/map'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { ArrowRight, HelpCircle, Sparkles } from 'lucide-react'
@@ -21,6 +20,7 @@ import { useSelectedWinner } from '../../hooks/winner'
 import { useTeams, type NormalizedTeam } from '../../hooks/teams'
 import Flag from '../../components/Flag'
 import { captureEvent } from '../../lib/posthog'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 interface ScoringHelpButtonProps {
   onClick: () => void
@@ -42,15 +42,17 @@ function groupMatchesByDate(matches: NormalizedMatch[]) {
 }
 
 const ScoringHelpButton = ({ onClick }: ScoringHelpButtonProps) => {
+  const { t } = useLanguage()
+
   return (
     <button
       type="button"
       className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-indigo-100 bg-white px-4 py-2 text-xs font-semibold text-indigo-600 shadow-sm transition-colors hover:border-indigo-200 hover:text-indigo-800"
       onClick={onClick}
-      aria-label="Aide sur le calcul des points"
+      aria-label={t.matches.scoringHelp}
     >
       <HelpCircle size={15} className="shrink-0" />
-      <span>Comment les points sont calculés ?</span>
+      <span>{t.matches.scoringHelp}</span>
     </button>
   )
 }
@@ -82,22 +84,28 @@ function findTeamById(
   return null
 }
 
-function formatWinnerOdd(winOdd: number | null): string | null {
+function formatWinnerOdd(
+  winOdd: number | null,
+  localeCode: string,
+): string | null {
   if (winOdd == null) {
     return null
   }
 
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(localeCode, {
     maximumFractionDigits: 0,
   }).format(Math.round(winOdd / 10) * 10)
 }
 
-function formatPotentialPoints(points: number | null): string | null {
+function formatPotentialPoints(
+  points: number | null,
+  localeCode: string,
+): string | null {
   if (points == null) {
     return null
   }
 
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(localeCode, {
     maximumFractionDigits: 0,
   }).format(Math.round(points / 10) * 10)
 }
@@ -106,19 +114,24 @@ const FinalWinnerReminder = ({
   hasWinner,
   selectedTeam,
 }: FinalWinnerReminderProps) => {
-  const formattedOdd = formatWinnerOdd(selectedTeam?.winOdd ?? null)
+  const { localeCode, t } = useLanguage()
+  const formattedOdd = formatWinnerOdd(selectedTeam?.winOdd ?? null, localeCode)
   const title = hasWinner
-    ? `Ton vainqueur : ${selectedTeam?.name ?? 'choix enregistré'}`
-    : 'Il te manque le vainqueur final'
+    ? `${t.matches.finalWinnerSelectedPrefix} ${
+        selectedTeam?.name ?? t.matches.finalWinnerRecordedChoice
+      }`
+    : t.matches.finalWinnerMissingTitle
   const description = hasWinner
     ? formattedOdd
-      ? `Cote associée : ${formattedOdd}. Clique ici pour changer ton choix.`
-      : 'Clique ici pour changer ton choix.'
-    : "Tu n'as pas encore tenté le gros bonus. Choisis ton champion maintenant."
-  const actionLabel = hasWinner ? 'Changer' : 'Choisir'
+      ? `${t.matches.finalWinnerOddPrefix} ${formattedOdd}. ${t.matches.finalWinnerChangeHint}`
+      : t.matches.finalWinnerChangeHint
+    : t.matches.finalWinnerMissingDescription
+  const actionLabel = hasWinner
+    ? t.matches.finalWinnerChange
+    : t.matches.finalWinnerChoose
   const ariaLabel = hasWinner
-    ? 'Changer le pronostic du vainqueur final'
-    : 'Choisir le vainqueur final'
+    ? t.matches.finalWinnerChange
+    : t.matches.finalWinnerChoose
 
   return (
     <div className="px-4 pt-2">
@@ -155,16 +168,17 @@ const FinalWinnerAliveReminder = ({
   isOfficialWinner,
   selectedTeam,
 }: FinalWinnerAliveReminderProps) => {
-  const formattedPoints = formatPotentialPoints(selectedTeam.winOdd)
+  const { localeCode, t } = useLanguage()
+  const formattedPoints = formatPotentialPoints(selectedTeam.winOdd, localeCode)
   const potentialGain = formattedPoints
-    ? `+${formattedPoints} pts`
-    : 'le bonus vainqueur final'
+    ? `+${formattedPoints} ${t.common.pointsShort}`
+    : t.matches.finalWinnerWinnerBonus
   const title = isOfficialWinner
-    ? 'Ton vainqueur a gagné'
-    : 'Ton vainqueur est toujours en course'
+    ? t.matches.finalWinnerOfficialTitle
+    : t.matches.finalWinnerAliveTitle
   const description = isOfficialWinner
-    ? `${selectedTeam.name} a gagné et ton bonus vainqueur final est validé.`
-    : `${selectedTeam.name} peut encore te rapporter ${potentialGain} si elle va au bout.`
+    ? `${selectedTeam.name} ${t.matches.finalWinnerOfficialDescriptionSuffix}`
+    : `${selectedTeam.name} ${t.matches.finalWinnerAliveDescriptionPrefix} ${potentialGain} ${t.matches.finalWinnerAliveDescriptionSuffix}`
 
   return (
     <div className="px-4 pt-2">
@@ -194,6 +208,7 @@ const Matches = () => {
   const location = useLocation()
   const isAdmin = useIsUserAdmin()
   const isConnected = useIsUserConnected()
+  const { dateLocale, t } = useLanguage()
   const { bettedMatchIds, refresh: refreshBets } = useAllUserBets()
   const [selectedWinner] = useSelectedWinner()
   const teams = useTeams()
@@ -322,12 +337,9 @@ const Matches = () => {
         <div className="text-center max-w-md">
           <div className="text-5xl mb-4">🏆</div>
           <h1 className="text-xl font-bold text-navy mb-2">
-            Bientôt disponible
+            {t.matches.launchTitle}
           </h1>
-          <p className="text-gray-500">
-            Les pronostics seront bientôt accessibles ! D'ici là, vous pouvez
-            créer votre groupe et inviter vos amis !
-          </p>
+          <p className="text-gray-500">{t.matches.launchText}</p>
         </div>
       </div>
     )
@@ -340,13 +352,13 @@ const Matches = () => {
           className={`py-2 px-6 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${selectedTab === 0 ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
           onClick={() => handleTabChange(0)}
         >
-          À venir
+          {t.matches.tabUpcoming}
         </button>
         <button
           className={`py-2 px-6 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${selectedTab === 1 ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
           onClick={() => handleTabChange(1)}
         >
-          Terminés
+          {t.matches.tabFinished}
         </button>
       </div>
 
@@ -375,22 +387,20 @@ const Matches = () => {
             onClick={handleOpenAiModal}
           >
             <Sparkles size={18} />
-            <span>Laisse l'IA pronostiquer !</span>
+            <span>{t.matches.aiButton}</span>
           </button>
         </div>
       )}
 
       <div className="max-w-[520px] mx-auto py-2 px-4 pb-10">
         {dateGroups.length === 0 && (
-          <p className="text-gray-400 text-center py-12">
-            Aucun match à afficher
-          </p>
+          <p className="text-gray-400 text-center py-12">{t.matches.empty}</p>
         )}
         {dateGroups.map((group) => (
           <div key={group.date.toISOString()} className="mb-6">
             <div className="relative z-[5] py-2 mb-2">
               <span className="inline-block text-xs font-bold uppercase tracking-wide text-navy bg-cream py-0.5">
-                {format(group.date, 'EEEE d MMMM', { locale: fr })}
+                {format(group.date, 'EEEE d MMMM', { locale: dateLocale })}
               </span>
             </div>
             <div className="flex flex-col gap-2.5">

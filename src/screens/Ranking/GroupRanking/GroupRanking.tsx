@@ -10,6 +10,7 @@ import OwnRank from './OwnRank'
 import { useNavigate } from 'react-router-dom'
 import Flag from 'components/Flag'
 import Tooltip from 'components/Tooltip'
+import { useLanguage } from '../../../contexts/LanguageContext'
 
 interface GroupRankingProps {
   name?: string
@@ -54,6 +55,7 @@ const GroupRanking = ({
   const opponents = useOpponents(memberIds)
   const navigate = useNavigate()
   const competitionData = useCompetitionData()
+  const { localeCode, t } = useLanguage()
 
   const opponentsUsed = opponentsProvided || opponents
 
@@ -115,32 +117,33 @@ const GroupRanking = ({
               </div>
 
               <span className="flex-1 text-sm font-semibold text-navy overflow-hidden text-ellipsis whitespace-nowrap">
-                {opponent.display_name ?? 'Anonyme'}
+                {opponent.display_name ?? t.common.anonymous}
               </span>
 
               <span className="text-xs font-bold text-indigo-500 shrink-0">
-                {(opponent.score || 0).toLocaleString()} pts
+                {(opponent.score || 0).toLocaleString(localeCode)}{' '}
+                {t.common.pointsShort}
               </span>
 
               <div className="shrink-0 w-8 h-8">
                 {team ? (
                   hideWinner ? (
-                    <Tooltip content="Vainqueur encore secret">
+                    <Tooltip content={t.ranking.secretWinner}>
                       <img
                         src={imgUrl}
                         style={{ width: 28, height: 28 }}
-                        alt="Mystère"
+                        alt={t.common.mystery}
                       />
                     </Tooltip>
                   ) : isFinalWinner ? (
                     <Flag
-                      tooltipText={'Vainqueur officiel : ' + team.name}
+                      tooltipText={`${t.ranking.officialWinnerPrefix} ${team.name}`}
                       country={team.code}
                       style={{ width: 28, height: 28 }}
                     />
                   ) : team.elimination ? (
                     <Flag
-                      tooltipText={'Éliminé : ' + team.name}
+                      tooltipText={`${t.ranking.eliminatedPrefix} ${team.name}`}
                       country={team.code}
                       style={{
                         width: 28,
@@ -156,20 +159,20 @@ const GroupRanking = ({
                       style={{ width: 28, height: 28 }}
                     />
                   ) : (
-                    <Tooltip content="Vainqueur mystère">
+                    <Tooltip content={t.ranking.mysteryWinner}>
                       <img
                         src={imgUrl}
                         style={{ width: 28, height: 28 }}
-                        alt="Mystère"
+                        alt={t.common.mystery}
                       />
                     </Tooltip>
                   )
                 ) : (
-                  <Tooltip content="Pas de vainqueur sélectionné">
+                  <Tooltip content={t.ranking.noFinalWinner}>
                     <img
                       src={forgotBetImgUrl}
                       style={{ width: 28, height: 28, opacity: 0.4 }}
-                      alt="Aucun"
+                      alt={t.common.noWinner}
                     />
                   </Tooltip>
                 )}

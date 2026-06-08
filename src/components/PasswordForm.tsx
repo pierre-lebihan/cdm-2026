@@ -1,5 +1,6 @@
 import { KeyRound } from 'lucide-react'
 import { useState } from 'react'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface PasswordFormProps {
   submitLabel: string
@@ -10,13 +11,14 @@ interface PasswordFormProps {
 function getPasswordValidationError(
   password: string,
   confirmPassword: string,
+  t: ReturnType<typeof useLanguage>['t'],
 ): string | null {
   if (password.length < 8) {
-    return 'Le mot de passe doit contenir au moins 8 caractères.'
+    return t.profile.passwordMinError
   }
 
   if (password !== confirmPassword) {
-    return 'Les deux mots de passe ne correspondent pas.'
+    return t.profile.passwordMismatchError
   }
 
   return null
@@ -27,6 +29,7 @@ const PasswordForm = ({
   submittingLabel,
   onSubmit,
 }: PasswordFormProps) => {
+  const { t } = useLanguage()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -39,6 +42,7 @@ const PasswordForm = ({
     const validationError = getPasswordValidationError(
       password,
       confirmPassword,
+      t,
     )
     if (validationError) {
       setError(validationError)
@@ -53,9 +57,7 @@ const PasswordForm = ({
       setConfirmPassword('')
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : 'Impossible de mettre à jour le mot de passe.',
+        err instanceof Error ? err.message : t.profile.passwordUpdateFallback,
       )
     } finally {
       setSubmitting(false)
@@ -69,7 +71,7 @@ const PasswordForm = ({
           htmlFor="new-password"
           className="text-xs font-semibold text-navy"
         >
-          Nouveau mot de passe
+          {t.profile.newPassword}
         </label>
         <input
           id="new-password"
@@ -88,7 +90,7 @@ const PasswordForm = ({
           htmlFor="confirm-password"
           className="text-xs font-semibold text-navy"
         >
-          Confirmer le mot de passe
+          {t.profile.confirmPassword}
         </label>
         <input
           id="confirm-password"

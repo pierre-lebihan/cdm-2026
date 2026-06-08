@@ -3,6 +3,7 @@ import isEmpty from 'lodash/isEmpty'
 import toast from 'react-hot-toast'
 import { Pencil, Check, X } from 'lucide-react'
 import { useAuth } from '../../../contexts/AuthContext'
+import { useLanguage } from '../../../contexts/LanguageContext'
 import { useRenameGroup, type GroupWithMembers } from '../../../hooks/groups'
 import { captureEvent } from '../../../lib/posthog'
 
@@ -13,13 +14,17 @@ const MyGroups = ({
   groups: GroupWithMembers[]
   onChange: () => void
 }) => {
+  const { t } = useLanguage()
+
   if (isEmpty(groups)) return null
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-card">
-      <h3 className="text-lg font-bold text-navy m-0 mb-1">Mes tribus</h3>
+      <h3 className="text-lg font-bold text-navy m-0 mb-1">
+        {t.groups.myGroupsTitle}
+      </h3>
       <p className="text-xs text-gray-400 m-0 mb-4">
-        Les tribus dont vous faites partie
+        {t.groups.myGroupsDescription}
       </p>
 
       <div className="flex flex-col gap-2 mt-3">
@@ -39,6 +44,7 @@ const GroupItem = ({
   onChange: () => void
 }) => {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const uid = user?.id
   const renameGroup = useRenameGroup()
 
@@ -51,11 +57,11 @@ const GroupItem = ({
   const isAwaiting = group.awaitingIds.includes(uid ?? '')
 
   const badgeLabel = isAdmin
-    ? 'Admin'
+    ? t.groups.adminBadge
     : isMember
-      ? 'Membre'
+      ? t.groups.memberBadge
       : isAwaiting
-        ? 'En attente'
+        ? t.groups.awaitingBadge
         : ''
 
   const badgeClasses = isAdmin
@@ -92,7 +98,7 @@ const GroupItem = ({
       captureEvent('group_join_key_copied', {
         group_id: group.id,
       })
-      toast.success('Code copié !', { duration: 2000 })
+      toast.success(t.groups.codeCopied, { duration: 2000 })
     })
   }
 
@@ -115,7 +121,7 @@ const GroupItem = ({
           onClick={handleSave}
           disabled={!isValid || saving}
           className="p-1.5 rounded-md text-green-700 bg-green-100 hover:bg-green-200 disabled:opacity-40 disabled:cursor-not-allowed"
-          title="Enregistrer"
+          title={t.common.save}
         >
           <Check size={16} />
         </button>
@@ -124,7 +130,7 @@ const GroupItem = ({
           onClick={handleCancel}
           disabled={saving}
           className="p-1.5 rounded-md text-gray-600 bg-gray-200 hover:bg-gray-300"
-          title="Annuler"
+          title={t.common.cancel}
         >
           <X size={16} />
         </button>
@@ -142,20 +148,23 @@ const GroupItem = ({
           type="button"
           onClick={() => setIsEditing(true)}
           className="p-1 rounded-md text-gray-500 hover:text-indigo-600 hover:bg-indigo-50"
-          title="Renommer la tribu"
+          title={t.groups.renameGroup}
         >
           <Pencil size={14} />
         </button>
       )}
       <span className="text-xs text-gray-400">
-        {group.memberIds.length} membres
+        {group.memberIds.length}{' '}
+        {group.memberIds.length > 1
+          ? t.common.memberPlural
+          : t.common.memberSingular}
       </span>
       {group.join_key && (
         <button
           type="button"
           onClick={handleCopyJoinKey}
           className="text-[0.7rem] font-mono text-indigo-500 bg-indigo-50 py-0.5 px-2 rounded-md active:scale-95 transition-transform cursor-pointer"
-          title="Copier le code d'invitation"
+          title={t.groups.copyInviteCode}
         >
           {group.join_key}
         </button>

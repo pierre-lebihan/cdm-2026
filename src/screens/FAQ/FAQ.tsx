@@ -85,18 +85,24 @@ function FAQPage() {
         answer={
           <>
             <p className="m-0 mb-3">
-              D’abord, la <strong>précision</strong> : plus ton pronostic colle au vrai match (bon vainqueur ou bon
-              nul, score proche, petits bonus si tu es juste ou tout proche), plus tu accumules des points de base —
-              jusqu’à une vingtaine de points par rencontre.
+              D’abord, la <strong>précision</strong> : plus ton pronostic colle
+              au vrai match (bon vainqueur ou bon nul, score proche, petits
+              bonus si tu es juste ou tout proche), plus tu accumules des points
+              de base — jusqu’à une vingtaine de points par rencontre.
             </p>
             <p className="m-0 mb-3">
-              Ensuite, un <strong>multiplicateur dynamique</strong> amplifie ces points : si tout le monde a joué la
-              même tendance que toi, le gain reste modeste ; si tu es dans une minorité de pronos, le multiplicateur
-              peut monter fort. L’objectif est de récompenser les choix originaux sans casser l’équilibre du jeu.
+              Ensuite, un <strong>multiplicateur dynamique</strong> amplifie ces
+              points : si tout le monde a joué la même tendance que toi, le gain
+              reste modeste ; si tu es dans une minorité de pronos, le
+              multiplicateur peut monter fort. L’objectif est de récompenser les
+              choix originaux sans casser l’équilibre du jeu.
             </p>
             <p className="m-0 text-xs text-gray-500">
               Tableau complet, formule et exemples :{' '}
-              <Link to="/rules/algorithm" className="text-indigo-600 font-medium">
+              <Link
+                to="/rules/algorithm"
+                className="text-indigo-600 font-medium"
+              >
                 règlement détaillé et algorithme
               </Link>
               .
@@ -117,7 +123,8 @@ function FAQPage() {
         answer={
           <>
             Les données personnelles collectées le sont uniquement dans le but
-            du jeu. <b>Aucune donnée ne sera réutilisée pour un autre objectif.</b>
+            du jeu.{' '}
+            <b>Aucune donnée ne sera réutilisée pour un autre objectif.</b>
           </>
         }
       />

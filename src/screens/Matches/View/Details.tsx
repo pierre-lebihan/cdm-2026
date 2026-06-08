@@ -10,6 +10,7 @@ import MatchBegun from '../MatchBegun/Match'
 import ScoreBreakdownPanel from '../MatchBegun/ScoreBreakdownPanel'
 import Loader from '../../../components/Loader'
 import { computeScoringBreakdown } from '../../../lib/scoring'
+import { useLanguage } from '../../../contexts/LanguageContext'
 
 const Details = () => {
   const { id } = useParams()
@@ -20,6 +21,7 @@ const Details = () => {
   const allOpponents = useAllOpponents()
   const [currentBet] = useBet(match?.id)
   const hasLoaded = useRef(false)
+  const { t } = useLanguage()
 
   useEffect(() => {
     if (match) {
@@ -52,7 +54,7 @@ const Details = () => {
   }
 
   const tabs = [
-    { label: 'Général', key: 'general' },
+    { label: t.ranking.general, key: 'general' },
     ...groups.map((g) => ({
       label: g.name.length > 10 ? `${g.name.slice(0, 8)}…` : g.name,
       key: g.id,
@@ -67,7 +69,7 @@ const Details = () => {
 
       <div className="bg-white rounded-2xl p-5 shadow-card mb-4">
         <h3 className="text-center text-lg font-bold text-navy mb-3">
-          Détail de mes points
+          {t.matches.myPointsDetail}
         </h3>
         <ScoreBreakdownPanel
           breakdown={breakdown}
@@ -88,11 +90,11 @@ const Details = () => {
       {isEmpty(groups) ? (
         <div className="bg-white rounded-2xl p-5 shadow-card text-center">
           <p className="text-sm text-gray-500">
-            Pour voir plus d'infos,{' '}
+            {t.matches.moreInfoPrefix}{' '}
             <Link to="/groups" className="text-indigo-500 font-semibold">
-              créez ou rejoignez une tribu
+              {t.matches.moreInfoLink}
             </Link>
-            .
+            {t.matches.moreInfoSuffix}
           </p>
         </div>
       ) : (
@@ -115,7 +117,7 @@ const Details = () => {
 
           {selectedTab === 0 ? (
             <GroupMatchDetails
-              name="Général"
+              name={t.ranking.general}
               opponents={allOpponents}
               match={match}
             />

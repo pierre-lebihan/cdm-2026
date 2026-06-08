@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../contexts/AuthContext'
 import InlineAvatar from 'components/Avatar'
 import { useBetsFromGame } from 'hooks/bets'
+import { useLanguage } from '../../../contexts/LanguageContext'
 
 interface GroupMatchDetailsProps {
   name: string
@@ -18,8 +19,13 @@ interface GroupMatchDetailsProps {
   }
 }
 
-const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) => {
+const GroupMatchDetails = ({
+  name,
+  opponents,
+  match,
+}: GroupMatchDetailsProps) => {
   const { user } = useAuth()
+  const { localeCode, t } = useLanguage()
   const uid = user?.id
   const navigate = useNavigate()
   const membersIds = opponents?.map((o) => o.id)
@@ -78,9 +84,9 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
           <thead>
             <tr>
               <th className="p-2 text-left"></th>
-              <th className="p-2 text-left">Nom</th>
-              <th className="p-2 text-left">Prono</th>
-              <th className="p-2 text-right">Points</th>
+              <th className="p-2 text-left">{t.matches.groupDetailsName}</th>
+              <th className="p-2 text-left">{t.scoring.prediction}</th>
+              <th className="p-2 text-right">{t.common.points}</th>
             </tr>
           </thead>
           <tbody>
@@ -105,7 +111,8 @@ const GroupMatchDetails = ({ name, opponents, match }: GroupMatchDetailsProps) =
                     {hasBet ? `${bet.betTeamA} : ${bet.betTeamB}` : '–'}
                   </td>
                   <td className="p-2 text-right font-semibold text-sm">
-                    {(bet?.pointsWon || 0).toLocaleString()} pts
+                    {(bet?.pointsWon || 0).toLocaleString(localeCode)}{' '}
+                    {t.common.pointsShort}
                   </td>
                 </tr>
               )

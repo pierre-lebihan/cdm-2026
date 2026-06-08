@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Download, Share, X } from 'lucide-react'
 import { useHideCrisp } from '../hooks/useHideCrisp'
 import { captureEvent } from '../lib/posthog'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -38,6 +39,7 @@ function wasDismissedRecently(): boolean {
 }
 
 export default function InstallPrompt({ enabled = true }: InstallPromptProps) {
+  const { t } = useLanguage()
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null)
   const [showChromePrompt, setShowChromePrompt] = useState(false)
@@ -126,18 +128,18 @@ export default function InstallPrompt({ enabled = true }: InstallPromptProps) {
             {showIosPrompt ? <Share size={24} /> : <Download size={24} />}
           </div>
           <div>
-            <h3 className="font-semibold text-navy">Installer l'application</h3>
+            <h3 className="font-semibold text-navy">
+              {t.prompts.installTitle}
+            </h3>
             <p className="text-sm text-gray-500 leading-tight mt-0.5">
-              {showIosPrompt
-                ? 'Appuyez sur le bouton Partager puis "Sur l\'écran d\'accueil"'
-                : 'Pour un accès plus rapide, même hors ligne !'}
+              {showIosPrompt ? t.prompts.installIos : t.prompts.installText}
             </p>
           </div>
         </div>
         <button
           onClick={handleDismiss}
           className="text-gray-400 hover:bg-gray-100 rounded-lg p-1 transition-colors -mt-1 -mr-1"
-          aria-label="Plus tard"
+          aria-label={t.prompts.closeLater}
         >
           <X size={20} />
         </button>
@@ -148,7 +150,7 @@ export default function InstallPrompt({ enabled = true }: InstallPromptProps) {
           onClick={handleInstallClick}
           className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
         >
-          Ajouter à l'écran d'accueil
+          {t.prompts.addToHomeScreen}
         </button>
       )}
     </div>

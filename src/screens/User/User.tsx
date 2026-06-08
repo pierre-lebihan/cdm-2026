@@ -1,5 +1,4 @@
 import { isPast, format, isSameDay } from 'date-fns'
-import { fr } from 'date-fns/locale'
 import map from 'lodash/map'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useCompetitionData } from '../../hooks/competition'
@@ -20,6 +19,7 @@ import Flag from 'components/Flag'
 import { useAuth } from '../../contexts/AuthContext'
 import { useBetFromUser } from '../../hooks/bets'
 import { computeScoringBreakdown } from '../../lib/scoring'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 function groupMatchesByDate(matches: NormalizedMatch[]) {
   const groups: { date: Date; matches: NormalizedMatch[] }[] = []
@@ -53,12 +53,15 @@ function findTeamById(
   return null
 }
 
-function formatWinnerPoints(points: number | null | undefined): string {
+function formatWinnerPoints(
+  points: number | null | undefined,
+  localeCode: string,
+): string {
   if (points === null || points === undefined) {
     return '0'
   }
 
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(localeCode, {
     maximumFractionDigits: 0,
   }).format(Math.round(points / 10) * 10)
 }
@@ -82,14 +85,16 @@ function UserWinnerStatus({
   finalWinnerPoints: number | null | undefined
   isOwn: boolean
 }) {
+  const { localeCode, t } = useLanguage()
+
   if (!team) {
     return (
       <div className="mb-4 rounded-xl bg-white p-4 shadow-card">
         <p className="m-0 text-sm font-bold text-navy">
-          Aucun vainqueur final sélectionné.
+          {t.user.finalWinnerNone}
         </p>
         <p className="m-0 mt-1 text-xs text-gray-500">
-          Aucun bonus ne pourra être ajouté au classement.
+          {t.user.finalWinnerNoBonus}
         </p>
       </div>
     )
@@ -102,21 +107,24 @@ function UserWinnerStatus({
   const potentialPoints = getPotentialWinnerPoints(team)
   const revealTeam = isOwn || isEliminated || finalWinnerKnown
   const title = isCorrectWinner
-    ? `Ce joueur a gagné ${formatWinnerPoints(finalWinnerPoints)} points`
+    ? `${t.user.finalWinnerCorrectPrefix} ${formatWinnerPoints(
+        finalWinnerPoints,
+        localeCode,
+      )} ${t.user.finalWinnerCorrectSuffix}`
     : finalWinnerKnown
-      ? "Son vainqueur final n'a pas gagné : 0 point"
+      ? t.user.finalWinnerLost
       : isEliminated
-        ? 'Son vainqueur final est éliminé : 0 point'
-        : `Ce joueur peut encore gagner des points via le vainqueur final`
+        ? t.user.finalWinnerEliminated
+        : t.user.finalWinnerPotential
   const description = revealTeam
     ? `${team.name} ${
         isCorrectWinner
-          ? 'a gagné la compétition.'
+          ? t.user.finalWinnerWonSuffix
           : isEliminated
-            ? 'est éliminé.'
-            : 'est encore en course.'
+            ? t.user.finalWinnerEliminatedSuffix
+            : t.user.finalWinnerStillAliveSuffix
       }`
-    : 'Son choix reste masqué tant que cette équipe est encore en course.'
+    : t.user.finalWinnerHidden
 
   return (
     <div className="mb-4 flex items-center gap-3 rounded-xl bg-white p-4 shadow-card">
@@ -144,6 +152,7 @@ const User = () => {
   const { id, matchId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { dateLocale, t } = useLanguage()
   const [comparingDate, setComparingDate] = useState(Date.now())
   const opponent = useOpponent(id)
   const teams = useTeams()
@@ -204,9 +213,7 @@ const User = () => {
   if (!isPast(LaunchBetDate)) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] px-6">
-        <p className="text-gray-500 text-center">
-          Les pronostics seront bientôt accessibles !
-        </p>
+        <p className="text-gray-500 text-center">{t.user.predictionSoon}</p>
       </div>
     )
   }
@@ -223,7 +230,7 @@ const User = () => {
             navigate(-1)
           }}
           className="p-2 hover:bg-navy/[0.06] rounded-full transition-colors"
-          aria-label="Retour"
+          aria-label={t.user.back}
         >
           <ArrowLeft size={20} />
         </button>
@@ -248,7 +255,8 @@ const User = () => {
             </div>
             <div className="bg-white rounded-2xl p-5 shadow-card mb-4">
               <h3 className="text-center text-lg font-bold text-navy mb-3">
-                Détail des points de {opponent.display_name ?? 'ce joueur'}
+                {t.user.detailPrefix}{' '}
+                {opponent.display_name ?? t.user.detailSuffix}
               </h3>
               <ScoreBreakdownPanel
                 breakdown={selectedBreakdown}
@@ -270,7 +278,7 @@ const User = () => {
 
         {matchId && !selectedMatch && (
           <p className="text-gray-500 text-center mt-8">
-            Match introuvable ou pas encore terminé.
+            {t.user.matchMissing}
           </p>
         )}
 
@@ -280,7 +288,7 @@ const User = () => {
               <div key={group.date.toISOString()} className="mb-6">
                 <div className="relative z-[5] py-2 mb-2">
                   <span className="inline-block text-xs font-bold uppercase tracking-wide text-navy bg-cream py-0.5">
-                    {format(group.date, 'EEEE d MMMM', { locale: fr })}
+                    {format(group.date, 'EEEE d MMMM', { locale: dateLocale })}
                   </span>
                 </div>
                 <div className="flex flex-col gap-2.5">
@@ -292,7 +300,7 @@ const User = () => {
             ))}
             {dateGroups.length === 0 && (
               <p className="text-gray-500 text-center mt-8">
-                Aucun match terminé pour le moment.
+                {t.user.noFinishedMatch}
               </p>
             )}
           </>

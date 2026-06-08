@@ -9,6 +9,7 @@ import {
   usePasswordReset,
 } from '../../hooks/user'
 import { useCompetitionDisplayName } from '../../hooks/competition'
+import { useLanguage } from '../../contexts/LanguageContext'
 import {
   isAndroidDevice,
   isInAppBrowser,
@@ -55,48 +56,49 @@ function normalizeDisplayName(displayName: string): string {
   return displayName.trim()
 }
 
-function getDisplayNameValidationError(displayName: string): string | null {
+function getDisplayNameValidationError(
+  displayName: string,
+  t: ReturnType<typeof useLanguage>['t'],
+): string | null {
   const normalizedDisplayName = normalizeDisplayName(displayName)
 
   if (normalizedDisplayName.length < MIN_DISPLAY_NAME_LENGTH) {
-    return 'Le nom doit contenir au moins 2 caractères.'
+    return t.auth.displayNameMinError
   }
 
   if (normalizedDisplayName.length > MAX_DISPLAY_NAME_LENGTH) {
-    return 'Le nom doit contenir 20 caractères maximum.'
+    return t.auth.displayNameMaxError
   }
 
   return null
 }
 
-function getEmailSubmitError(err: unknown): string {
+function getEmailSubmitError(err: unknown, fallback: string): string {
   if (err instanceof Error) {
     return err.message
   }
 
-  return "Impossible de vérifier l'adresse email."
+  return fallback
 }
 
-function getLoginError(err: unknown): string {
+function getLoginError(err: unknown, fallback: string): string {
   if (err instanceof Error) {
     return err.message
   }
 
-  return 'Email ou mot de passe incorrect.'
+  return fallback
 }
 
 function reloadCurrentPage() {
   window.location.reload()
 }
 
-function showOpenInSafariToast(): void {
-  toast(
-    'Pour continuer avec Google, ouvre cette page dans Safari : touche le menu « ··· » en haut à droite, puis « Ouvrir dans Safari ».',
-    { duration: 7000, icon: '🌐' },
-  )
+function showOpenInSafariToast(message: string): void {
+  toast(message, { duration: 7000, icon: '🌐' })
 }
 
 const ConnectionModal = () => {
+  const { t } = useLanguage()
   const authenticateWithGoogle = useGoogleLogin()
   const checkEmailExists = useEmailExists()
   const createPasswordSetupAccount = useCreatePasswordSetupAccount()
@@ -130,7 +132,7 @@ const ConnectionModal = () => {
       return
     }
 
-    showOpenInSafariToast()
+    showOpenInSafariToast(t.auth.openInSafari)
   }
 
   async function handleEmailSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -139,7 +141,7 @@ const ConnectionModal = () => {
 
     const nextEmail = normalizeEmail(email)
     if (!isValidEmail(nextEmail)) {
-      setError('Entre une adresse email valide.')
+      setError(t.auth.emailInvalid)
       return
     }
 
@@ -157,7 +159,7 @@ const ConnectionModal = () => {
         setStep('display_name')
       }
     } catch (err) {
-      setError(getEmailSubmitError(err))
+      setError(getEmailSubmitError(err, t.auth.checkEmailFallback))
     } finally {
       setSubmitting(false)
     }
@@ -167,7 +169,7 @@ const ConnectionModal = () => {
     e.preventDefault()
     if (submitting) return
 
-    const validationError = getDisplayNameValidationError(displayName)
+    const validationError = getDisplayNameValidationError(displayName, t)
     if (validationError) {
       setError(validationError)
       return
@@ -182,7 +184,7 @@ const ConnectionModal = () => {
       captureEvent('auth_password_setup_email_sent')
       setStep('created')
     } catch (err) {
-      setError(getEmailSubmitError(err))
+      setError(getEmailSubmitError(err, t.auth.checkEmailFallback))
     } finally {
       setSubmitting(false)
     }
@@ -198,7 +200,7 @@ const ConnectionModal = () => {
       await authenticateWithPassword(email, password)
     } catch (err) {
       captureEvent('auth_password_sign_in_failed')
-      setError(getLoginError(err))
+      setError(getLoginError(err, t.auth.loginErrorFallback))
     } finally {
       setPasswordSubmitting(false)
     }
@@ -214,11 +216,7 @@ const ConnectionModal = () => {
       captureEvent('auth_password_reset_email_sent')
       setResetSent(true)
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Impossible d'envoyer l'email de réinitialisation.",
-      )
+      setError(err instanceof Error ? err.message : t.auth.resetEmailFallback)
     } finally {
       setResetSubmitting(false)
     }
@@ -238,11 +236,11 @@ const ConnectionModal = () => {
   return (
     <div className="py-8 px-7 text-center flex flex-col gap-3">
       <div className="text-4xl mb-1">⚽</div>
-      <h2 className="text-xl font-extrabold text-navy m-0">Bienvenue !</h2>
+      <h2 className="text-xl font-extrabold text-navy m-0">{t.auth.title}</h2>
       <p className="text-sm text-gray-500 mb-2">
         {competitionLabel === 'Pronostics'
-          ? 'Connectez-vous pour pronostiquer les matchs et défier vos amis.'
-          : `Connectez-vous pour pronostiquer les matchs de ${competitionLabel}.`}
+          ? t.auth.descriptionDefault
+          : `${t.auth.descriptionPrefix} ${competitionLabel}.`}
       </p>
 
       <button
@@ -251,12 +249,12 @@ const ConnectionModal = () => {
         onClick={handleGoogleClick}
       >
         <GoogleIcon />
-        <span>Continuer avec Google</span>
+        <span>{t.auth.continueWithGoogle}</span>
       </button>
 
       <div className="flex items-center gap-3 my-2 text-xs text-gray-400">
         <div className="flex-1 h-px bg-gray-200" />
-        <span>ou</span>
+        <span>{t.auth.or}</span>
         <div className="flex-1 h-px bg-gray-200" />
       </div>
 
@@ -292,7 +290,7 @@ const ConnectionModal = () => {
             className="mt-1 inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-navy text-white text-sm font-semibold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Mail size={16} />
-            <span>{submitting ? 'Vérification…' : 'Continuer'}</span>
+            <span>{submitting ? t.auth.checking : t.auth.continue}</span>
             {!submitting ? <ArrowRight size={16} /> : null}
           </button>
         </form>
@@ -315,7 +313,7 @@ const ConnectionModal = () => {
             htmlFor="password-login"
             className="text-xs font-semibold text-navy"
           >
-            Mot de passe
+            {t.auth.password}
           </label>
           <input
             id="password-login"
@@ -328,8 +326,8 @@ const ConnectionModal = () => {
           />
           {resetSent ? (
             <div className="text-sm text-navy-dark bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-              Un email de réinitialisation vient d&apos;être envoyé à{' '}
-              <strong>{email}</strong>.
+              {t.auth.passwordResetSentPrefix} <strong>{email}</strong>
+              {t.auth.passwordResetSentSuffix}
             </div>
           ) : null}
           {error ? (
@@ -343,7 +341,7 @@ const ConnectionModal = () => {
             className="mt-1 inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-navy text-white text-sm font-semibold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <KeyRound size={16} />
-            <span>{passwordSubmitting ? 'Connexion…' : 'Se connecter'}</span>
+            <span>{passwordSubmitting ? t.auth.signingIn : t.auth.signIn}</span>
           </button>
           <button
             type="button"
@@ -352,7 +350,11 @@ const ConnectionModal = () => {
             onClick={handleForgotPassword}
           >
             <RotateCcw size={14} />
-            <span>{resetSubmitting ? 'Envoi…' : 'Mot de passe oublié'}</span>
+            <span>
+              {resetSubmitting
+                ? t.auth.forgotPasswordSending
+                : t.auth.forgotPassword}
+            </span>
           </button>
         </form>
       ) : null}
@@ -374,7 +376,7 @@ const ConnectionModal = () => {
             htmlFor="display-name-signup"
             className="text-xs font-semibold text-navy"
           >
-            Nom affiché
+            {t.auth.displayName}
           </label>
           <input
             id="display-name-signup"
@@ -385,10 +387,10 @@ const ConnectionModal = () => {
             autoComplete="nickname"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Ton pseudo"
+            placeholder={t.auth.displayNamePlaceholder}
             className="w-full px-3 py-2.5 rounded-xl border-[1.5px] border-gray-200 text-sm focus:outline-none focus:border-navy"
           />
-          <p className="text-xs text-gray-400 m-0">Entre 2 et 20 caractères.</p>
+          <p className="text-xs text-gray-400 m-0">{t.auth.displayNameRange}</p>
           {error ? (
             <p className="text-xs text-red-500 m-0" role="alert">
               {error}
@@ -400,7 +402,7 @@ const ConnectionModal = () => {
             className="mt-1 inline-flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-navy text-white text-sm font-semibold cursor-pointer transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Mail size={16} />
-            <span>{submitting ? 'Création…' : 'Créer le compte'}</span>
+            <span>{submitting ? t.auth.creating : t.auth.createAccount}</span>
           </button>
         </form>
       ) : null}
@@ -408,8 +410,8 @@ const ConnectionModal = () => {
       {step === 'created' ? (
         <div className="text-sm text-navy-dark bg-green-50 border border-green-100 rounded-xl px-4 py-3 flex flex-col gap-3">
           <p className="m-0">
-            Un compte vient d&apos;être créé pour <strong>{email}</strong>.
-            Clique sur le lien reçu par email pour configurer ton mot de passe.
+            {t.auth.accountCreatedPrefix} <strong>{email}</strong>.{' '}
+            {t.auth.accountCreatedSuffix}
           </p>
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
             <button
@@ -418,7 +420,7 @@ const ConnectionModal = () => {
               onClick={handleBackToEmail}
             >
               <ArrowLeft size={14} />
-              <span>Retour à la connexion</span>
+              <span>{t.auth.backToLogin}</span>
             </button>
             <button
               type="button"
@@ -426,7 +428,7 @@ const ConnectionModal = () => {
               onClick={reloadCurrentPage}
             >
               <RotateCcw size={14} />
-              <span>Rafraîchir la page</span>
+              <span>{t.auth.refreshPage}</span>
             </button>
           </div>
         </div>

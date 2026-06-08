@@ -115,10 +115,7 @@ export async function ensurePushSubscriptionReady(): Promise<void> {
   if (OneSignal.Notifications.permissionNative !== 'granted') {
     return
   }
-  if (
-    hasValidPushToken() &&
-    OneSignal.User.PushSubscription.optedIn === true
-  ) {
+  if (hasValidPushToken() && OneSignal.User.PushSubscription.optedIn === true) {
     return
   }
   await OneSignal.User.PushSubscription.optIn()

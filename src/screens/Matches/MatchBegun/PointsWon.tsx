@@ -1,4 +1,5 @@
 import { pointsWonTitleSelf } from '../../../lib/betOutcomeStatus'
+import { useLanguage } from '../../../contexts/LanguageContext'
 
 const PointsWon = ({
   betTeamA,
@@ -7,6 +8,8 @@ const PointsWon = ({
   outcomeStatus,
   scores,
 }) => {
+  const { t } = useLanguage()
+
   if (!scores) return null
 
   const { A, B } = scores
@@ -32,7 +35,7 @@ const PointsWon = ({
       className={`absolute -top-2 -right-2 z-10 flex flex-col items-center justify-center min-w-[44px] h-[44px] px-2 rounded-full font-extrabold text-sm leading-none ring-2 ring-cream ${bubbleClass}`}
     >
       <span className="text-[0.6rem] font-semibold uppercase tracking-wide opacity-80">
-        pts
+        {t.common.pointsShort}
       </span>
       <span className="text-base">
         {isPositive ? '+' : ''}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useIsUserAdmin } from '../../../hooks/user'
 import { useHideCrisp } from '../../../hooks/useHideCrisp'
 import Mascot from '../../../components/Mascot'
+import { useLanguage } from '../../../contexts/LanguageContext'
 
 interface ScoringHelpModalProps {
   open: boolean
@@ -11,6 +12,7 @@ interface ScoringHelpModalProps {
 
 const ScoringHelpModal = ({ open, onClose }: ScoringHelpModalProps) => {
   const isAdmin = useIsUserAdmin()
+  const { t } = useLanguage()
   useHideCrisp(open)
 
   if (!open) {
@@ -31,50 +33,68 @@ const ScoringHelpModal = ({ open, onClose }: ScoringHelpModalProps) => {
       >
         <div className="flex justify-between items-start gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <Mascot id="mexico" size="sm" className="ring-2 ring-emerald-100 shadow-sm" />
-            <h2 id="scoring-help-title" className="text-lg font-extrabold text-navy m-0">
-              Comment sont calculés les points ?
+            <Mascot
+              id="mexico"
+              size="sm"
+              className="ring-2 ring-emerald-100 shadow-sm"
+            />
+            <h2
+              id="scoring-help-title"
+              className="text-lg font-extrabold text-navy m-0"
+            >
+              {t.scoring.title}
             </h2>
           </div>
           <button
             type="button"
             className="p-1.5 rounded-full text-gray-400 hover:bg-gray-100 hover:text-navy shrink-0"
-            aria-label="Fermer"
+            aria-label={t.common.close}
             onClick={onClose}
           >
             <X size={20} />
           </button>
         </div>
         <p className="text-xs italic text-emerald-700 mb-3">
-          « Iván t'explique : sois précis, mais aussi malin ! »
+          {t.scoring.intro}
         </p>
         <div className="text-sm text-gray-600 space-y-4 leading-relaxed">
           <p className="m-0">
-            <span className="font-semibold text-navy">La précision.</span> Sur chaque match, tu peux marquer jusqu’à
-            une vingtaine de points de base si ton pronostic colle bien au réel : bon vainqueur ou bon nul, score
-            proche, petits bonus si tu es tout proche ou pile juste.
+            <span className="font-semibold text-navy">
+              {t.scoring.precisionTitle}
+            </span>{' '}
+            {t.scoring.precisionText}
           </p>
           <p className="m-0">
-            <span className="font-semibold text-navy">Le multiplicateur dynamique.</span> Ensuite, ces points sont
-            amplifiés par une cote « anti-mouton » : si ton choix est très majoritaire chez les joueurs, la cote
-            reste modeste ; si tu es dans le camp des originaux, la cote peut monter fort — toujours dans une
-            fourchette raisonnable pour que le jeu reste équilibré.
+            <span className="font-semibold text-navy">
+              {t.scoring.multiplierTitle}
+            </span>{' '}
+            {t.scoring.multiplierText}
           </p>
           <p className="m-0 text-xs text-gray-500">
-            Tout le détail des barèmes et la formule officielle :{' '}
-            <Link to="/rules/algorithm" className="text-indigo-600 font-medium hover:underline" onClick={onClose}>
-              règlement détaillé et algorithme
+            {t.scoring.algorithmIntro} :{' '}
+            <Link
+              to="/rules/algorithm"
+              className="text-indigo-600 font-medium hover:underline"
+              onClick={onClose}
+            >
+              {t.scoring.algorithmLink}
             </Link>
             .
           </p>
           {isAdmin && (
             <p className="m-0 text-xs text-amber-950 bg-amber-50 rounded-xl p-3 border border-amber-100/80 leading-relaxed">
-              <span className="font-semibold text-navy">Admin.</span> Tu peux rendre un match visible ou le masquer
-              (liste des matchs et pronostics des joueurs) depuis{' '}
-              <Link to="/admin" className="text-indigo-600 font-medium hover:underline" onClick={onClose}>
+              <span className="font-semibold text-navy">
+                {t.scoring.adminLabel}
+              </span>{' '}
+              {t.scoring.adminHintPrefix}{' '}
+              <Link
+                to="/admin"
+                className="text-indigo-600 font-medium hover:underline"
+                onClick={onClose}
+              >
                 Administration
               </Link>
-              , pour chaque rencontre.
+              {t.scoring.adminHintSuffix}
             </p>
           )}
         </div>

@@ -11,7 +11,10 @@ const RuleTable = ({ header = [], rows = [[]] }: RuleTableProps) => (
       <thead>
         <tr className="border-b border-gray-200">
           {header.map((col, i) => (
-            <th key={i} className="text-left py-2 px-3 font-semibold text-gray-500">
+            <th
+              key={i}
+              className="text-left py-2 px-3 font-semibold text-gray-500"
+            >
               {col}
             </th>
           ))}

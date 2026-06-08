@@ -1,5 +1,4 @@
 import { format, isPast } from 'date-fns'
-import { fr } from 'date-fns/locale'
 import { Suspense, useCallback, useMemo } from 'react'
 import { useSelectedWinner } from '../../../hooks/winner'
 import {
@@ -8,15 +7,13 @@ import {
 } from '../../../hooks/competition'
 import Loader from '../../../components/Loader'
 import FinalWinnerChoice from './FinalWinnerChoice'
-
-const finalWinnerLoader = (
-  <Loader label="Chargement du vainqueur final..." size="sm" variant="inline" />
-)
+import { useLanguage } from '../../../contexts/LanguageContext'
 
 const FinalWinner = () => {
   const [team, saveWinner] = useSelectedWinner()
   const competitionData = useCompetitionData()
   const competitionLabel = useCompetitionDisplayName()
+  const { dateLocale, t } = useLanguage()
 
   const CompetitionStartDate = useMemo(() => {
     if (!competitionData?.start_date) return null
@@ -39,27 +36,31 @@ const FinalWinner = () => {
     if (!competitionData?.start_date) return null
     return format(
       new Date(competitionData.start_date),
-      "d MMMM yyyy 'à' HH:mm",
+      t.finalWinner.closingDateFormat,
       {
-        locale: fr,
+        locale: dateLocale,
       },
     )
-  }, [competitionData?.start_date])
+  }, [competitionData?.start_date, dateLocale, t.finalWinner.closingDateFormat])
+
+  const finalWinnerLoader = (
+    <Loader label={t.finalWinner.loading} size="sm" variant="inline" />
+  )
 
   return (
     <div className="bg-white rounded-2xl py-6 px-5 text-center shadow-card">
       <h3 className="text-lg font-bold text-navy m-0 mb-1">
-        {locked ? 'Votre vainqueur final' : 'Choisissez le vainqueur'}
+        {locked ? t.finalWinner.winnerTitle : t.finalWinner.chooseTitle}
       </h3>
       <p className="text-xs text-gray-400 m-0 mb-4">
         {locked
-          ? 'Vous avez parié pour :'
+          ? t.finalWinner.lockedBetFor
           : competitionLabel === 'Pronostics'
-            ? 'Qui sera le vainqueur final ?'
-            : `Qui gagnera ${competitionLabel} ?`}
+            ? t.finalWinner.finalWinnerQuestion
+            : `${t.finalWinner.winnerQuestionPrefix} ${competitionLabel} ?`}
         {!locked && lockLabel != null && (
           <span className="block mt-2 text-gray-500">
-            Clôture des pronostics vainqueur le {lockLabel}.
+            {t.finalWinner.closingPrefix} {lockLabel}.
           </span>
         )}
       </p>

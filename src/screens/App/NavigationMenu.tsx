@@ -9,11 +9,13 @@ import {
   ShieldCheck,
   type LucideProps,
 } from 'lucide-react'
-import { Suspense, useEffect } from 'react'
+import { Suspense, useEffect, type ComponentType } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useIsUserConnected, useIsUserAdmin } from '../../hooks/user'
 import { useCompetitionDisplayName } from '../../hooks/competition'
 import { captureEvent } from '../../lib/posthog'
+import { useLanguage } from '../../contexts/LanguageContext'
+import type { TranslationDictionary } from '../../lib/i18n'
 
 const FootballIcon = (props: LucideProps) => (
   <svg
@@ -44,53 +46,69 @@ const FootballIcon = (props: LucideProps) => (
   </svg>
 )
 
-const menuItems = [
-  { label: 'Accueil', icon: Home, path: '/', auth: false, admin: false },
+type NavLabelKey = keyof TranslationDictionary['nav']
+
+interface MenuItem {
+  admin: boolean
+  auth: boolean
+  icon: ComponentType<LucideProps>
+  labelKey: NavLabelKey
+  path: string
+}
+
+const menuItems: MenuItem[] = [
+  { labelKey: 'home', icon: Home, path: '/', auth: false, admin: false },
   {
-    label: 'Pronostics',
+    labelKey: 'matches',
     icon: FootballIcon,
     path: '/matches',
     auth: true,
     admin: false,
   },
   {
-    label: 'Classement',
+    labelKey: 'ranking',
     icon: Trophy,
     path: '/ranking',
     auth: true,
     admin: false,
   },
-  { label: 'Tribus', icon: Users, path: '/groups', auth: true, admin: false },
   {
-    label: 'Analytics',
+    labelKey: 'groups',
+    icon: Users,
+    path: '/groups',
+    auth: true,
+    admin: false,
+  },
+  {
+    labelKey: 'analytics',
     icon: BarChart3,
     path: '/analytics',
     auth: true,
     admin: false,
   },
   {
-    label: 'Règles',
+    labelKey: 'rules',
     icon: HelpCircle,
     path: '/rules',
     auth: false,
     admin: false,
   },
   {
-    label: 'FAQ',
+    labelKey: 'faq',
     icon: MessageCircleQuestion,
     path: '/faq',
     auth: false,
     admin: false,
   },
   {
-    label: 'Confidentialité',
+    labelKey: 'legal',
     icon: FileText,
     path: '/legal',
     auth: false,
     admin: false,
   },
   {
-    label: 'Admin',
+    labelKey: 'admin',
     icon: ShieldCheck,
     path: '/admin',
     auth: true,
@@ -121,6 +139,7 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
   const navigate = useNavigate()
   const location = useLocation()
   const competitionSubtitle = useCompetitionDisplayName()
+  const { t } = useLanguage()
 
   useEffect(() => {
     if (!menuOpen) return
@@ -175,6 +194,7 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
                 item.path === '/'
                   ? location.pathname === '/'
                   : location.pathname.startsWith(item.path)
+              const label = t.nav[item.labelKey]
 
               return (
                 <button
@@ -184,13 +204,13 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
                       ? 'bg-navy text-white font-semibold shadow-sm'
                       : 'bg-transparent text-gray-600 hover:bg-gray-50 hover:text-navy'
                   }`}
-                  onClick={goTo(item.path, item.label, isActive)}
+                  onClick={goTo(item.path, label, isActive)}
                 >
                   <item.icon
                     size={20}
                     className={isActive ? 'text-white' : 'text-gray-400'}
                   />
-                  <span>{item.label}</span>
+                  <span>{label}</span>
                 </button>
               )
             })}
