@@ -113,27 +113,30 @@ export type Database = {
       }
       competitions: {
         Row: {
+          active: boolean
+          final_winner_reminder_sent_at: string | null
           final_winner_team: string | null
           id: string
           launch_bet: string | null
           name: string
-          active: boolean
           start_date: string | null
         }
         Insert: {
+          active?: boolean
+          final_winner_reminder_sent_at?: string | null
           final_winner_team?: string | null
           id?: string
           launch_bet?: string | null
           name?: string
-          active?: boolean
           start_date?: string | null
         }
         Update: {
+          active?: boolean
+          final_winner_reminder_sent_at?: string | null
           final_winner_team?: string | null
           id?: string
           launch_bet?: string | null
           name?: string
-          active?: boolean
           start_date?: string | null
         }
         Relationships: []
@@ -527,8 +530,9 @@ export type Tables<
     ? R
     : never
   : T extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
-    ? (DefaultSchema['Tables'] &
-        DefaultSchema['Views'])[T] extends { Row: infer R }
+    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[T] extends {
+        Row: infer R
+      }
       ? R
       : never
     : never

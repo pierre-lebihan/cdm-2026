@@ -19,6 +19,7 @@ Dans le dashboard Supabase → **Edge Functions** → **Secrets** (ou `supabase 
 | `ONESIGNAL_APP_ID` | Même valeur que `VITE_ONESIGNAL_APP_ID` |
 | `ONESIGNAL_REST_API_KEY` | Clé REST API (dashboard OneSignal → Keys & IDs, **pas** la clé du client web) |
 | `PUBLIC_SITE_URL` | Optionnel. URL du site pour le lien dans les notifs (défaut : `https://makepronogreatagain.bzh/`) |
+| `FINAL_WINNER_REMINDER_WINDOW_HOURS` | Optionnel. Fenêtre d’envoi du rappel vainqueur final (défaut : 48 h avant `start_date`) |
 
 Les secrets `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont déjà fournis par l’hébergement des fonctions.
 
@@ -31,12 +32,23 @@ Les secrets `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont déjà fournis pa
 
 Si tu changes d’URL de projet Supabase, mets à jour l’URL dans le `cron.schedule` de cette migration (comme pour `update-results`).
 
+## Rappel vainqueur final
+
+- Migration `supabase/migrations/20260608203000_final_winner_reminder_notification.sql` : colonne `competitions.final_winner_reminder_sent_at` + job **pg_cron** qui appelle la fonction **`notify-final-winner`** toutes les heures.
+- Fenêtre : compétition active avec `start_date` dans les **48 prochaines heures** par défaut. Cette fenêtre peut être ajustée via le secret optionnel `FINAL_WINNER_REMINDER_WINDOW_HOURS`.
+- Cibles : utilisateurs présents dans **`competition_profiles`** pour la compétition active.
+- Message sans vainqueur : demande de choisir le vainqueur final avant le coup d’envoi.
+- Message avec vainqueur : rappel simple indiquant que la cote a peut-être évolué et que le choix peut encore être changé.
+- Après traitement automatique, `final_winner_reminder_sent_at` est renseigné pour ne pas renvoyer le même rappel.
+- Déclenchement manuel possible : appeler `notify-final-winner?force=true`. En mode forcé, la fenêtre et l’anti-doublon sont ignorés, et la colonne de suivi n’est pas mise à jour.
+
 ## Déploiement des fonctions
 
-Le workflow GitHub Actions déploie `notify-pre-match` avec `update-results`. En local :
+Le workflow GitHub Actions déploie `notify-pre-match`, `notify-final-winner` et `update-results`. En local :
 
 ```bash
 supabase functions deploy notify-pre-match --no-verify-jwt
+supabase functions deploy notify-final-winner --no-verify-jwt
 ```
 
 ---
