@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useCompetition } from '../contexts/CompetitionContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import type { BetOutcomeStatusEnum, Tables } from '../lib/database.types'
 import type { MatchPrediction } from '../lib/openrouter'
 import { captureEvent } from '../lib/posthog'
@@ -119,6 +120,7 @@ export function useBet(
 ] {
   const { user } = useAuth()
   const { activeCompetitionId } = useCompetition()
+  const { t } = useLanguage()
   const uid = user?.id
   const [bet, setBetState] = useState<BetRow | null>(null)
   const [loading, setLoading] = useState<boolean>(Boolean(matchId && uid))
@@ -172,7 +174,7 @@ export function useBet(
           match_id: matchId,
           competition_id: activeCompetitionId,
         })
-        toast.error('Erreur lors de la sauvegarde du pronostic', {
+        toast.error(t.toasts.betSaveError, {
           id: toastId,
         })
       } else if (data) {
@@ -184,10 +186,16 @@ export function useBet(
           bet_team_b: betData.betTeamB,
           has_playoff_winner: betData.betPlayoffWinner != null,
         })
-        toast.success('Pronostic sauvegardé', { id: toastId })
+        toast.success(t.toasts.betSaved, { id: toastId })
       }
     },
-    [matchId, uid, activeCompetitionId],
+    [
+      matchId,
+      uid,
+      activeCompetitionId,
+      t.toasts.betSaveError,
+      t.toasts.betSaved,
+    ],
   )
 
   const normalizedBet = useMemo(() => normalizeBet(bet), [bet])
@@ -227,6 +235,7 @@ export async function saveBatchBets(
   userId: string,
   predictions: MatchPrediction[],
   competitionId: string | null,
+  saveErrorMessage: string,
 ): Promise<number> {
   const rows = predictions.map((p) => ({
     id: `${p.match_id}_${userId}`,
@@ -247,7 +256,7 @@ export async function saveBatchBets(
       competition_id: competitionId,
       predictions_count: rows.length,
     })
-    throw new Error('Erreur lors de la sauvegarde des pronostics')
+    throw new Error(saveErrorMessage)
   }
 
   captureEvent('ai_batch_bets_saved', {

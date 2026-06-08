@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 import { v4 as uuidv4 } from 'uuid'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import type { Tables } from '../lib/database.types'
 import { captureEvent } from '../lib/posthog'
 
@@ -15,6 +16,7 @@ export interface GroupWithMembers extends GroupRow {
 
 export function useCreateGroup() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const [applyInGroup] = useApplyInGroup()
 
   return async (group: { name: string }) => {
@@ -30,7 +32,7 @@ export function useCreateGroup() {
       captureEvent('group_create_failed', {
         name_length: group.name.length,
       })
-      toast.error('Erreur lors de la création du groupe')
+      toast.error(t.toasts.groupCreateError)
       return
     }
 
@@ -40,12 +42,15 @@ export function useCreateGroup() {
       name_length: group.name.length,
       join_key_length: joinKey.length,
     })
-    toast.success(`Groupe ${group.name} créé avec le code ${joinKey}.`)
+    toast.success(
+      `${t.toasts.groupCreatedPrefix} ${group.name} ${t.toasts.groupCreatedSuffix} ${t.toasts.groupCreatedCodeConnector} ${joinKey}.`,
+    )
   }
 }
 
 export function useApplyInGroup(): [(joinKey: string) => Promise<void>] {
   const { user } = useAuth()
+  const { t } = useLanguage()
 
   const applyFn = useCallback(
     async (joinKey: string) => {
@@ -58,7 +63,9 @@ export function useApplyInGroup(): [(joinKey: string) => Promise<void>] {
         captureEvent('group_join_code_not_found', {
           join_key_length: joinKey.length,
         })
-        toast.error(`Aucune tribu avec le code ${joinKey} n'existe`)
+        toast.error(
+          `${t.toasts.groupNotFoundPrefix} ${joinKey} ${t.toasts.groupNotFoundSuffix}`,
+        )
         return
       }
 
@@ -75,7 +82,7 @@ export function useApplyInGroup(): [(joinKey: string) => Promise<void>] {
         captureEvent('group_join_duplicate', {
           group_id: group.id,
         })
-        toast(`Vous appartenez déjà à la tribu ${group.name}`)
+        toast(`${t.toasts.groupAlreadyMemberPrefix} ${group.name}`)
         return
       }
 
@@ -89,16 +96,23 @@ export function useApplyInGroup(): [(joinKey: string) => Promise<void>] {
         captureEvent('group_join_request_failed', {
           group_id: group.id,
         })
-        toast.error("Erreur lors de l'inscription")
+        toast.error(t.toasts.groupJoinError)
         return
       }
 
       captureEvent('group_join_requested', {
         group_id: group.id,
       })
-      toast.success(`Inscription dans la tribu ${group.name} !`)
+      toast.success(`${t.toasts.groupJoinSuccessPrefix} ${group.name}`)
     },
-    [user?.id],
+    [
+      user?.id,
+      t.toasts.groupAlreadyMemberPrefix,
+      t.toasts.groupJoinError,
+      t.toasts.groupJoinSuccessPrefix,
+      t.toasts.groupNotFoundPrefix,
+      t.toasts.groupNotFoundSuffix,
+    ],
   )
 
   return [applyFn]
@@ -209,31 +223,38 @@ async function fetchGroupsForUser(
 }
 
 export function useRenameGroup() {
-  return useCallback(async (groupId: string, name: string) => {
-    const { error } = await supabase
-      .from('groups')
-      .update({ name })
-      .eq('id', groupId)
+  const { t } = useLanguage()
 
-    if (error) {
-      captureEvent('group_rename_failed', {
+  return useCallback(
+    async (groupId: string, name: string) => {
+      const { error } = await supabase
+        .from('groups')
+        .update({ name })
+        .eq('id', groupId)
+
+      if (error) {
+        captureEvent('group_rename_failed', {
+          group_id: groupId,
+          name_length: name.length,
+        })
+        toast.error(t.toasts.groupRenameError)
+        return false
+      }
+
+      captureEvent('group_renamed', {
         group_id: groupId,
         name_length: name.length,
       })
-      toast.error('Erreur lors du renommage de la tribu')
-      return false
-    }
-
-    captureEvent('group_renamed', {
-      group_id: groupId,
-      name_length: name.length,
-    })
-    toast.success('Tribu renommée')
-    return true
-  }, [])
+      toast.success(t.toasts.groupRenamed)
+      return true
+    },
+    [t.toasts.groupRenameError, t.toasts.groupRenamed],
+  )
 }
 
 export function useValidApply(groupId: string, userId: string) {
+  const { t } = useLanguage()
+
   return useCallback(async () => {
     const { error } = await supabase.rpc('validate_group_apply', {
       p_group_id: groupId,
@@ -251,6 +272,6 @@ export function useValidApply(groupId: string, userId: string) {
     captureEvent('group_apply_validated', {
       group_id: groupId,
     })
-    toast.success('Joueur validé')
-  }, [groupId, userId])
+    toast.success(t.toasts.groupPlayerValidated)
+  }, [groupId, userId, t.toasts.groupPlayerValidated])
 }

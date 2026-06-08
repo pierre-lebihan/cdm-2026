@@ -218,6 +218,7 @@ const AiBetModal = ({
           user.id,
           predictions,
           activeCompetitionId,
+          t.toasts.batchBetsSaveError,
         )
         captureEvent('ai_bet_prediction_succeeded', {
           provider,
@@ -249,6 +250,7 @@ const AiBetModal = ({
       t.aiBet.noValidPrediction,
       t.aiBet.successFilledByAi,
       t.aiBet.unknownError,
+      t.toasts.batchBetsSaveError,
     ],
   )
 

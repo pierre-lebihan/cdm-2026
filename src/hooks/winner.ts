@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useCompetition } from '../contexts/CompetitionContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { captureEvent } from '../lib/posthog'
 
 export function useSelectedWinner(): [
@@ -11,6 +12,7 @@ export function useSelectedWinner(): [
 ] {
   const { user } = useAuth()
   const { activeCompetitionId } = useCompetition()
+  const { t } = useLanguage()
   const [winnerTeam, setWinnerTeam] = useState<string | null | undefined>(
     undefined,
   )
@@ -46,7 +48,7 @@ export function useSelectedWinner(): [
           competition_id: activeCompetitionId,
           team_id: team,
         })
-        toast.error('Mise à jour échouée :(')
+        toast.error(t.toasts.finalWinnerSaveError)
         return
       }
       setWinnerTeam(team)
@@ -54,9 +56,14 @@ export function useSelectedWinner(): [
         competition_id: activeCompetitionId,
         team_id: team,
       })
-      toast.success('Équipe mise à jour')
+      toast.success(t.toasts.finalWinnerSaved)
     },
-    [user?.id, activeCompetitionId],
+    [
+      user?.id,
+      activeCompetitionId,
+      t.toasts.finalWinnerSaveError,
+      t.toasts.finalWinnerSaved,
+    ],
   )
 
   return [winnerTeam, updater]
