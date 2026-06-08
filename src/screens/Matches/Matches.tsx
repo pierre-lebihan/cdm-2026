@@ -9,7 +9,7 @@ import {
   type NormalizedMatch,
 } from '../../hooks/matches'
 import { useAllUserBets } from '../../hooks/bets'
-import { useIsUserAdmin, useIsUserConnected } from '../../hooks/user'
+import { useIsUserConnected } from '../../hooks/user'
 import MatchToBet from './MatchToBet/Match'
 import MatchBegun from './MatchBegun/Match'
 import AiBetModal from './AiBetModal'
@@ -206,7 +206,6 @@ const FinalWinnerAliveReminder = ({
 const Matches = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const isAdmin = useIsUserAdmin()
   const isConnected = useIsUserConnected()
   const { dateLocale, t } = useLanguage()
   const { bettedMatchIds, refresh: refreshBets } = useAllUserBets()
@@ -286,17 +285,11 @@ const Matches = () => {
       .reverse()
   }, [visibleMatches, selectedTab, upcomingMatches, comparingDate])
 
-  const hasUnbettedMatches = useMemo(() => {
-    if (!bettedMatchIds) return false
-    return upcomingMatches.some((m) => !bettedMatchIds.has(m.id))
-  }, [upcomingMatches, bettedMatchIds])
-
   const showAiButton =
     isConnected &&
     selectedTab === 0 &&
     bettedMatchIds !== null &&
-    upcomingMatches.length > 0 &&
-    (hasUnbettedMatches || isAdmin)
+    upcomingMatches.length > 0
 
   const finalWinnerLocked = useMemo(() => {
     if (!competitionData?.start_date) return true
@@ -426,7 +419,6 @@ const Matches = () => {
           onComplete={handleAiComplete}
           matches={upcomingMatches}
           bettedMatchIds={bettedMatchIds}
-          isAdmin={isAdmin}
         />
       )}
       <ScoringHelpModal

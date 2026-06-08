@@ -28,7 +28,6 @@ interface AiBetModalProps {
   onComplete: () => void
   matches: NormalizedMatch[]
   bettedMatchIds: Set<string>
-  isAdmin: boolean
 }
 
 const AI_PROVIDERS: {
@@ -92,7 +91,6 @@ const AiBetModal = ({
   onComplete,
   matches,
   bettedMatchIds,
-  isAdmin,
 }: AiBetModalProps) => {
   const { user, profile } = useAuth()
   const { activeCompetitionId, competition } = useCompetition()
@@ -101,7 +99,7 @@ const AiBetModal = ({
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [step, setStep] = useState<ModalStep>('prompt')
   const [prompt, setPrompt] = useState('')
-  const [overwriteExisting, setOverwriteExisting] = useState(isAdmin)
+  const [overwriteExisting, setOverwriteExisting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const hasSomeBets = useMemo(
@@ -122,14 +120,13 @@ const AiBetModal = ({
       captureEvent('ai_bet_modal_opened', {
         matches_count: matches.length,
         already_betted_count: bettedMatchIds.size,
-        admin: isAdmin,
       })
       setStep('prompt')
       setError(null)
     } else {
       dialog.close()
     }
-  }, [open, matches.length, bettedMatchIds.size, isAdmin])
+  }, [open, matches.length, bettedMatchIds.size])
 
   const handleClose = useCallback(() => {
     captureEvent('ai_bet_modal_closed', {
