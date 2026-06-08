@@ -23,7 +23,7 @@ export function initPostHog() {
   }
 
   posthog.init(POSTHOG_KEY, {
-    api_host: POSTHOG_HOST || 'https://us.i.posthog.com',
+    api_host: POSTHOG_HOST || 'https://eu.i.posthog.com',
     capture_pageview: false,
     person_profiles: 'identified_only',
   })
