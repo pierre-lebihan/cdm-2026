@@ -6,7 +6,14 @@ import {
   type ChangeEvent,
 } from 'react'
 import toast from 'react-hot-toast'
-import { Search, Trash2, UserRound, Users, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  Search,
+  Trash2,
+  UserRound,
+  Users,
+  X,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -24,7 +31,7 @@ import Flag from 'components/Flag'
 import Loader from 'components/Loader'
 import { formatTournamentPhaseLabel } from '../lib/matchEnums'
 
-type AdminTab = 'scores' | 'winner' | 'eliminations' | 'groups'
+type AdminTab = 'scores' | 'winner' | 'eliminations' | 'groups' | 'users'
 type AdminMatchFilter = 'all' | 'pending' | 'finished'
 type AdminPlayoffWinner = 'A' | 'B' | null
 type AdminGroupRow = Tables<'groups'>
@@ -47,6 +54,29 @@ type AdminGroupsState = {
   groups: AdminGroupWithMembers[]
   loading: boolean
   error: string | null
+}
+
+type AdminUserRow = Pick<
+  Tables<'profiles'>,
+  | 'avatar_url'
+  | 'display_name'
+  | 'email'
+  | 'id'
+  | 'last_connection'
+  | 'nb_connections'
+  | 'role'
+>
+
+type AdminUsersState = {
+  users: AdminUserRow[]
+  loading: boolean
+  error: string | null
+}
+
+type AdminUserGroupMembership = {
+  groupId: string
+  groupName: string
+  status: string
 }
 
 function incrementNumber(value: number): number {
@@ -446,6 +476,260 @@ function useAdminGroups(
         }
 
         setState(createAdminGroupsErrorState(getUnknownErrorMessage(error)))
+      })
+
+    return () => {
+      active = false
+    }
+  }, [refreshKey, enabled])
+
+  return state
+}
+
+function createAdminUsersLoadingState(): AdminUsersState {
+  return {
+    users: [],
+    loading: true,
+    error: null,
+  }
+}
+
+function createAdminUsersReadyState(users: AdminUserRow[]): AdminUsersState {
+  return {
+    users,
+    loading: false,
+    error: null,
+  }
+}
+
+function createAdminUsersErrorState(message: string): AdminUsersState {
+  return {
+    users: [],
+    loading: false,
+    error: message,
+  }
+}
+
+function getAdminUserLabel(user: AdminUserRow): string {
+  return getAdminProfileLabel(user, user.id)
+}
+
+function getAdminUserSortLabel(user: AdminUserRow): string {
+  return getAdminUserLabel(user).toLocaleLowerCase('fr-FR')
+}
+
+function compareAdminUsers(a: AdminUserRow, b: AdminUserRow): number {
+  return getAdminUserSortLabel(a).localeCompare(
+    getAdminUserSortLabel(b),
+    'fr-FR',
+  )
+}
+
+function sortAdminUsers(users: AdminUserRow[]): AdminUserRow[] {
+  return [...users].sort(compareAdminUsers)
+}
+
+async function fetchAdminUsers(): Promise<AdminUserRow[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(
+      'id, display_name, email, avatar_url, role, nb_connections, last_connection',
+    )
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  const users: AdminUserRow[] = data ?? []
+  return sortAdminUsers(users)
+}
+
+async function deleteAdminUser(userId: string): Promise<boolean> {
+  const { error } = await supabase.rpc('admin_delete_user', {
+    p_user_id: userId,
+  })
+
+  if (error) {
+    toast.error(`Erreur: ${error.message}`)
+    return false
+  }
+
+  toast.success('Utilisateur supprimé')
+  return true
+}
+
+function getAdminUserGroupMemberships(
+  userId: string,
+  groups: AdminGroupWithMembers[],
+): AdminUserGroupMembership[] {
+  const memberships: AdminUserGroupMembership[] = []
+
+  for (let i = 0; i < groups.length; i += 1) {
+    const group = groups[i]
+
+    for (let j = 0; j < group.members.length; j += 1) {
+      const member = group.members[j]
+      if (member.user_id === userId) {
+        memberships.push({
+          groupId: group.id,
+          groupName: group.name,
+          status: member.status,
+        })
+      }
+    }
+  }
+
+  return memberships
+}
+
+function adminUserMembershipsMatchSearch(
+  memberships: AdminUserGroupMembership[],
+  search: string,
+): boolean {
+  for (let i = 0; i < memberships.length; i += 1) {
+    const membership = memberships[i]
+    if (membership.groupName.toLocaleLowerCase('fr-FR').includes(search)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function adminUserMatchesSearch(
+  user: AdminUserRow,
+  memberships: AdminUserGroupMembership[],
+  search: string,
+): boolean {
+  if (search === '') {
+    return true
+  }
+
+  if (adminProfileMatchesSearch(user, user.id, search)) {
+    return true
+  }
+
+  if (user.role?.toLocaleLowerCase('fr-FR').includes(search)) {
+    return true
+  }
+
+  return adminUserMembershipsMatchSearch(memberships, search)
+}
+
+function filterAdminUsers(
+  users: AdminUserRow[],
+  groups: AdminGroupWithMembers[],
+  searchValue: string,
+): AdminUserRow[] {
+  const search = normalizeAdminSearch(searchValue)
+  const filteredUsers: AdminUserRow[] = []
+
+  for (let i = 0; i < users.length; i += 1) {
+    const user = users[i]
+    const memberships = getAdminUserGroupMemberships(user.id, groups)
+
+    if (adminUserMatchesSearch(user, memberships, search)) {
+      filteredUsers.push(user)
+    }
+  }
+
+  return filteredUsers
+}
+
+function getAdminUserRoleLabel(role: string | null): string {
+  if (role === 'admin') {
+    return 'Admin'
+  }
+
+  return 'Joueur'
+}
+
+function getAdminUserRoleClasses(role: string | null): string {
+  if (role === 'admin') {
+    return 'bg-red-50 text-red-600'
+  }
+
+  return 'bg-blue-50 text-blue-700'
+}
+
+function getAdminUserGroupCountLabel(count: number): string {
+  if (count > 1) {
+    return `${count} tribus`
+  }
+
+  return `${count} tribu`
+}
+
+function getAdminMembershipStatusLabel(status: string): string {
+  if (status === 'member') {
+    return 'Membre'
+  }
+
+  if (status === 'awaiting') {
+    return 'En attente'
+  }
+
+  return status
+}
+
+function getAdminMembershipStatusClasses(status: string): string {
+  if (status === 'member') {
+    return 'bg-green-50 text-green-700'
+  }
+
+  if (status === 'awaiting') {
+    return 'bg-amber-50 text-amber-700'
+  }
+
+  return 'bg-gray-100 text-gray-500'
+}
+
+function formatAdminLastConnection(value: string | null): string {
+  if (!value) {
+    return 'Jamais connecté'
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Date inconnue'
+  }
+
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function useAdminUsers(refreshKey: number, enabled: boolean): AdminUsersState {
+  const [state, setState] = useState<AdminUsersState>(
+    createAdminUsersLoadingState,
+  )
+
+  useEffect(() => {
+    if (!enabled) {
+      setState(createAdminUsersReadyState([]))
+      return
+    }
+
+    let active = true
+    setState(createAdminUsersLoadingState())
+
+    fetchAdminUsers()
+      .then((users) => {
+        if (!active) {
+          return
+        }
+
+        setState(createAdminUsersReadyState(users))
+      })
+      .catch((error: unknown) => {
+        if (!active) {
+          return
+        }
+
+        setState(createAdminUsersErrorState(getUnknownErrorMessage(error)))
       })
 
     return () => {
@@ -1090,6 +1374,285 @@ function AdminGroupsPanel({
   )
 }
 
+function AdminUserGroupChip({
+  membership,
+}: {
+  membership: AdminUserGroupMembership
+}) {
+  return (
+    <span
+      className={`inline-flex min-w-0 items-center gap-1 rounded-full px-2 py-1 text-[0.68rem] font-semibold ${getAdminMembershipStatusClasses(
+        membership.status,
+      )}`}
+      title={getAdminMembershipStatusLabel(membership.status)}
+    >
+      <span className="truncate">{membership.groupName}</span>
+    </span>
+  )
+}
+
+function AdminUserDeleteButton({
+  adminUser,
+  currentUserId,
+  memberships,
+  onDelete,
+}: {
+  adminUser: AdminUserRow
+  currentUserId: string | null
+  memberships: AdminUserGroupMembership[]
+  onDelete: (userId: string) => Promise<boolean>
+}) {
+  const [confirming, setConfirming] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const isCurrentUser = adminUser.id === currentUserId
+  const disabled = deleting || isCurrentUser
+
+  const handleOpen = useCallback(() => {
+    if (disabled) {
+      return
+    }
+
+    setConfirming(true)
+  }, [disabled])
+
+  const handleCancel = useCallback(() => {
+    if (deleting) {
+      return
+    }
+
+    setConfirming(false)
+  }, [deleting])
+
+  const handleConfirm = useCallback(async () => {
+    if (disabled) {
+      return
+    }
+
+    setDeleting(true)
+    const deleted = await onDelete(adminUser.id)
+    setDeleting(false)
+
+    if (deleted) {
+      setConfirming(false)
+    }
+  }, [adminUser.id, disabled, onDelete])
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 bg-white text-red-500 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={disabled}
+        onClick={handleOpen}
+        title={
+          isCurrentUser
+            ? 'Impossible de supprimer votre propre compte'
+            : 'Supprimer l’utilisateur'
+        }
+      >
+        <Trash2 size={16} />
+      </button>
+
+      {confirming && (
+        <div className="absolute right-0 top-full z-20 mt-2 w-72 rounded-lg border border-red-100 bg-white p-3 text-left shadow-card">
+          <div className="absolute -top-1.5 right-3 h-3 w-3 rotate-45 border-l border-t border-red-100 bg-white" />
+          <div className="mb-3 flex gap-2 pr-6">
+            <AlertTriangle className="mt-0.5 shrink-0 text-red-500" size={16} />
+            <div className="min-w-0">
+              <p className="m-0 text-xs font-bold text-navy">
+                Supprimer {getAdminUserLabel(adminUser)} ?
+              </p>
+              <p className="m-0 mt-1 text-[0.7rem] leading-snug text-gray-500">
+                Cette action supprime son compte, son profil, ses pronos, son
+                score et ses appartenances à{' '}
+                {getAdminUserGroupCountLabel(memberships.length)}.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-navy"
+            disabled={deleting}
+            onClick={handleCancel}
+            title="Annuler"
+          >
+            <X size={14} />
+          </button>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50"
+              disabled={deleting}
+              onClick={handleCancel}
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              className="rounded-full border-none bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600 disabled:cursor-wait disabled:bg-gray-200 disabled:text-gray-400"
+              disabled={deleting}
+              onClick={handleConfirm}
+            >
+              {deleting ? 'Suppression...' : 'Supprimer'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AdminUserCard({
+  adminUser,
+  currentUserId,
+  memberships,
+  onDelete,
+}: {
+  adminUser: AdminUserRow
+  currentUserId: string | null
+  memberships: AdminUserGroupMembership[]
+  onDelete: (userId: string) => Promise<boolean>
+}) {
+  const displayName = getAdminUserLabel(adminUser)
+  const email = adminUser.email ?? ''
+
+  return (
+    <div className="rounded-xl bg-white p-4 shadow-card">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="min-w-0 [&_span]:truncate">
+            <Avatar
+              avatarUrl={optionalString(adminUser.avatar_url)}
+              displayName={displayName}
+              size={34}
+            />
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${getAdminUserRoleClasses(
+                adminUser.role,
+              )}`}
+            >
+              {getAdminUserRoleLabel(adminUser.role)}
+            </span>
+            <span className="text-[0.7rem] text-gray-500">
+              {adminUser.nb_connections ?? 0} connexions
+            </span>
+            <span className="text-[0.7rem] text-gray-400">
+              Dernière : {formatAdminLastConnection(adminUser.last_connection)}
+            </span>
+          </div>
+          {email && (
+            <p className="m-0 mt-1 truncate text-xs text-gray-500">{email}</p>
+          )}
+        </div>
+
+        <AdminUserDeleteButton
+          adminUser={adminUser}
+          currentUserId={currentUserId}
+          memberships={memberships}
+          onDelete={onDelete}
+        />
+      </div>
+
+      <div className="mt-4">
+        <p className="m-0 mb-2 text-xs font-bold text-navy">Tribus</p>
+        {memberships.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {memberships.map((membership) => (
+              <AdminUserGroupChip
+                key={`${membership.groupId}_${membership.status}`}
+                membership={membership}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="m-0 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-400">
+            Aucune tribu
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function AdminUsersPanel({
+  state,
+  groups,
+  search,
+  filteredUsers,
+  currentUserId,
+  onSearchChange,
+  onDelete,
+}: {
+  state: AdminUsersState
+  groups: AdminGroupWithMembers[]
+  search: string
+  filteredUsers: AdminUserRow[]
+  currentUserId: string | null
+  onSearchChange: (value: string) => void
+  onDelete: (userId: string) => Promise<boolean>
+}) {
+  const handleSearchChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      onSearchChange(event.target.value)
+    },
+    [onSearchChange],
+  )
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-xl bg-white p-4 shadow-card">
+        <div className="relative">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2.5 pl-9 pr-3 text-sm text-navy outline-none transition-colors placeholder:text-gray-400 focus:border-indigo-500"
+            value={search}
+            onChange={handleSearchChange}
+            placeholder="Chercher un joueur, un email, une tribu ou un rôle"
+          />
+        </div>
+        <p className="m-0 mt-3 text-xs text-gray-500">
+          {filteredUsers.length} / {state.users.length} utilisateurs affichés
+        </p>
+      </div>
+
+      {state.loading && (
+        <div className="rounded-xl bg-white p-6 text-center text-sm text-gray-400 shadow-card">
+          Chargement des utilisateurs...
+        </div>
+      )}
+
+      {!state.loading && state.error && (
+        <div className="rounded-xl border border-red-100 bg-white p-4 text-sm text-red-500 shadow-card">
+          {state.error}
+        </div>
+      )}
+
+      {!state.loading && !state.error && filteredUsers.length === 0 && (
+        <div className="rounded-xl bg-white p-6 text-center text-sm text-gray-400 shadow-card">
+          Aucun utilisateur trouvé.
+        </div>
+      )}
+
+      {!state.loading &&
+        !state.error &&
+        filteredUsers.map((adminUser) => (
+          <AdminUserCard
+            key={adminUser.id}
+            adminUser={adminUser}
+            currentUserId={currentUserId}
+            memberships={getAdminUserGroupMemberships(adminUser.id, groups)}
+            onDelete={onDelete}
+          />
+        ))}
+    </div>
+  )
+}
+
 const Admin = () => {
   const { user, profile, loading: authLoading } = useAuth()
   const isAdmin = useIsUserAdmin()
@@ -1097,9 +1660,11 @@ const Admin = () => {
   const [matchesRefreshKey, setMatchesRefreshKey] = useState(0)
   const [teamsRefreshKey, setTeamsRefreshKey] = useState(0)
   const [groupsRefreshKey, setGroupsRefreshKey] = useState(0)
+  const [usersRefreshKey, setUsersRefreshKey] = useState(0)
   const matches = useMatches(matchesRefreshKey)
   const teams = useTeams(teamsRefreshKey)
   const adminGroupsState = useAdminGroups(groupsRefreshKey, isAdmin)
+  const adminUsersState = useAdminUsers(usersRefreshKey, isAdmin)
   const {
     competitions,
     activeCompetitionId,
@@ -1118,6 +1683,7 @@ const Admin = () => {
   const [savingFinalWinner, setSavingFinalWinner] = useState(false)
   const [filter, setFilter] = useState<AdminMatchFilter>('pending')
   const [groupSearch, setGroupSearch] = useState('')
+  const [userSearch, setUserSearch] = useState('')
   const [recalculating, setRecalculating] = useState(false)
   const [refreshingOdds, setRefreshingOdds] = useState(false)
 
@@ -1143,6 +1709,10 @@ const Admin = () => {
 
   const bumpGroupsList = useCallback(() => {
     setGroupsRefreshKey(incrementNumber)
+  }, [])
+
+  const bumpUsersList = useCallback(() => {
+    setUsersRefreshKey(incrementNumber)
   }, [])
 
   useEffect(() => {
@@ -1375,6 +1945,20 @@ const Admin = () => {
     [bumpGroupsList],
   )
 
+  const handleDeleteUser = useCallback(
+    async (userId: string) => {
+      const deleted = await deleteAdminUser(userId)
+
+      if (deleted) {
+        bumpUsersList()
+        bumpGroupsList()
+      }
+
+      return deleted
+    },
+    [bumpGroupsList, bumpUsersList],
+  )
+
   if (authLoading || (user !== null && profile === null)) {
     return <Loader />
   }
@@ -1408,6 +1992,11 @@ const Admin = () => {
   const filteredAdminGroups = filterAdminGroups(
     adminGroupsState.groups,
     groupSearch,
+  )
+  const filteredAdminUsers = filterAdminUsers(
+    adminUsersState.users,
+    adminGroupsState.groups,
+    userSearch,
   )
 
   return (
@@ -1524,6 +2113,12 @@ const Admin = () => {
           onClick={() => setAdminTab('groups')}
         >
           Tribus
+        </button>
+        <button
+          className={`py-2 px-4 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${adminTab === 'users' ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
+          onClick={() => setAdminTab('users')}
+        >
+          Utilisateurs
         </button>
       </div>
 
@@ -1674,6 +2269,18 @@ const Admin = () => {
           filteredGroups={filteredAdminGroups}
           onSearchChange={setGroupSearch}
           onDelete={handleDeleteGroup}
+        />
+      )}
+
+      {adminTab === 'users' && (
+        <AdminUsersPanel
+          state={adminUsersState}
+          groups={adminGroupsState.groups}
+          search={userSearch}
+          filteredUsers={filteredAdminUsers}
+          currentUserId={user?.id ?? null}
+          onSearchChange={setUserSearch}
+          onDelete={handleDeleteUser}
         />
       )}
     </div>

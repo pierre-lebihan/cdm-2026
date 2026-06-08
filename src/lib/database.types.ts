@@ -492,6 +492,10 @@ export type Database = {
         Args: Record<string, never>
         Returns: Json
       }
+      admin_delete_user: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       bet_outcome_status: BetOutcomeStatusEnum
