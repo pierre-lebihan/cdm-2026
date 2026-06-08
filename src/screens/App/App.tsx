@@ -64,15 +64,19 @@ const App = () => {
           </button>
           <Link
             to="/"
-            className="flex items-center gap-2 text-[1.05rem] font-extrabold text-navy tracking-tight hover:opacity-80 active:scale-95 transition-all"
+            className="flex min-w-0 flex-1 items-center justify-center gap-2 px-2 text-[0.72rem] font-extrabold leading-none text-navy transition-all hover:opacity-80 active:scale-95 sm:flex-none sm:justify-start sm:px-0 sm:text-[1.05rem] sm:leading-tight"
             title={t.nav.home}
           >
             <img
               src="/icon-192x192.png"
               alt=""
-              className="w-8 h-8 rounded-md object-contain shrink-0"
+              className="hidden h-8 w-8 shrink-0 rounded-md object-contain sm:block"
             />
-            <span className="hidden sm:inline">Make Prono Great Again</span>
+            <span className="flex flex-col items-center sm:block">
+              <span className="sm:hidden">Make Prono</span>
+              <span className="sm:hidden">Great Again</span>
+              <span className="hidden sm:inline">Make Prono Great Again</span>
+            </span>
           </Link>
           <div className="flex shrink-0 items-center gap-2">
             <LanguageSelector />
