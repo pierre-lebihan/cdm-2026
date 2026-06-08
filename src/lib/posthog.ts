@@ -29,7 +29,7 @@ export function initPostHog() {
   }
 
   posthog.init(postHogKey, {
-    api_host: POSTHOG_HOST || 'https://eu.i.posthog.com',
+    api_host: POSTHOG_HOST || 'https://t.makepronogreatagain.bzh',
     capture_pageview: false,
     person_profiles: 'identified_only',
   })
