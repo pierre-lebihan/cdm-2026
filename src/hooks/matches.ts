@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCompetition } from '../contexts/CompetitionContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import type { Tables } from '../lib/database.types'
+import { getLocalizedCountryName } from '../lib/localizedNames'
 import type { MatchBetFormat, MatchTournamentPhase } from '../lib/matchEnums'
+import type { LanguageCode } from '../lib/i18n'
 
 type MatchWithTeamsRow = Tables<'matches_with_teams'>
 
@@ -37,7 +40,11 @@ function normalizePlayoffWinner(
   return null
 }
 
-function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
+function normalizeMatch(
+  row: MatchWithTeamsRow,
+  language: LanguageCode,
+  localeCode: string,
+): NormalizedMatch {
   return {
     id: row.id!,
     dateTime: row.date_time
@@ -46,9 +53,19 @@ function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
     ville: row.city,
     teamA: row.team_a,
     teamB: row.team_b,
-    teamAName: row.team_a_name ?? null,
+    teamAName: getLocalizedCountryName(
+      row.team_a_code,
+      row.team_a_name,
+      language,
+      localeCode,
+    ),
     teamACode: row.team_a_code ?? null,
-    teamBName: row.team_b_name ?? null,
+    teamBName: getLocalizedCountryName(
+      row.team_b_code,
+      row.team_b_name,
+      language,
+      localeCode,
+    ),
     teamBCode: row.team_b_code ?? null,
     streaming: row.streaming,
     scores: { A: row.score_a, B: row.score_b },
@@ -68,6 +85,7 @@ function normalizeMatch(row: MatchWithTeamsRow): NormalizedMatch {
 export function useMatches(refreshKey: number = 0): NormalizedMatch[] | null {
   const [matches, setMatches] = useState<NormalizedMatch[] | null>(null)
   const { activeCompetitionId } = useCompetition()
+  const { language, localeCode } = useLanguage()
 
   useEffect(() => {
     if (!activeCompetitionId) return
@@ -79,19 +97,22 @@ export function useMatches(refreshKey: number = 0): NormalizedMatch[] | null {
       .order('date_time', { ascending: true })
       .then(({ data }) => {
         if (cancelled) return
-        const normalized = data?.map(normalizeMatch)
+        const normalized = data?.map((row) =>
+          normalizeMatch(row, language, localeCode),
+        )
         setMatches(normalized ?? null)
       })
     return () => {
       cancelled = true
     }
-  }, [activeCompetitionId, refreshKey])
+  }, [activeCompetitionId, refreshKey, language, localeCode])
 
   return matches
 }
 
 export function useMatch(matchId: string | undefined): NormalizedMatch | null {
   const [match, setMatch] = useState<NormalizedMatch | null>(null)
+  const { language, localeCode } = useLanguage()
 
   useEffect(() => {
     if (!matchId) return
@@ -100,8 +121,10 @@ export function useMatch(matchId: string | undefined): NormalizedMatch | null {
       .select('*')
       .eq('id', matchId)
       .single()
-      .then(({ data }) => setMatch(data ? normalizeMatch(data) : null))
-  }, [matchId])
+      .then(({ data }) =>
+        setMatch(data ? normalizeMatch(data, language, localeCode) : null),
+      )
+  }, [matchId, language, localeCode])
 
   return match
 }

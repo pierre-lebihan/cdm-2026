@@ -1,5 +1,6 @@
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useCompetitionDisplayName } from '../../hooks/competition'
+import { isGenericCompetitionName } from '../../lib/localizedNames'
 import Section from './component/rulesSection'
 import Table from './component/table'
 
@@ -9,7 +10,7 @@ function getFinalWinnerCopy(
   prefix: string,
   suffix: string,
 ): string {
-  if (competitionLabel === 'Pronostics') {
+  if (isGenericCompetitionName(competitionLabel)) {
     return defaultCopy
   }
 

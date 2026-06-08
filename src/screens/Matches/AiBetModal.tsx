@@ -4,6 +4,7 @@ import { ArrowRight, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCompetition } from '../../contexts/CompetitionContext'
+import { useCompetitionDisplayName } from '../../hooks/competition'
 import { saveBatchBets } from '../../hooks/bets'
 import { useHideCrisp } from '../../hooks/useHideCrisp'
 import { generatePredictions, type AiProvider } from '../../lib/openrouter'
@@ -93,7 +94,8 @@ const AiBetModal = ({
   bettedMatchIds,
 }: AiBetModalProps) => {
   const { user, profile } = useAuth()
-  const { activeCompetitionId, competition } = useCompetition()
+  const { activeCompetitionId } = useCompetition()
+  const competitionLabel = useCompetitionDisplayName()
   const { t } = useLanguage()
   useHideCrisp(open)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -202,7 +204,7 @@ const AiBetModal = ({
       setError(null)
 
       try {
-        const aiCompetitionLabel = competition?.name?.trim() ?? ''
+        const aiCompetitionLabel = competitionLabel.trim()
         const predictions = await generatePredictions(
           matchesToPredict,
           prompt,
@@ -245,7 +247,7 @@ const AiBetModal = ({
       onComplete,
       onClose,
       activeCompetitionId,
-      competition?.name,
+      competitionLabel,
       overwriteExisting,
       t.aiBet.noValidPrediction,
       t.aiBet.successFilledByAi,

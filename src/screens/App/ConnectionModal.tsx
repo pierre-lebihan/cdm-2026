@@ -9,6 +9,7 @@ import {
   usePasswordReset,
 } from '../../hooks/user'
 import { useCompetitionDisplayName } from '../../hooks/competition'
+import { isGenericCompetitionName } from '../../lib/localizedNames'
 import { useLanguage } from '../../contexts/LanguageContext'
 import {
   isAndroidDevice,
@@ -238,7 +239,7 @@ const ConnectionModal = () => {
       <div className="text-4xl mb-1">⚽</div>
       <h2 className="text-xl font-extrabold text-navy m-0">{t.auth.title}</h2>
       <p className="text-sm text-gray-500 mb-2">
-        {competitionLabel === 'Pronostics'
+        {isGenericCompetitionName(competitionLabel)
           ? t.auth.descriptionDefault
           : `${t.auth.descriptionPrefix} ${competitionLabel}.`}
       </p>

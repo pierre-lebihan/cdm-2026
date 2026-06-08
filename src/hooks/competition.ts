@@ -1,16 +1,12 @@
 import { useMemo } from 'react'
 import { useCompetition } from '../contexts/CompetitionContext'
+import { useLanguage } from '../contexts/LanguageContext'
+import { getLocalizedCompetitionName } from '../lib/localizedNames'
 
 export function useCompetitionDisplayName(): string {
   const { competition } = useCompetition()
-  const raw = competition?.name
-  if (raw != null) {
-    const trimmed = raw.trim()
-    if (trimmed !== '') {
-      return trimmed
-    }
-  }
-  return 'Pronostics'
+  const { language } = useLanguage()
+  return getLocalizedCompetitionName(competition?.name, language)
 }
 
 interface CompetitionData {

@@ -8,6 +8,7 @@ import {
 import Loader from '../../../components/Loader'
 import FinalWinnerChoice from './FinalWinnerChoice'
 import { useLanguage } from '../../../contexts/LanguageContext'
+import { isGenericCompetitionName } from '../../../lib/localizedNames'
 
 const FinalWinner = () => {
   const [team, saveWinner] = useSelectedWinner()
@@ -55,7 +56,7 @@ const FinalWinner = () => {
       <p className="text-xs text-gray-400 m-0 mb-4">
         {locked
           ? t.finalWinner.lockedBetFor
-          : competitionLabel === 'Pronostics'
+          : isGenericCompetitionName(competitionLabel)
             ? t.finalWinner.finalWinnerQuestion
             : `${t.finalWinner.winnerQuestionPrefix} ${competitionLabel} ?`}
         {!locked && lockLabel != null && (

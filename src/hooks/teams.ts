@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCompetition } from '../contexts/CompetitionContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import type { Tables } from '../lib/database.types'
+import type { LanguageCode } from '../lib/i18n'
+import { getLocalizedCountryName } from '../lib/localizedNames'
 
 type TeamRow = Tables<'teams'>
 
@@ -15,13 +18,19 @@ export interface NormalizedTeam {
   unveiled: boolean | null
 }
 
-function normalizeTeam(row: TeamRow | null): NormalizedTeam | null {
+function normalizeTeam(
+  row: TeamRow | null,
+  language: LanguageCode,
+  localeCode: string,
+): NormalizedTeam | null {
   if (!row) return null
   return {
     id: row.id,
     code: row.code,
     group: row.group_name,
-    name: row.name,
+    name:
+      getLocalizedCountryName(row.code, row.name, language, localeCode) ??
+      row.name,
     winOdd: row.win_odd,
     elimination: row.elimination,
     unveiled: row.unveiled,
@@ -54,6 +63,7 @@ export function getFinalWinnerEligibleTeams(
 
 export function useTeam(id: string | null | undefined): NormalizedTeam | null {
   const [team, setTeam] = useState<NormalizedTeam | null>(null)
+  const { language, localeCode } = useLanguage()
 
   useEffect(() => {
     if (!id) return
@@ -62,8 +72,8 @@ export function useTeam(id: string | null | undefined): NormalizedTeam | null {
       .select('*')
       .eq('id', id)
       .single()
-      .then(({ data }) => setTeam(normalizeTeam(data)))
-  }, [id])
+      .then(({ data }) => setTeam(normalizeTeam(data, language, localeCode)))
+  }, [id, language, localeCode])
 
   return team
 }
@@ -71,6 +81,7 @@ export function useTeam(id: string | null | undefined): NormalizedTeam | null {
 export function useTeams(refreshKey: number = 0): NormalizedTeam[] {
   const [teams, setTeams] = useState<NormalizedTeam[]>([])
   const { activeCompetitionId } = useCompetition()
+  const { language, localeCode } = useLanguage()
 
   useEffect(() => {
     if (!activeCompetitionId) return
@@ -82,12 +93,12 @@ export function useTeams(refreshKey: number = 0): NormalizedTeam[] {
       .then(({ data }) =>
         setTeams(
           data?.flatMap((t) => {
-            const n = normalizeTeam(t)
+            const n = normalizeTeam(t, language, localeCode)
             return n ? [n] : []
           }) ?? [],
         ),
       )
-  }, [activeCompetitionId, refreshKey])
+  }, [activeCompetitionId, refreshKey, language, localeCode])
 
   return teams
 }

@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { useCompetitionDisplayName } from '../../hooks/competition'
+import { isGenericCompetitionName } from '../../lib/localizedNames'
 import FaqEntry from './FaqEntry'
 import Mascot from '../../components/Mascot'
 import { MASCOT_LIST } from '../../lib/mascots'
@@ -12,7 +13,7 @@ function faqWhatIsItAnswer(
   competitionPrefix: string,
   competitionSuffix: string,
 ): string {
-  if (competitionLabel === 'Pronostics') {
+  if (isGenericCompetitionName(competitionLabel)) {
     return defaultAnswer
   }
 
