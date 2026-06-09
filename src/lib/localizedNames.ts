@@ -35,6 +35,106 @@ const competitionNamesByKey: Record<string, LocalizedName> = {
 }
 
 const footballRegionNamesByCode: Record<string, LocalizedName> = {
+  ar: {
+    fr: 'Argentine',
+    en: 'Argentina',
+    mk: 'Аргентина',
+  },
+  at: {
+    fr: 'Autriche',
+    en: 'Austria',
+    mk: 'Австрија',
+  },
+  au: {
+    fr: 'Australie',
+    en: 'Australia',
+    mk: 'Австралија',
+  },
+  ba: {
+    fr: 'Bosnie-Herzégovine',
+    en: 'Bosnia & Herzegovina',
+    mk: 'Босна и Херцеговина',
+  },
+  be: {
+    fr: 'Belgique',
+    en: 'Belgium',
+    mk: 'Белгија',
+  },
+  br: {
+    fr: 'Brésil',
+    en: 'Brazil',
+    mk: 'Бразил',
+  },
+  ca: {
+    fr: 'Canada',
+    en: 'Canada',
+    mk: 'Канада',
+  },
+  cd: {
+    fr: 'RD Congo',
+    en: 'Congo - Kinshasa',
+    mk: 'Конго - Киншаса',
+  },
+  ch: {
+    fr: 'Suisse',
+    en: 'Switzerland',
+    mk: 'Швајцарија',
+  },
+  ci: {
+    fr: "Côte d'Ivoire",
+    en: 'Côte d’Ivoire',
+    mk: 'Брегот на Слоновата Коска',
+  },
+  co: {
+    fr: 'Colombie',
+    en: 'Colombia',
+    mk: 'Колумбија',
+  },
+  cv: {
+    fr: 'Cap-Vert',
+    en: 'Cape Verde',
+    mk: 'Кабо Верде',
+  },
+  cw: {
+    fr: 'Curaçao',
+    en: 'Curaçao',
+    mk: 'Курасао',
+  },
+  cz: {
+    fr: 'République tchèque',
+    en: 'Czechia',
+    mk: 'Чешка',
+  },
+  de: {
+    fr: 'Allemagne',
+    en: 'Germany',
+    mk: 'Германија',
+  },
+  dz: {
+    fr: 'Algérie',
+    en: 'Algeria',
+    mk: 'Алжир',
+  },
+  ec: {
+    fr: 'Equateur',
+    en: 'Ecuador',
+    mk: 'Еквадор',
+  },
+  eg: {
+    fr: 'Égypte',
+    en: 'Egypt',
+    mk: 'Египет',
+  },
+  es: {
+    fr: 'Espagne',
+    en: 'Spain',
+    mk: 'Шпанија',
+  },
+  fr: {
+    fr: 'France',
+    en: 'France',
+    mk: 'Франција',
+  },
   'gb-eng': {
     fr: 'Angleterre',
     en: 'England',
@@ -55,15 +155,150 @@ const footballRegionNamesByCode: Record<string, LocalizedName> = {
     en: 'Wales',
     mk: 'Велс',
   },
+  gh: {
+    fr: 'Ghana',
+    en: 'Ghana',
+    mk: 'Гана',
+  },
+  hr: {
+    fr: 'Croatie',
+    en: 'Croatia',
+    mk: 'Хрватска',
+  },
+  ht: {
+    fr: 'Haïti',
+    en: 'Haiti',
+    mk: 'Хаити',
+  },
+  iq: {
+    fr: 'Irak',
+    en: 'Iraq',
+    mk: 'Ирак',
+  },
+  ir: {
+    fr: 'Iran',
+    en: 'Iran',
+    mk: 'Иран',
+  },
+  it: {
+    fr: 'Italie',
+    en: 'Italy',
+    mk: 'Италија',
+  },
+  jo: {
+    fr: 'Jordanie',
+    en: 'Jordan',
+    mk: 'Јордан',
+  },
+  jp: {
+    fr: 'Japon',
+    en: 'Japan',
+    mk: 'Јапонија',
+  },
+  kr: {
+    fr: 'Corée du Sud',
+    en: 'South Korea',
+    mk: 'Јужна Кореја',
+  },
+  ma: {
+    fr: 'Maroc',
+    en: 'Morocco',
+    mk: 'Мароко',
+  },
+  mx: {
+    fr: 'Mexique',
+    en: 'Mexico',
+    mk: 'Мексико',
+  },
+  nl: {
+    fr: 'Pays-Bas',
+    en: 'Netherlands',
+    mk: 'Холандија',
+  },
+  no: {
+    fr: 'Norvège',
+    en: 'Norway',
+    mk: 'Норвешка',
+  },
+  nz: {
+    fr: 'Nouvelle-Zélande',
+    en: 'New Zealand',
+    mk: 'Нов Зеланд',
+  },
+  pa: {
+    fr: 'Panama',
+    en: 'Panama',
+    mk: 'Панама',
+  },
+  pt: {
+    fr: 'Portugal',
+    en: 'Portugal',
+    mk: 'Португалија',
+  },
+  py: {
+    fr: 'Paraguay',
+    en: 'Paraguay',
+    mk: 'Парагвај',
+  },
+  qa: {
+    fr: 'Qatar',
+    en: 'Qatar',
+    mk: 'Катар',
+  },
+  sa: {
+    fr: 'Arabie Saoudite',
+    en: 'Saudi Arabia',
+    mk: 'Саудиска Арабија',
+  },
+  se: {
+    fr: 'Suède',
+    en: 'Sweden',
+    mk: 'Шведска',
+  },
+  sn: {
+    fr: 'Sénégal',
+    en: 'Senegal',
+    mk: 'Сенегал',
+  },
   tbd: {
     fr: 'À déterminer',
     en: 'To be decided',
     mk: 'Ќе се одреди',
   },
+  tn: {
+    fr: 'Tunisie',
+    en: 'Tunisia',
+    mk: 'Тунис',
+  },
+  tr: {
+    fr: 'Turquie',
+    en: 'Türkiye',
+    mk: 'Турција',
+  },
+  us: {
+    fr: 'États-Unis',
+    en: 'United States',
+    mk: 'Соединети Американски Држави',
+  },
+  uy: {
+    fr: 'Uruguay',
+    en: 'Uruguay',
+    mk: 'Уругвај',
+  },
+  uz: {
+    fr: 'Ouzbékistan',
+    en: 'Uzbekistan',
+    mk: 'Узбекистан',
+  },
   xk: {
     fr: 'Kosovo',
     en: 'Kosovo',
     mk: 'Косово',
+  },
+  za: {
+    fr: 'Afrique du Sud',
+    en: 'South Africa',
+    mk: 'Јужноафриканска Република',
   },
 }
 
