@@ -24,6 +24,7 @@ import { MASCOT_LIST } from '../../lib/mascots'
 import { captureEvent } from '../../lib/posthog'
 import { useLanguage } from '../../contexts/LanguageContext'
 import LanguageSelector from 'components/LanguageSelector'
+import { Users } from 'lucide-react'
 
 const ONBOARDING_STORAGE_KEY = 'mpga-onboarding-seen'
 const FINAL_WINNER_ELEMENT_ID = 'final-winner'
@@ -287,6 +288,14 @@ const HomePageConnected = () => {
           <div className="text-xs font-semibold text-navy">
             {t.home.shortcutRanking}
           </div>
+        </button>
+        <button
+          type="button"
+          className="flex-1 min-w-[140px] max-w-[200px] bg-white rounded-[14px] p-4 text-center shadow-card cursor-pointer transition-all border-none hover:shadow-card-hover hover:-translate-y-px"
+          onClick={() => handleShortcutClick('/groups', t.nav.groups)}
+        >
+          <Users size={26} className="mx-auto mb-1.5 text-navy" />
+          <div className="text-xs font-semibold text-navy">{t.nav.groups}</div>
         </button>
       </div>
 
