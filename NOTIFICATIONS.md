@@ -24,8 +24,8 @@ Les secrets `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont déjà fournis pa
 
 ## Rappel automatique (~5 minutes avant le match)
 
-- Migration `supabase/migrations/20260328140000_pre_match_reminder_and_notify_cron.sql` : colonne `matches.pre_match_reminder_sent_at` + job **pg_cron** qui appelle la fonction **`notify-pre-match`** chaque minute.
-- Fenêtre : `date_time` du match strictement après **maintenant + 4 min** et inférieur ou égal à **maintenant + 5 min** (une seule exécution utile par match).
+- Colonne `matches.pre_match_reminder_sent_at` + job **pg_cron** qui appelle la fonction **`notify-pre-match`** toutes les 5 minutes entre **18h et 7h heure de Sofia**.
+- Fenêtre : `date_time` du match strictement après **maintenant + 4 min** et inférieur ou égal à **maintenant + 9 min** (une seule exécution utile par match).
 - Cibles : utilisateurs présents dans **`competition_profiles`** pour la compétition du match, **sans** pronostic complet (`bet_team_a` et `bet_team_b` renseignés) pour ce match. (En pratique, une ligne `competition_profiles` apparaît après un premier prono ou le choix du vainqueur : les comptes tout neufs sans aucune action ne sont pas dans ce périmètre.)
 - Après traitement, `pre_match_reminder_sent_at` est renseigné pour ne pas renvoyer le même rappel.
 

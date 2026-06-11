@@ -112,8 +112,8 @@ populate/            # Scripts admin
 
 | Fonction | Role | Cron |
 |----------|------|------|
-| `update-results` | Recupere les resultats via Gemini + Google Search, met a jour `matches` | Toutes les 5 min |
-| `notify-pre-match` | Push OneSignal aux joueurs sans prono ~5 min avant coup d'envoi | Toutes les 5 min pendant les heures de match |
+| `update-results` | Recupere les resultats via Gemini + Google Search, met a jour `matches` | Toutes les 5 min, 19h-10h Sofia |
+| `notify-pre-match` | Push OneSignal aux joueurs sans prono ~5 min avant coup d'envoi | Toutes les 5 min, 18h-7h Sofia |
 
 Les cotes (`odds_a`, `odds_b`, `odds_draw`) ne viennent plus d'un bookmaker : elles sont recalculées automatiquement par un trigger DB à chaque INSERT/UPDATE/DELETE sur `bets` (tant que le match n'a pas démarré), selon la popularité des pronostics.
 

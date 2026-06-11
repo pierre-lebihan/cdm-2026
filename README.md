@@ -81,7 +81,7 @@ UPDATE profiles SET role = 'admin' WHERE id = '<user-uuid>';
 
 ### 5. Scores live via Gemini
 
-La fonction Supabase `update-results` utilise Gemini avec Google Search pour récupérer les scores des matchs en cours. Elle s'exécute toutes les 5 minutes via `pg_cron`, ne contacte Gemini que si un match visible a démarré depuis moins de 4 heures et n'est pas marqué comme terminé, puis met à jour `matches.score_a`, `matches.score_b`, `matches.finished`, `matches.playoff_winner` et l'audit JSON `matches.score_payload`.
+La fonction Supabase `update-results` utilise Gemini avec Google Search pour récupérer les scores des matchs en cours. Elle s'exécute toutes les 5 minutes via `pg_cron`, entre 19h et 10h heure de Sofia, ne contacte Gemini que si un match visible a démarré depuis moins de 4 heures et n'est pas marqué comme terminé, puis met à jour `matches.score_a`, `matches.score_b`, `matches.finished`, `matches.playoff_winner` et l'audit JSON `matches.score_payload`.
 
 Créer une clé dans [Google AI Studio](https://aistudio.google.com/app/apikey), puis l'enregistrer comme secret Supabase :
 

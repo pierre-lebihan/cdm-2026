@@ -89,8 +89,8 @@ Two bet formats exist (`src/lib/matchEnums.ts`):
 
 | Function | Schedule | Role |
 |---|---|---|
-| `update-results` | Every 5 min | Fetches results through Gemini + Google Search, updates `matches` |
-| `notify-pre-match` | Every 5 min during match hours | Sends OneSignal push to users without a bet ~5 min before kickoff |
+| `update-results` | Every 5 min, 19:00-10:00 Sofia time | Fetches results through Gemini + Google Search, updates `matches` |
+| `notify-pre-match` | Every 5 min, 18:00-07:00 Sofia time | Sends OneSignal push to users without a bet ~5 min before kickoff |
 
 Edge Functions use the `service_role` key (bypasses RLS). Required secrets: `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY`. `GEMINI_MODEL` is optional.
 
