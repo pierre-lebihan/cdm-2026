@@ -78,23 +78,6 @@ export function initOneSignal(): Promise<void> {
     allowLocalhostAsSecureOrigin: false,
     serviceWorkerPath: oneSignalServiceWorkerPath(),
     serviceWorkerParam: { scope: oneSignalServiceWorkerScope() },
-    promptOptions: {
-      slidedown: {
-        prompts: [
-          {
-            type: 'push',
-            autoPrompt: false,
-            delay: {},
-            text: {
-              actionMessage:
-                'Rappels avant les matchs quand ton prono manque — rien de spam.',
-              acceptButton: 'Autoriser',
-              cancelButton: 'Plus tard',
-            },
-          },
-        ],
-      },
-    },
   })
     .then(() => undefined)
     .catch((err: unknown) => {
@@ -118,6 +101,7 @@ export async function ensurePushSubscriptionReady(): Promise<void> {
   if (hasValidPushToken() && OneSignal.User.PushSubscription.optedIn === true) {
     return
   }
+  await OneSignal.Notifications.requestPermission()
   await OneSignal.User.PushSubscription.optIn()
 }
 

@@ -70,6 +70,7 @@ export async function optInPushSubscription(): Promise<void> {
     return
   }
   await initOneSignal()
+  await OneSignal.Notifications.requestPermission()
   await OneSignal.User.PushSubscription.optIn()
 }
 
