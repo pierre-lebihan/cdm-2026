@@ -61,6 +61,51 @@ const PRIVATE_ROUTE_SEO: SeoState = {
   robots: 'noindex, nofollow',
 }
 
+const PRIVATE_ROUTE_SEO_BY_PATH: Record<string, StaticRouteSeo> = {
+  '/matches': {
+    title: `Pronostics · ${SITE_NAME}`,
+    description:
+      'Gérez vos pronostics Make Prono Great Again pour les matches de la compétition.',
+    canonicalPath: '/matches/',
+  },
+  '/user': {
+    title: `Profil joueur · ${SITE_NAME}`,
+    description:
+      'Consultez le détail des pronostics et des points d’un joueur Make Prono Great Again.',
+    canonicalPath: '/user/',
+  },
+  '/ranking': {
+    title: `Classement · ${SITE_NAME}`,
+    description:
+      'Consultez le classement Make Prono Great Again et suivez les scores de votre tribu.',
+    canonicalPath: '/ranking/',
+  },
+  '/groups': {
+    title: `Tribus · ${SITE_NAME}`,
+    description:
+      'Gérez vos tribus Make Prono Great Again et affrontez vos proches.',
+    canonicalPath: '/groups/',
+  },
+  '/profile': {
+    title: `Profil · ${SITE_NAME}`,
+    description:
+      'Modifiez votre profil Make Prono Great Again et vos préférences de joueur.',
+    canonicalPath: '/profile/',
+  },
+  '/admin': {
+    title: `Administration · ${SITE_NAME}`,
+    description:
+      'Administrez Make Prono Great Again, les matches, les tribus, les utilisateurs et les recalculs.',
+    canonicalPath: '/admin/',
+  },
+  '/analytics': {
+    title: `Analytics · ${SITE_NAME}`,
+    description:
+      'Consultez les tableaux de bord analytics de vos tribus Make Prono Great Again.',
+    canonicalPath: '/analytics/',
+  },
+}
+
 const NOT_FOUND_SEO: SeoState = {
   title: `Page introuvable · ${SITE_NAME}`,
   description:
@@ -96,6 +141,31 @@ function getHomeSeo(competitionName: string): SeoState {
   }
 }
 
+function buildPrivateRouteSeo(routeSeo: StaticRouteSeo): SeoState {
+  return {
+    ...routeSeo,
+    robots: 'noindex, nofollow',
+  }
+}
+
+function getPrivateRouteSeo(pathname: string): SeoState | null {
+  const routeSeo = PRIVATE_ROUTE_SEO_BY_PATH[pathname]
+
+  if (routeSeo) {
+    return buildPrivateRouteSeo(routeSeo)
+  }
+
+  if (pathname.startsWith('/matches/')) {
+    return buildPrivateRouteSeo(PRIVATE_ROUTE_SEO_BY_PATH['/matches'])
+  }
+
+  if (pathname.startsWith('/user/')) {
+    return buildPrivateRouteSeo(PRIVATE_ROUTE_SEO_BY_PATH['/user'])
+  }
+
+  return null
+}
+
 function getRouteSeo(pathname: string, competitionName: string): SeoState {
   const normalizedPathname = normalizePathname(pathname)
 
@@ -114,6 +184,12 @@ function getRouteSeo(pathname: string, competitionName: string): SeoState {
 
   if (normalizedPathname.startsWith('/auth/')) {
     return PRIVATE_ROUTE_SEO
+  }
+
+  const privateRouteSeo = getPrivateRouteSeo(normalizedPathname)
+
+  if (privateRouteSeo) {
+    return privateRouteSeo
   }
 
   return NOT_FOUND_SEO
