@@ -34,7 +34,7 @@ src/
 └── main.tsx         # Point d'entree
 
 supabase/
-├── functions/       # Edge Functions (update-results, notify-pre-match)
+├── functions/       # Edge Functions (update-results, notify-pre-match, etc.)
 └── migrations/      # Migrations SQL (schema, RLS, triggers, vues, cron)
 
 populate/            # Scripts admin
@@ -113,8 +113,7 @@ populate/            # Scripts admin
 | Fonction | Role | Cron |
 |----------|------|------|
 | `update-results` | Recupere les resultats via Gemini + Google Search, met a jour `matches` | Toutes les 5 min |
-| `notify-pre-match` | Push OneSignal aux joueurs sans prono ~5 min avant coup d'envoi | Chaque minute (pg_cron) |
-| `notify-final-winner` | Push OneSignal pour choisir ou revoir le vainqueur final avant le verrou | Toutes les heures (pg_cron) |
+| `notify-pre-match` | Push OneSignal aux joueurs sans prono ~5 min avant coup d'envoi | Toutes les 5 min pendant les heures de match |
 
 Les cotes (`odds_a`, `odds_b`, `odds_draw`) ne viennent plus d'un bookmaker : elles sont recalculées automatiquement par un trigger DB à chaque INSERT/UPDATE/DELETE sur `bets` (tant que le match n'a pas démarré), selon la popularité des pronostics.
 
@@ -150,7 +149,7 @@ Ne jamais commiter de fichiers `.env`, credentials, ou cles d'API.
 
 Push sur `main` declenche le workflow `.github/workflows/deploy.yml` :
 1. `supabase db push` (migrations)
-2. Deploy des Edge Functions (`update-results`, `notify-pre-match`, `notify-final-winner`)
+2. Deploy des Edge Functions (`update-results`, `notify-pre-match`)
 3. Build frontend + deploy sur GitHub Pages
 
 ## Points d'attention

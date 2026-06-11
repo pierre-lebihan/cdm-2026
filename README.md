@@ -178,7 +178,7 @@ src/
 ## Ce qui reste à faire (hors PoC)
 
 - ~~**Row Level Security**~~ : ✅ RLS policies configurées
-- ~~**Edge Functions**~~ : ✅ résultats Gemini et rappels OneSignal déployés
+- ~~**Edge Functions**~~ : ✅ résultats Gemini et rappels match OneSignal déployés
 - ~~**Notifications push**~~ : ✅ OneSignal web push configuré
 - **Populate scripts** : Scripts dans `populate/` (service role) — alignés sur `competition_profiles`
 - **Tests** : Réécrire les tests unitaires
@@ -188,5 +188,5 @@ src/
 
 ## Dossiers annexes
 
-- `supabase/functions/` : Edge Functions (scores Gemini / rappels OneSignal).
+- `supabase/functions/` : Edge Functions (scores Gemini / rappels match OneSignal).
 - `populate/` : scripts admin (service role) pour classements et contrôles.

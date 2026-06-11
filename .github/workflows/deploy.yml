@@ -55,15 +55,18 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      - run: supabase functions deploy notify-final-winner --no-verify-jwt
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
       - run: supabase functions deploy metabase-embed
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - run: supabase functions deploy auth-password-setup --no-verify-jwt
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Delete retired Edge Functions
+        run: |
+          supabase functions delete notify-final-winner --project-ref $SUPABASE_PROJECT_ID --yes || true
+          supabase functions delete update-odds --project-ref $SUPABASE_PROJECT_ID --yes || true
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
