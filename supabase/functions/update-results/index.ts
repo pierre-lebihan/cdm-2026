@@ -1,7 +1,10 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
-const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview'
+const DEFAULT_GEMINI_MODELS: string[] = [
+  'gemini-3.5-flash',
+  'gemini-3-flash-preview',
+]
 const GEMINI_API_BASE =
   'https://generativelanguage.googleapis.com/v1beta/models'
 const MATCH_LOOKBACK_MINUTES = 240
@@ -42,6 +45,7 @@ interface GeminiScoreResult {
 }
 
 interface GeminiScoreLookup {
+  model: string
   result: GeminiScoreResult
   webSearchQueries: string[]
 }
@@ -64,12 +68,26 @@ interface GeminiCandidate {
 }
 
 interface GeminiApiError {
+  code?: number
   message?: string
+  status?: string
 }
 
 interface GeminiApiResponse {
   candidates?: GeminiCandidate[]
   error?: GeminiApiError
+}
+
+class GeminiRequestError extends Error {
+  statusCode: number
+  apiStatus: string | null
+
+  constructor(message: string, statusCode: number, apiStatus: string | null) {
+    super(message)
+    this.name = 'GeminiRequestError'
+    this.statusCode = statusCode
+    this.apiStatus = apiStatus
+  }
 }
 
 const SCORE_RESPONSE_SCHEMA: Record<string, unknown> = {
@@ -437,7 +455,11 @@ async function fetchGeminiScore(
 
   if (!response.ok) {
     const message = data.error?.message ?? `Gemini API ${response.status}`
-    throw new Error(message)
+    throw new GeminiRequestError(
+      message,
+      response.status,
+      data.error?.status ?? null,
+    )
   }
 
   const text = extractGeminiText(data)
@@ -452,9 +474,83 @@ async function fetchGeminiScore(
   }
 
   return {
+    model,
     result,
     webSearchQueries: extractSearchQueries(data),
   }
+}
+
+function splitConfiguredModels(value: string): string[] {
+  const models: string[] = []
+  for (const rawModel of value.split(',')) {
+    const model = rawModel.trim()
+    if (model) {
+      models.push(model)
+    }
+  }
+
+  return models
+}
+
+function addUniqueModel(models: string[], model: string): void {
+  if (models.includes(model)) {
+    return
+  }
+
+  models.push(model)
+}
+
+function resolveGeminiModels(): string[] {
+  const models: string[] = []
+  const configured = Deno.env.get('GEMINI_MODEL')
+  if (configured) {
+    for (const model of splitConfiguredModels(configured)) {
+      addUniqueModel(models, model)
+    }
+  }
+
+  for (const model of DEFAULT_GEMINI_MODELS) {
+    addUniqueModel(models, model)
+  }
+
+  return models
+}
+
+function isAuthGeminiError(error: unknown): boolean {
+  if (!(error instanceof GeminiRequestError)) {
+    return false
+  }
+
+  if (error.statusCode === 401) {
+    return true
+  }
+
+  return error.statusCode === 403
+}
+
+async function fetchGeminiScoreWithFallback(
+  apiKey: string,
+  models: string[],
+  match: MatchRow,
+): Promise<GeminiScoreLookup> {
+  const errors: string[] = []
+
+  for (const model of models) {
+    try {
+      return await fetchGeminiScore(apiKey, model, match)
+    } catch (error) {
+      const message = errorMessage(error)
+      errors.push(`${model}: ${message}`)
+
+      if (isAuthGeminiError(error)) {
+        throw new Error(errors.join(' | '))
+      }
+
+      console.warn(`[update-results] ${match.id} ${model} failed: ${message}`)
+    }
+  }
+
+  throw new Error(`All Gemini models failed: ${errors.join(' | ')}`)
 }
 
 function isPersistableScore(result: GeminiScoreResult): boolean {
@@ -509,12 +605,11 @@ function resolvePlayoffWinner(
 function buildScorePayload(
   match: MatchRow,
   lookup: GeminiScoreLookup,
-  model: string,
   checkedAt: string,
 ): Record<string, unknown> {
   return {
     provider: 'gemini',
-    model,
+    model: lookup.model,
     match_id: match.id,
     checked_at: checkedAt,
     result: {
@@ -536,12 +631,11 @@ async function updateMatchScore(
   supabase: SupabaseClient,
   match: MatchRow,
   lookup: GeminiScoreLookup,
-  model: string,
 ): Promise<Record<string, unknown>> {
   const checkedAt = new Date().toISOString()
   const update: Record<string, unknown> = {
     score_provider: 'gemini',
-    score_payload: buildScorePayload(match, lookup, model, checkedAt),
+    score_payload: buildScorePayload(match, lookup, checkedAt),
     score_checked_at: checkedAt,
   }
 
@@ -568,21 +662,13 @@ async function updateMatchScore(
   return {
     match: match.id,
     success: true,
+    model: lookup.model,
     status: lookup.result.status,
     score_a: lookup.result.scoreA,
     score_b: lookup.result.scoreB,
     finished: update.finished ?? false,
     confidence: lookup.result.confidence,
   }
-}
-
-function resolveGeminiModel(): string {
-  const configured = Deno.env.get('GEMINI_MODEL')
-  if (configured) {
-    return configured
-  }
-
-  return DEFAULT_GEMINI_MODEL
 }
 
 async function findMatchesToUpdate(
@@ -640,21 +726,27 @@ async function handleRequest(_req: Request): Promise<Response> {
       return jsonResponse({ error: 'Missing GEMINI_API_KEY env' }, 500)
     }
 
-    const model = resolveGeminiModel()
+    const models = resolveGeminiModels()
     const results: Record<string, unknown>[] = []
 
     for (const match of matches) {
       const label = `${match.teamAName ?? '?'} vs ${match.teamBName ?? '?'}`
       try {
-        const lookup = await fetchGeminiScore(geminiApiKey, model, match)
-        const result = await updateMatchScore(supabase, match, lookup, model)
+        const lookup = await fetchGeminiScoreWithFallback(
+          geminiApiKey,
+          models,
+          match,
+        )
+        const result = await updateMatchScore(supabase, match, lookup)
         console.log(
-          `[update-results] ${match.id} ${label} → status=${lookup.result.status} score=${lookup.result.scoreA}-${lookup.result.scoreB} finished=${result.finished} confidence=${lookup.result.confidence}`,
+          `[update-results] ${match.id} ${label} → model=${lookup.model} status=${lookup.result.status} score=${lookup.result.scoreA}-${lookup.result.scoreB} finished=${result.finished} confidence=${lookup.result.confidence}`,
         )
         results.push(result)
       } catch (error) {
         const message = errorMessage(error)
-        console.error(`[update-results] ${match.id} ${label} → error: ${message}`)
+        console.error(
+          `[update-results] ${match.id} ${label} → error: ${message}`,
+        )
         results.push({
           match: match.id,
           success: false,
