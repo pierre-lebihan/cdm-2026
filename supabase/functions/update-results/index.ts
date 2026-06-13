@@ -2,12 +2,14 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const DEFAULT_GEMINI_MODELS: string[] = [
+  'gemini-3.1-flash-lite',
   'gemini-3.5-flash',
-  'gemini-3-flash-preview',
 ]
 const GEMINI_API_BASE =
   'https://generativelanguage.googleapis.com/v1beta/models'
 const MATCH_LOOKBACK_MINUTES = 240
+const MATCH_FIRST_CHECK_DELAY_MINUTES = 105
+const MATCH_CHECK_THROTTLE_MINUTES = 15
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 type Confidence = 'high' | 'medium' | 'low'
@@ -528,6 +530,31 @@ function isAuthGeminiError(error: unknown): boolean {
   return error.statusCode === 403
 }
 
+function isSpendingCapGeminiError(error: unknown): boolean {
+  if (!(error instanceof GeminiRequestError)) {
+    return false
+  }
+
+  const message = error.message.toLowerCase()
+  if (message.includes('spending cap')) {
+    return true
+  }
+
+  if (message.includes('no credits')) {
+    return true
+  }
+
+  return message.includes('prepay')
+}
+
+function shouldStopModelFallback(error: unknown): boolean {
+  if (isAuthGeminiError(error)) {
+    return true
+  }
+
+  return isSpendingCapGeminiError(error)
+}
+
 async function fetchGeminiScoreWithFallback(
   apiKey: string,
   models: string[],
@@ -542,7 +569,7 @@ async function fetchGeminiScoreWithFallback(
       const message = errorMessage(error)
       errors.push(`${model}: ${message}`)
 
-      if (isAuthGeminiError(error)) {
+      if (shouldStopModelFallback(error)) {
         throw new Error(errors.join(' | '))
       }
 
@@ -551,6 +578,42 @@ async function fetchGeminiScoreWithFallback(
   }
 
   throw new Error(`All Gemini models failed: ${errors.join(' | ')}`)
+}
+
+function buildFailurePayload(
+  match: MatchRow,
+  message: string,
+  models: string[],
+  checkedAt: string,
+): Record<string, unknown> {
+  return {
+    provider: 'gemini',
+    match_id: match.id,
+    checked_at: checkedAt,
+    attempted_models: models,
+    error: message,
+  }
+}
+
+async function recordMatchCheckFailure(
+  supabase: SupabaseClient,
+  match: MatchRow,
+  message: string,
+  models: string[],
+): Promise<void> {
+  const checkedAt = new Date().toISOString()
+  const { error } = await supabase
+    .from('matches')
+    .update({
+      score_provider: 'gemini',
+      score_payload: buildFailurePayload(match, message, models, checkedAt),
+      score_checked_at: checkedAt,
+    })
+    .eq('id', match.id)
+
+  if (error) {
+    throw error
+  }
 }
 
 function isPersistableScore(result: GeminiScoreResult): boolean {
@@ -678,6 +741,12 @@ async function findMatchesToUpdate(
   const startedAfter = new Date(
     now.getTime() - MATCH_LOOKBACK_MINUTES * 60 * 1000,
   )
+  const firstCheckBefore = new Date(
+    now.getTime() - MATCH_FIRST_CHECK_DELAY_MINUTES * 60 * 1000,
+  )
+  const lastCheckedBefore = new Date(
+    now.getTime() - MATCH_CHECK_THROTTLE_MINUTES * 60 * 1000,
+  )
 
   const { data, error } = await supabase
     .from('matches_with_teams')
@@ -688,7 +757,10 @@ async function findMatchesToUpdate(
     .eq('visible_to_users', true)
     .not('date_time', 'is', null)
     .gte('date_time', startedAfter.toISOString())
-    .lte('date_time', now.toISOString())
+    .lte('date_time', firstCheckBefore.toISOString())
+    .or(
+      `score_checked_at.is.null,score_checked_at.lte.${lastCheckedBefore.toISOString()}`,
+    )
     .order('date_time', { ascending: true })
 
   if (error) {
@@ -743,7 +815,12 @@ async function handleRequest(_req: Request): Promise<Response> {
         )
         results.push(result)
       } catch (error) {
-        const message = errorMessage(error)
+        let message = errorMessage(error)
+        try {
+          await recordMatchCheckFailure(supabase, match, message, models)
+        } catch (recordError) {
+          message = `${message}; failed to store check failure: ${errorMessage(recordError)}`
+        }
         console.error(
           `[update-results] ${match.id} ${label} → error: ${message}`,
         )
