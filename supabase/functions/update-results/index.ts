@@ -7,9 +7,9 @@ const DEFAULT_GEMINI_MODELS: string[] = [
 ]
 const GEMINI_API_BASE =
   'https://generativelanguage.googleapis.com/v1beta/models'
-const MATCH_LOOKBACK_MINUTES = 240
-const MATCH_FIRST_CHECK_DELAY_MINUTES = 105
-const MATCH_CHECK_THROTTLE_MINUTES = 15
+const MATCH_LOOKBACK_MINUTES = 720
+const MATCH_FIRST_CHECK_DELAY_MINUTES = 180
+const MATCH_CHECK_THROTTLE_MINUTES = 10
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 type Confidence = 'high' | 'medium' | 'low'
@@ -632,6 +632,14 @@ function isFinishedResult(result: GeminiScoreResult): boolean {
   return result.status === 'finished'
 }
 
+function isPersistableFinishedScore(result: GeminiScoreResult): boolean {
+  if (!isFinishedResult(result)) {
+    return false
+  }
+
+  return isPersistableScore(result)
+}
+
 function resolvePlayoffWinner(
   match: MatchRow,
   result: GeminiScoreResult,
@@ -702,10 +710,10 @@ async function updateMatchScore(
     score_checked_at: checkedAt,
   }
 
-  if (isPersistableScore(lookup.result)) {
+  if (isPersistableFinishedScore(lookup.result)) {
     update.score_a = lookup.result.scoreA
     update.score_b = lookup.result.scoreB
-    update.finished = isFinishedResult(lookup.result)
+    update.finished = true
   }
 
   const playoffWinner = resolvePlayoffWinner(match, lookup.result)
