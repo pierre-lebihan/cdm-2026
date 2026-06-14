@@ -117,13 +117,15 @@ const SCORE_RESPONSE_SCHEMA: Record<string, unknown> = {
       type: ['integer', 'null'],
       minimum: 0,
       maximum: 99,
-      description: 'goals for team_a exactly as provided in the prompt',
+      description:
+        'goals for team_a exactly as provided in the prompt; for knockout_decider, use the 90-minute regulation score before extra time or penalties',
     },
     score_b: {
       type: ['integer', 'null'],
       minimum: 0,
       maximum: 99,
-      description: 'goals for team_b exactly as provided in the prompt',
+      description:
+        'goals for team_b exactly as provided in the prompt; for knockout_decider, use the 90-minute regulation score before extra time or penalties',
     },
     winner_side: {
       type: 'string',
@@ -375,14 +377,18 @@ function buildPrompt(match: MatchRow): string {
   const teamA = teamLabel(match.teamAName, match.teamACode, 'team A')
   const teamB = teamLabel(match.teamBName, match.teamBCode, 'team B')
   const kickoff = match.dateTime ?? 'unknown kickoff time'
+  const betFormat = match.betFormat ?? 'standard'
 
   return [
     'Use Google Search to find the current live or final score for this football/soccer match.',
     `team_a: ${teamA}`,
     `team_b: ${teamB}`,
     `scheduled_kickoff_utc: ${kickoff}`,
-    'score_a must be the goals for team_a, and score_b must be the goals for team_b.',
-    'If this is a knockout match decided after extra time or penalties, winner_side must be the team that advanced or won the match.',
+    `bet_format: ${betFormat}`,
+    'For standard matches, score_a and score_b must be the final score after regulation time.',
+    'For bet_format=knockout_decider, score_a and score_b must be the 90-minute regulation score, before extra time or penalties.',
+    'For bet_format=knockout_decider, if the match is tied after 90 minutes and decided after extra time or penalties, keep the tied 90-minute score and set winner_side to the team that advanced or won.',
+    'Example for bet_format=knockout_decider: if team_a wins 2-1 after extra time after a 1-1 draw at 90 minutes, return score_a=1, score_b=1, winner_side=A.',
     'If you cannot verify the exact match from current sources, set available to false, score_a and score_b to null, status to unknown, winner_side to unknown, and confidence to low.',
     'Do not infer or predict a score. Only report a score found in current web results.',
   ].join('\n')
