@@ -62,20 +62,6 @@ function clearAutoReloadRun(buildId: string): void {
   window.sessionStorage.removeItem(key)
 }
 
-function isReloadNavigation(): boolean {
-  if (typeof PerformanceNavigationTiming === 'undefined') {
-    return false
-  }
-
-  const entries = window.performance.getEntriesByType('navigation')
-  const navigationEntry = entries[0]
-  if (!(navigationEntry instanceof PerformanceNavigationTiming)) {
-    return false
-  }
-
-  return navigationEntry.type === 'reload'
-}
-
 function handleMandatoryReloadError(error: unknown): void {
   console.error("Erreur d'activation de la mise à jour", error)
   reloadWindow()
@@ -83,17 +69,19 @@ function handleMandatoryReloadError(error: unknown): void {
 
 async function forceUpdateAndReload(
   setReloading: ReloadingSetter,
-): Promise<void> {
+): Promise<boolean> {
   setReloading(true)
   const worker = await findServiceWorkerReadyForActivation()
   if (!worker) {
     pollServiceWorkerUpdate()
     setReloading(false)
-    return
+    return false
   }
 
   const activator = new ServiceWorkerActivator(worker)
   activator.activate()
+
+  return true
 }
 
 function pollServiceWorkerUpdate(): void {
@@ -158,6 +146,21 @@ function lockPageScroll(): () => void {
   return () => {
     document.body.style.overflow = initialOverflow
   }
+}
+
+function shouldShowUpdateOverlay(
+  availableBuildId: string | null,
+  autoReloadBuildId: string | null,
+): boolean {
+  if (!availableBuildId) {
+    return false
+  }
+
+  if (autoReloadBuildId === availableBuildId) {
+    return false
+  }
+
+  return hasAutoReloadAlreadyRun(availableBuildId)
 }
 
 class AppVersionPoller {
@@ -426,6 +429,51 @@ class ReloadClickHandler {
   }
 }
 
+class AutoReloadStarter {
+  private buildId: string
+  private setAutoReloadBuildId: AvailableBuildIdSetter
+  private setReloading: ReloadingSetter
+
+  constructor(
+    buildId: string,
+    setAutoReloadBuildId: AvailableBuildIdSetter,
+    setReloading: ReloadingSetter,
+  ) {
+    this.buildId = buildId
+    this.setAutoReloadBuildId = setAutoReloadBuildId
+    this.setReloading = setReloading
+  }
+
+  start = (): void => {
+    if (hasAutoReloadAlreadyRun(this.buildId)) {
+      return
+    }
+
+    markAutoReloadRun(this.buildId)
+    this.setAutoReloadBuildId(this.buildId)
+    captureEvent('pwa_update_auto_reload_started', {
+      build_id: this.buildId,
+    })
+    forceUpdateAndReload(this.setReloading)
+      .then(this.handleReloadAttempt)
+      .catch(this.handleReloadError)
+  }
+
+  private handleReloadAttempt = (started: boolean): void => {
+    if (started) {
+      return
+    }
+
+    this.setAutoReloadBuildId(null)
+  }
+
+  private handleReloadError = (error: unknown): void => {
+    logUpdateError(error)
+    this.setReloading(false)
+    this.setAutoReloadBuildId(null)
+  }
+}
+
 class NativeUpdateListener {
   private registration: ServiceWorkerRegistration | null = null
   private running = true
@@ -602,6 +650,10 @@ export const PwaUpdatePrompt = () => {
   const [autoReloadBuildId, setAutoReloadBuildId] = useState<string | null>(
     null,
   )
+  const showUpdateOverlay = shouldShowUpdateOverlay(
+    availableBuildId,
+    autoReloadBuildId,
+  )
   const reloadClickHandler = new ReloadClickHandler(setReloading)
 
   useRegisterSW(new PwaRegisterCallbacks(setAvailableBuildId))
@@ -621,8 +673,6 @@ export const PwaUpdatePrompt = () => {
     captureEvent('pwa_update_available', {
       build_id: availableBuildId,
     })
-
-    return lockPageScroll()
   }, [availableBuildId])
 
   useEffect(() => {
@@ -637,27 +687,23 @@ export const PwaUpdatePrompt = () => {
       return
     }
 
-    if (!isReloadNavigation()) {
-      return
-    }
-
-    if (hasAutoReloadAlreadyRun(availableBuildId)) {
-      return
-    }
-
-    markAutoReloadRun(availableBuildId)
-    setAutoReloadBuildId(availableBuildId)
-    captureEvent('pwa_update_auto_reload_started', {
-      build_id: availableBuildId,
-    })
-    forceUpdateAndReload(setReloading).catch(handleMandatoryReloadError)
+    const starter = new AutoReloadStarter(
+      availableBuildId,
+      setAutoReloadBuildId,
+      setReloading,
+    )
+    starter.start()
   }, [availableBuildId])
 
-  if (!availableBuildId) {
-    return null
-  }
+  useEffect(() => {
+    if (!showUpdateOverlay) {
+      return
+    }
 
-  if (autoReloadBuildId === availableBuildId) {
+    return lockPageScroll()
+  }, [showUpdateOverlay])
+
+  if (!showUpdateOverlay) {
     return null
   }
 
