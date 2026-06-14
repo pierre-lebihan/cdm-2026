@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import type { QueryFunctionContext } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCompetition } from '../contexts/CompetitionContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import type { Tables } from '../lib/database.types'
 import type { LanguageCode } from '../lib/i18n'
 import { getLocalizedCountryName } from '../lib/localizedNames'
+import { teamDetailQueryKey, teamsListQueryKey } from '../lib/queryKeys'
+import { queryKeyNumberValue, queryKeyStringValue } from '../lib/queryHelpers'
 
 type TeamRow = Tables<'teams'>
 
@@ -61,44 +65,93 @@ export function getFinalWinnerEligibleTeams(
   return eligibleTeams
 }
 
-export function useTeam(id: string | null | undefined): NormalizedTeam | null {
-  const [team, setTeam] = useState<NormalizedTeam | null>(null)
-  const { language, localeCode } = useLanguage()
+async function fetchTeam(id: string): Promise<TeamRow | null> {
+  const { data, error } = await supabase
+    .from('teams')
+    .select('*')
+    .eq('id', id)
+    .single()
 
-  useEffect(() => {
-    if (!id) return
-    supabase
-      .from('teams')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data }) => setTeam(normalizeTeam(data, language, localeCode)))
-  }, [id, language, localeCode])
+  if (error) {
+    throw error
+  }
+
+  return data ?? null
+}
+
+async function fetchTeams(competitionId: string): Promise<TeamRow[]> {
+  const { data, error } = await supabase
+    .from('teams')
+    .select('*')
+    .eq('competition_id', competitionId)
+    .order('win_odd', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return data ?? []
+}
+
+async function fetchTeamsQuery(
+  context: QueryFunctionContext,
+): Promise<TeamRow[]> {
+  const competitionId = queryKeyStringValue(context.queryKey[2])
+
+  if (!competitionId) {
+    return []
+  }
+
+  return fetchTeams(competitionId)
+}
+
+async function fetchTeamQuery(
+  context: QueryFunctionContext,
+): Promise<TeamRow | null> {
+  const teamId = queryKeyStringValue(context.queryKey[2])
+
+  if (!teamId) {
+    return null
+  }
+
+  return fetchTeam(teamId)
+}
+
+export function useTeam(id: string | null | undefined): NormalizedTeam | null {
+  const { language, localeCode } = useLanguage()
+  const query = useQuery({
+    enabled: Boolean(id),
+    queryFn: fetchTeamQuery,
+    queryKey: teamDetailQueryKey(id),
+  })
+
+  const team = useMemo(() => {
+    return normalizeTeam(query.data ?? null, language, localeCode)
+  }, [query.data, language, localeCode])
 
   return team
 }
 
 export function useTeams(refreshKey: number = 0): NormalizedTeam[] {
-  const [teams, setTeams] = useState<NormalizedTeam[]>([])
   const { activeCompetitionId } = useCompetition()
   const { language, localeCode } = useLanguage()
+  const query = useQuery({
+    enabled: Boolean(activeCompetitionId),
+    placeholderData: keepPreviousData,
+    queryFn: fetchTeamsQuery,
+    queryKey: teamsListQueryKey(
+      activeCompetitionId,
+      queryKeyNumberValue(refreshKey),
+    ),
+    refetchInterval: 2 * 60 * 1000,
+  })
 
-  useEffect(() => {
-    if (!activeCompetitionId) return
-    supabase
-      .from('teams')
-      .select('*')
-      .eq('competition_id', activeCompetitionId)
-      .order('win_odd', { ascending: true })
-      .then(({ data }) =>
-        setTeams(
-          data?.flatMap((t) => {
-            const n = normalizeTeam(t, language, localeCode)
-            return n ? [n] : []
-          }) ?? [],
-        ),
-      )
-  }, [activeCompetitionId, refreshKey, language, localeCode])
+  const teams = useMemo(() => {
+    return (query.data ?? []).flatMap((t) => {
+      const n = normalizeTeam(t, language, localeCode)
+      return n ? [n] : []
+    })
+  }, [query.data, language, localeCode])
 
   return teams
 }

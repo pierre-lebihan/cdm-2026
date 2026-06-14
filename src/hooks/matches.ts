@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import type { QueryFunctionContext } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useCompetition } from '../contexts/CompetitionContext'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -6,6 +8,8 @@ import type { Tables } from '../lib/database.types'
 import { getLocalizedCountryName } from '../lib/localizedNames'
 import type { MatchBetFormat, MatchTournamentPhase } from '../lib/matchEnums'
 import type { LanguageCode } from '../lib/i18n'
+import { matchDetailQueryKey, matchesListQueryKey } from '../lib/queryKeys'
+import { queryKeyNumberValue, queryKeyStringValue } from '../lib/queryHelpers'
 
 type MatchWithTeamsRow = Tables<'matches_with_teams'>
 
@@ -36,7 +40,10 @@ export interface NormalizedMatch {
 function normalizePlayoffWinner(
   value: string | null | undefined,
 ): 'A' | 'B' | null {
-  if (value === 'A' || value === 'B') return value
+  if (value === 'A' || value === 'B') {
+    return value
+  }
+
   return null
 }
 
@@ -46,7 +53,7 @@ function normalizeMatch(
   localeCode: string,
 ): NormalizedMatch {
   return {
-    id: row.id!,
+    id: row.id ?? '',
     dateTime: row.date_time
       ? { seconds: new Date(row.date_time).getTime() / 1000 }
       : null,
@@ -82,49 +89,102 @@ function normalizeMatch(
   }
 }
 
+async function fetchMatches(
+  competitionId: string,
+): Promise<MatchWithTeamsRow[] | null> {
+  const { data, error } = await supabase
+    .from('matches_with_teams')
+    .select('*')
+    .eq('competition_id', competitionId)
+    .order('date_time', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return data ?? null
+}
+
+async function fetchMatchesQuery(
+  context: QueryFunctionContext,
+): Promise<MatchWithTeamsRow[] | null> {
+  const competitionId = queryKeyStringValue(context.queryKey[2])
+
+  if (!competitionId) {
+    return null
+  }
+
+  return fetchMatches(competitionId)
+}
+
+async function fetchMatch(matchId: string): Promise<MatchWithTeamsRow | null> {
+  const { data, error } = await supabase
+    .from('matches_with_teams')
+    .select('*')
+    .eq('id', matchId)
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data ?? null
+}
+
+async function fetchMatchQuery(
+  context: QueryFunctionContext,
+): Promise<MatchWithTeamsRow | null> {
+  const matchId = queryKeyStringValue(context.queryKey[2])
+
+  if (!matchId) {
+    return null
+  }
+
+  return fetchMatch(matchId)
+}
+
 export function useMatches(refreshKey: number = 0): NormalizedMatch[] | null {
-  const [matches, setMatches] = useState<NormalizedMatch[] | null>(null)
   const { activeCompetitionId } = useCompetition()
   const { language, localeCode } = useLanguage()
+  const query = useQuery({
+    enabled: Boolean(activeCompetitionId),
+    placeholderData: keepPreviousData,
+    queryFn: fetchMatchesQuery,
+    queryKey: matchesListQueryKey(
+      activeCompetitionId,
+      queryKeyNumberValue(refreshKey),
+    ),
+    refetchInterval: 60 * 1000,
+  })
 
-  useEffect(() => {
-    if (!activeCompetitionId) return
-    let cancelled = false
-    supabase
-      .from('matches_with_teams')
-      .select('*')
-      .eq('competition_id', activeCompetitionId)
-      .order('date_time', { ascending: true })
-      .then(({ data }) => {
-        if (cancelled) return
-        const normalized = data?.map((row) =>
-          normalizeMatch(row, language, localeCode),
-        )
-        setMatches(normalized ?? null)
-      })
-    return () => {
-      cancelled = true
+  const matches = useMemo(() => {
+    if (!query.data) {
+      return null
     }
-  }, [activeCompetitionId, refreshKey, language, localeCode])
+
+    return query.data.map((row) => normalizeMatch(row, language, localeCode))
+  }, [query.data, language, localeCode])
 
   return matches
 }
 
 export function useMatch(matchId: string | undefined): NormalizedMatch | null {
-  const [match, setMatch] = useState<NormalizedMatch | null>(null)
   const { language, localeCode } = useLanguage()
+  const query = useQuery({
+    enabled: Boolean(matchId),
+    placeholderData: keepPreviousData,
+    queryFn: fetchMatchQuery,
+    queryKey: matchDetailQueryKey(matchId),
+    refetchInterval: 60 * 1000,
+  })
 
-  useEffect(() => {
-    if (!matchId) return
-    supabase
-      .from('matches_with_teams')
-      .select('*')
-      .eq('id', matchId)
-      .single()
-      .then(({ data }) =>
-        setMatch(data ? normalizeMatch(data, language, localeCode) : null),
-      )
-  }, [matchId, language, localeCode])
+  const match = useMemo(() => {
+    if (!query.data) {
+      return null
+    }
+
+    return normalizeMatch(query.data, language, localeCode)
+  }, [query.data, language, localeCode])
 
   return match
 }

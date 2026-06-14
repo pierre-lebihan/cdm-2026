@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState, useMemo } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { QueryFunctionContext } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -7,6 +9,16 @@ import { useLanguage } from '../contexts/LanguageContext'
 import type { BetOutcomeStatusEnum, Tables } from '../lib/database.types'
 import type { MatchPrediction } from '../lib/openrouter'
 import { captureEvent } from '../lib/posthog'
+import {
+  betForUserQueryKey,
+  betsForMatchQueryKey,
+  betsRootQueryKey,
+  matchesRootQueryKey,
+  userBetsQueryKey,
+  userBetsRootQueryKey,
+} from '../lib/queryKeys'
+import { queryKeyStringValue } from '../lib/queryHelpers'
+import { queryClient as appQueryClient } from '../lib/queryClient'
 
 type BetRow = Tables<'bets'>
 
@@ -30,6 +42,14 @@ interface NormalizedBet {
   updated_at: string | null
 }
 
+function normalizeBetPlayoffWinner(value: string | null): 'A' | 'B' | null {
+  if (value === 'A' || value === 'B') {
+    return value
+  }
+
+  return null
+}
+
 function normalizeBet(row: BetRow | null): NormalizedBet | undefined {
   if (!row) return undefined
   return {
@@ -38,73 +58,134 @@ function normalizeBet(row: BetRow | null): NormalizedBet | undefined {
     uid: row.user_id,
     betTeamA: row.bet_team_a,
     betTeamB: row.bet_team_b,
-    betPlayoffWinner: (row.bet_playoff_winner as 'A' | 'B' | null) ?? null,
+    betPlayoffWinner: normalizeBetPlayoffWinner(row.bet_playoff_winner),
     outcomeStatus: row.outcome_status,
     pointsWon: row.points_won,
     updatedAt: row.updated_at,
   }
 }
 
+async function fetchBetsFromGame(
+  matchId: string,
+): Promise<NormalizedBet[] | null> {
+  const { data, error } = await supabase
+    .from('bets')
+    .select('*')
+    .eq('match_id', matchId)
+
+  if (error) {
+    throw error
+  }
+
+  return (
+    data?.flatMap((b) => {
+      const n = normalizeBet(b)
+      return n ? [n] : []
+    }) ?? null
+  )
+}
+
+async function fetchBetsFromGameQuery(
+  context: QueryFunctionContext,
+): Promise<NormalizedBet[] | null> {
+  const matchId = queryKeyStringValue(context.queryKey[2])
+
+  if (!matchId) {
+    return null
+  }
+
+  return fetchBetsFromGame(matchId)
+}
+
+async function fetchBetFromUser(
+  matchId: string,
+  uid: string,
+): Promise<NormalizedBet | null> {
+  const { data, error } = await supabase
+    .from('bets')
+    .select('*')
+    .eq('match_id', matchId)
+    .eq('user_id', uid)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return normalizeBet(data) ?? null
+}
+
+async function fetchBetFromUserQuery(
+  context: QueryFunctionContext,
+): Promise<NormalizedBet | null> {
+  const matchId = queryKeyStringValue(context.queryKey[2])
+  const uid = queryKeyStringValue(context.queryKey[3])
+
+  if (!matchId || !uid) {
+    return null
+  }
+
+  return fetchBetFromUser(matchId, uid)
+}
+
+async function fetchAllUserBets(
+  competitionId: string,
+  userId: string,
+): Promise<Set<string> | null> {
+  const { data, error } = await supabase
+    .from('bets')
+    .select('match_id')
+    .eq('user_id', userId)
+    .eq('competition_id', competitionId)
+
+  if (error) {
+    throw error
+  }
+
+  const ids = new Set(
+    (data ?? []).flatMap((b) => (b.match_id ? [b.match_id] : [])),
+  )
+
+  return ids
+}
+
+async function fetchAllUserBetsQuery(
+  context: QueryFunctionContext,
+): Promise<Set<string> | null> {
+  const competitionId = queryKeyStringValue(context.queryKey[2])
+  const userId = queryKeyStringValue(context.queryKey[3])
+
+  if (!competitionId || !userId) {
+    return null
+  }
+
+  return fetchAllUserBets(competitionId, userId)
+}
+
 export function useBetsFromGame(
   matchId: string | undefined,
   enabled: boolean,
 ): [NormalizedBet[] | null, boolean] {
-  const [bets, setBets] = useState<NormalizedBet[] | null>(null)
-  const [loading, setLoading] = useState<boolean>(Boolean(matchId && enabled))
+  const query = useQuery({
+    enabled: Boolean(matchId && enabled),
+    queryFn: fetchBetsFromGameQuery,
+    queryKey: betsForMatchQueryKey(matchId),
+  })
 
-  useEffect(() => {
-    if (!matchId || !enabled) {
-      if (!enabled) {
-        setBets(null)
-      }
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    supabase
-      .from('bets')
-      .select('*')
-      .eq('match_id', matchId)
-      .then(({ data }) => {
-        setBets(
-          data?.flatMap((b) => {
-            const n = normalizeBet(b)
-            return n ? [n] : []
-          }) ?? null,
-        )
-        setLoading(false)
-      })
-  }, [matchId, enabled])
-
-  return [bets, loading]
+  return [query.data ?? null, query.isPending && Boolean(matchId && enabled)]
 }
 
 export function useBetFromUser(
   matchId: string | undefined,
   uid: string | undefined,
 ): [NormalizedBet | null | undefined, boolean] {
-  const [bet, setBet] = useState<NormalizedBet | null | undefined>(null)
-  const [loading, setLoading] = useState<boolean>(Boolean(matchId && uid))
+  const query = useQuery({
+    enabled: Boolean(matchId && uid),
+    queryFn: fetchBetFromUserQuery,
+    queryKey: betForUserQueryKey(matchId, uid),
+  })
 
-  useEffect(() => {
-    if (!matchId || !uid) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    supabase
-      .from('bets')
-      .select('*')
-      .eq('match_id', matchId)
-      .eq('user_id', uid)
-      .maybeSingle()
-      .then(({ data }) => {
-        setBet(normalizeBet(data) ?? null)
-        setLoading(false)
-      })
-  }, [matchId, uid])
-
-  return [bet, loading]
+  return [query.data, query.isPending && Boolean(matchId && uid)]
 }
 
 export function useBet(
@@ -122,26 +203,12 @@ export function useBet(
   const { activeCompetitionId } = useCompetition()
   const { t } = useLanguage()
   const uid = user?.id
-  const [bet, setBetState] = useState<BetRow | null>(null)
-  const [loading, setLoading] = useState<boolean>(Boolean(matchId && uid))
-
-  useEffect(() => {
-    if (!matchId || !uid) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    supabase
-      .from('bets')
-      .select('*')
-      .eq('match_id', matchId)
-      .eq('user_id', uid)
-      .maybeSingle()
-      .then(({ data }) => {
-        setBetState(data)
-        setLoading(false)
-      })
-  }, [matchId, uid])
+  const queryClient = useQueryClient()
+  const query = useQuery({
+    enabled: Boolean(matchId && uid),
+    queryFn: fetchBetFromUserQuery,
+    queryKey: betForUserQueryKey(matchId, uid),
+  })
 
   const setBet = useCallback(
     async (betData: {
@@ -149,11 +216,11 @@ export function useBet(
       betTeamB: number
       betPlayoffWinner?: 'A' | 'B' | null
     }) => {
-      if (!uid) return
+      if (!uid || !matchId) return
       const id = `${matchId}_${uid}`
       const row = {
         id,
-        match_id: matchId!,
+        match_id: matchId,
         user_id: uid,
         competition_id: activeCompetitionId,
         bet_team_a: betData.betTeamA,
@@ -178,7 +245,17 @@ export function useBet(
           id: toastId,
         })
       } else if (data) {
-        setBetState(data)
+        queryClient.setQueryData(
+          betForUserQueryKey(matchId, uid),
+          normalizeBet(data) ?? null,
+        )
+        queryClient.invalidateQueries({
+          queryKey: betsForMatchQueryKey(matchId),
+        })
+        queryClient.invalidateQueries({ queryKey: matchesRootQueryKey() })
+        queryClient.invalidateQueries({
+          queryKey: userBetsQueryKey(activeCompetitionId, uid),
+        })
         captureEvent('bet_saved', {
           match_id: matchId,
           competition_id: activeCompetitionId,
@@ -193,42 +270,36 @@ export function useBet(
       matchId,
       uid,
       activeCompetitionId,
+      queryClient,
       t.toasts.betSaveError,
       t.toasts.betSaved,
     ],
   )
 
-  const normalizedBet = useMemo(() => normalizeBet(bet), [bet])
-
-  return [normalizedBet, setBet, loading]
+  return [
+    query.data ?? undefined,
+    setBet,
+    query.isPending && Boolean(matchId && uid),
+  ]
 }
 
 export function useAllUserBets() {
   const { user } = useAuth()
   const { activeCompetitionId } = useCompetition()
-  const [bettedMatchIds, setBettedMatchIds] = useState<Set<string> | null>(null)
-  const [version, setVersion] = useState(0)
-
-  useEffect(() => {
-    if (!user || !activeCompetitionId) return
-    supabase
-      .from('bets')
-      .select('match_id')
-      .eq('user_id', user.id)
-      .eq('competition_id', activeCompetitionId)
-      .then(({ data }) => {
-        const ids = new Set(
-          (data ?? []).flatMap((b) => (b.match_id ? [b.match_id] : [])),
-        )
-        setBettedMatchIds(ids)
-      })
-  }, [user, activeCompetitionId, version])
+  const queryClient = useQueryClient()
+  const query = useQuery({
+    enabled: Boolean(user?.id && activeCompetitionId),
+    queryFn: fetchAllUserBetsQuery,
+    queryKey: userBetsQueryKey(activeCompetitionId, user?.id),
+  })
 
   const refresh = useCallback(() => {
-    setVersion((v) => v + 1)
-  }, [])
+    queryClient.invalidateQueries({
+      queryKey: userBetsQueryKey(activeCompetitionId, user?.id),
+    })
+  }, [activeCompetitionId, queryClient, user?.id])
 
-  return { bettedMatchIds, refresh }
+  return { bettedMatchIds: query.data ?? null, refresh }
 }
 
 export async function saveBatchBets(
@@ -262,6 +333,13 @@ export async function saveBatchBets(
   captureEvent('ai_batch_bets_saved', {
     competition_id: competitionId,
     predictions_count: rows.length,
+  })
+
+  appQueryClient.invalidateQueries({ queryKey: betsRootQueryKey() })
+  appQueryClient.invalidateQueries({ queryKey: matchesRootQueryKey() })
+  appQueryClient.invalidateQueries({ queryKey: userBetsRootQueryKey() })
+  appQueryClient.invalidateQueries({
+    queryKey: userBetsQueryKey(competitionId, userId),
   })
 
   return rows.length

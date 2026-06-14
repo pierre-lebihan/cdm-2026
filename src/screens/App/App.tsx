@@ -17,6 +17,7 @@ import { OneSignalSubscriber } from 'components/OneSignalSubscriber'
 import SeoMetadata from 'components/SeoMetadata'
 import PostHogTracker from 'components/PostHogTracker'
 import LanguageSelector from 'components/LanguageSelector'
+import DataRealtime from 'components/DataRealtime'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { captureEvent } from '../../lib/posthog'
 
@@ -52,6 +53,7 @@ const App = () => {
     <>
       <PostHogTracker />
       <SeoMetadata />
+      <DataRealtime />
       {!hideHeader && (
         <header className="fixed top-0 left-0 right-0 z-[1100] h-14 flex items-center justify-between px-4 bg-cream/[0.88] backdrop-blur-sm border-b border-black/[0.06]">
           <button
