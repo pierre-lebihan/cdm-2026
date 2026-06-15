@@ -7,6 +7,7 @@ import {
   BarChart3,
   FileText,
   ShieldCheck,
+  Heart,
   type LucideProps,
 } from 'lucide-react'
 import { Suspense, useEffect, type ComponentType } from 'react'
@@ -55,6 +56,13 @@ interface MenuItem {
   labelKey: NavLabelKey
   path: string
 }
+
+type NavEntry =
+  | { kind: 'internal'; item: MenuItem }
+  | { kind: 'leetchi' }
+
+const LEETCHI_URL =
+  'https://www.leetchi.com/fr/c/make-prono-great-again-2209557?utm_source=copylink&utm_medium=social_sharing&utm_id=post_creation'
 
 const menuItems: MenuItem[] = [
   { labelKey: 'home', icon: Home, path: '/', auth: false, admin: false },
@@ -128,6 +136,35 @@ function captureNavigationItemClick(
   })
 }
 
+function captureExternalLinkClick(label: string, href: string) {
+  captureEvent('navigation_external_link_clicked', {
+    label,
+    href,
+  })
+}
+
+function getLeetchiInsertAfter(visibleItems: MenuItem[]): NavLabelKey {
+  if (visibleItems.some((item) => item.labelKey === 'analytics')) {
+    return 'analytics'
+  }
+
+  return 'home'
+}
+
+function buildNavEntries(visibleItems: MenuItem[]): NavEntry[] {
+  const insertAfter = getLeetchiInsertAfter(visibleItems)
+  const entries: NavEntry[] = []
+
+  for (const item of visibleItems) {
+    entries.push({ kind: 'internal', item })
+    if (item.labelKey === insertAfter) {
+      entries.push({ kind: 'leetchi' })
+    }
+  }
+
+  return entries
+}
+
 interface NavigationMenuProps {
   closeMenu: () => void
   menuOpen: boolean
@@ -153,6 +190,7 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
   const visibleItems = menuItems.filter(
     (item) => (!item.auth || isConnected) && (!item.admin || isAdmin),
   )
+  const navEntries = buildNavEntries(visibleItems)
 
   const goTo = (to: string, label: string, isActive: boolean) => () => {
     captureNavigationItemClick(label, to, isActive)
@@ -189,7 +227,33 @@ const NavigationMenu = ({ closeMenu, menuOpen }: NavigationMenuProps) => {
           </div>
 
           <nav className="flex-1 py-3 px-3 overflow-y-auto">
-            {visibleItems.map((item) => {
+            {navEntries.map((entry) => {
+              if (entry.kind === 'leetchi') {
+                const label = t.nav.leetchi
+
+                return (
+                  <a
+                    key="leetchi"
+                    href={LEETCHI_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 w-full py-3 px-3 rounded-xl mb-0.5 bg-transparent text-gray-600 no-underline transition-all duration-150 hover:bg-gray-50 hover:text-navy"
+                    onClick={() => {
+                      captureExternalLinkClick(label, LEETCHI_URL)
+                      closeMenu()
+                    }}
+                  >
+                    <Heart
+                      size={20}
+                      className="shrink-0 text-yellow-400"
+                      fill="currentColor"
+                    />
+                    <span className="text-sm font-medium">{label}</span>
+                  </a>
+                )
+              }
+
+              const item = entry.item
               const isActive =
                 item.path === '/'
                   ? location.pathname === '/'

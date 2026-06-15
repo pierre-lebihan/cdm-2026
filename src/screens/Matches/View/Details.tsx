@@ -7,7 +7,7 @@ import { useAllOpponents } from '../../../hooks/opponents'
 import { useMatch } from 'hooks/matches'
 import { useBet } from '../../../hooks/bets'
 import MatchBegun from '../MatchBegun/Match'
-import ScoreBreakdownPanel from '../MatchBegun/ScoreBreakdownPanel'
+import ScoreBreakdownSection from '../MatchBegun/ScoreBreakdownSection'
 import Loader from '../../../components/Loader'
 import { computeScoringBreakdown } from '../../../lib/scoring'
 import { useLanguage } from '../../../contexts/LanguageContext'
@@ -67,25 +67,21 @@ const Details = () => {
         <MatchBegun match={match} clickable={false} />
       </div>
 
-      <div className="bg-white rounded-2xl p-5 shadow-card mb-4">
-        <h3 className="text-center text-lg font-bold text-navy mb-3">
-          {t.matches.myPointsDetail}
-        </h3>
-        <ScoreBreakdownPanel
-          breakdown={breakdown}
-          betFormat={match.betFormat}
-          tournamentPhase={match.tournamentPhase}
-          teamAName={match.teamAName}
-          teamBName={match.teamBName}
-          scoreA={match.scores.A}
-          scoreB={match.scores.B}
-          playoffWinner={match.playoffWinner}
-          betTeamA={currentBet?.betTeamA}
-          betTeamB={currentBet?.betTeamB}
-          betPlayoffWinner={currentBet?.betPlayoffWinner}
-          pointsWon={currentBet?.pointsWon}
-        />
-      </div>
+      <ScoreBreakdownSection
+        title={t.matches.myPointsDetail}
+        breakdown={breakdown}
+        betFormat={match.betFormat}
+        tournamentPhase={match.tournamentPhase}
+        teamAName={match.teamAName}
+        teamBName={match.teamBName}
+        scoreA={match.scores.A}
+        scoreB={match.scores.B}
+        playoffWinner={match.playoffWinner}
+        betTeamA={currentBet?.betTeamA}
+        betTeamB={currentBet?.betTeamB}
+        betPlayoffWinner={currentBet?.betPlayoffWinner}
+        pointsWon={currentBet?.pointsWon}
+      />
 
       {isEmpty(groups) ? (
         <div className="bg-white rounded-2xl p-5 shadow-card text-center">

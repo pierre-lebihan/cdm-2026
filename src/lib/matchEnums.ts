@@ -9,6 +9,8 @@ export type MatchTournamentPhase =
 
 export type MatchBetFormat = 'regulation_1x2' | 'knockout_decider'
 
+export type MatchStatus = 'PLANNED' | 'ONGOING' | 'FINISHED'
+
 type PhaseStyle = {
   label: string
   color: string
@@ -42,4 +44,18 @@ export function formatTournamentPhaseLabel(
 
 export function tournamentPhaseMultiplier(phase: MatchTournamentPhase): number {
   return tournamentPhaseStyles[phase].multiplier
+}
+
+export function normalizeMatchStatus(
+  value: string | null | undefined,
+): MatchStatus {
+  if (value === 'ONGOING') {
+    return 'ONGOING'
+  }
+
+  if (value === 'FINISHED') {
+    return 'FINISHED'
+  }
+
+  return 'PLANNED'
 }

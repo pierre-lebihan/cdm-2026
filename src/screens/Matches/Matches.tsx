@@ -5,7 +5,7 @@ import { ArrowRight, HelpCircle, Sparkles } from 'lucide-react'
 import { useCompetitionData } from '../../hooks/competition'
 import {
   useMatches,
-  isMatchFinished,
+  isMatchBettingClosed,
   type NormalizedMatch,
 } from '../../hooks/matches'
 import { useAllUserBets } from '../../hooks/bets'
@@ -64,19 +64,23 @@ function isUpcomingMatch(
   match: NormalizedMatch,
   comparingDate: number,
 ): boolean {
-  return !isMatchFinished(match, comparingDate)
+  return !isMatchBettingClosed(match, comparingDate)
 }
 
 function isLiveMatch(match: NormalizedMatch, comparingDate: number): boolean {
-  if (match.finished) {
+  if (match.status === 'FINISHED') {
     return false
   }
 
-  return isMatchFinished(match, comparingDate)
+  if (match.status === 'ONGOING') {
+    return true
+  }
+
+  return isMatchBettingClosed(match, comparingDate)
 }
 
 function isFinishedMatch(match: NormalizedMatch): boolean {
-  return match.finished === true
+  return match.status === 'FINISHED'
 }
 
 function matchTabExists(tabs: MatchTab[], selectedTab: MatchTabKey): boolean {

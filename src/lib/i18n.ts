@@ -299,6 +299,7 @@ export interface TranslationDictionary {
     faq: string
     groups: string
     home: string
+    leetchi: string
     legal: string
     matches: string
     ranking: string
@@ -873,6 +874,7 @@ const frTranslations: TranslationDictionary = {
     faq: 'FAQ',
     groups: 'Tribus',
     home: 'Accueil',
+    leetchi: 'Soutenez les organisateurs',
     legal: 'Confidentialité',
     matches: 'Pronostics',
     ranking: 'Classement',
@@ -1503,6 +1505,7 @@ const enTranslations: TranslationDictionary = {
     faq: 'FAQ',
     groups: 'Tribes',
     home: 'Home',
+    leetchi: 'Support the organizers',
     legal: 'Privacy',
     matches: 'Predictions',
     ranking: 'Ranking',
@@ -2133,6 +2136,7 @@ const mkTranslations: TranslationDictionary = {
     faq: 'FAQ',
     groups: 'Триби',
     home: 'Почетна',
+    leetchi: 'Поддржете ги организаторите',
     legal: 'Приватност',
     matches: 'Прогнози',
     ranking: 'Рангирање',

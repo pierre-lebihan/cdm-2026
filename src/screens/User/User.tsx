@@ -4,11 +4,11 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useCompetitionData } from '../../hooks/competition'
 import {
   useMatches,
-  isMatchFinished,
+  isMatchStarted,
   type NormalizedMatch,
 } from '../../hooks/matches'
 import MatchBegun from './MatchBegun/Match'
-import ScoreBreakdownPanel from '../Matches/MatchBegun/ScoreBreakdownPanel'
+import ScoreBreakdownSection from '../Matches/MatchBegun/ScoreBreakdownSection'
 import InlineAvatar from 'components/Avatar'
 import Loader from 'components/Loader'
 import { useOpponent } from 'hooks/opponents'
@@ -168,7 +168,7 @@ const User = () => {
   const filteredMatches = useMemo(() => {
     if (!matches) return []
     return matches
-      .filter((match) => isMatchFinished(match, comparingDate))
+      .filter((match) => isMatchStarted(match, comparingDate))
       .sort((a, b) => {
         const tA = a.dateTime?.seconds || 0
         const tB = b.dateTime?.seconds || 0
@@ -253,26 +253,26 @@ const User = () => {
             <div className="mb-4">
               <MatchBegun match={selectedMatch} clickable={false} />
             </div>
-            <div className="bg-white rounded-2xl p-5 shadow-card mb-4">
-              <h3 className="text-center text-lg font-bold text-navy mb-3">
-                {t.user.detailPrefix}{' '}
-                {opponent.display_name ?? t.user.detailSuffix}
-              </h3>
-              <ScoreBreakdownPanel
-                breakdown={selectedBreakdown}
-                betFormat={selectedMatch.betFormat}
-                tournamentPhase={selectedMatch.tournamentPhase}
-                teamAName={selectedMatch.teamAName}
-                teamBName={selectedMatch.teamBName}
-                scoreA={selectedMatch.scores.A}
-                scoreB={selectedMatch.scores.B}
-                playoffWinner={selectedMatch.playoffWinner}
-                betTeamA={selectedBet?.betTeamA}
-                betTeamB={selectedBet?.betTeamB}
-                betPlayoffWinner={selectedBet?.betPlayoffWinner}
-                pointsWon={selectedBet?.pointsWon}
-              />
-            </div>
+            <ScoreBreakdownSection
+              title={
+                <>
+                  {t.user.detailPrefix}{' '}
+                  {opponent.display_name ?? t.user.detailSuffix}
+                </>
+              }
+              breakdown={selectedBreakdown}
+              betFormat={selectedMatch.betFormat}
+              tournamentPhase={selectedMatch.tournamentPhase}
+              teamAName={selectedMatch.teamAName}
+              teamBName={selectedMatch.teamBName}
+              scoreA={selectedMatch.scores.A}
+              scoreB={selectedMatch.scores.B}
+              playoffWinner={selectedMatch.playoffWinner}
+              betTeamA={selectedBet?.betTeamA}
+              betTeamB={selectedBet?.betTeamB}
+              betPlayoffWinner={selectedBet?.betPlayoffWinner}
+              pointsWon={selectedBet?.pointsWon}
+            />
           </>
         )}
 

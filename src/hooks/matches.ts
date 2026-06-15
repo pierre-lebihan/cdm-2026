@@ -6,7 +6,12 @@ import { useCompetition } from '../contexts/CompetitionContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import type { Tables } from '../lib/database.types'
 import { getLocalizedCountryName } from '../lib/localizedNames'
-import type { MatchBetFormat, MatchTournamentPhase } from '../lib/matchEnums'
+import {
+  normalizeMatchStatus,
+  type MatchBetFormat,
+  type MatchStatus,
+  type MatchTournamentPhase,
+} from '../lib/matchEnums'
 import type { LanguageCode } from '../lib/i18n'
 import { matchDetailQueryKey, matchesListQueryKey } from '../lib/queryKeys'
 import { queryKeyNumberValue, queryKeyStringValue } from '../lib/queryHelpers'
@@ -29,7 +34,7 @@ export interface NormalizedMatch {
   tournamentPhase: MatchTournamentPhase
   betFormat: MatchBetFormat
   playoffWinner: 'A' | 'B' | null
-  finished: boolean | null
+  status: MatchStatus
   display: boolean
   visibleToUsers: boolean
   idApiRugby: string | null
@@ -80,7 +85,7 @@ function normalizeMatch(
     tournamentPhase: row.tournament_phase ?? 'group',
     betFormat: row.bet_format ?? 'regulation_1x2',
     playoffWinner: normalizePlayoffWinner(row.playoff_winner),
-    finished: row.finished,
+    status: normalizeMatchStatus(row.status),
     display: true,
     visibleToUsers: row.visible_to_users !== false,
     idApiRugby: row.api_id,
@@ -189,12 +194,40 @@ export function useMatch(matchId: string | undefined): NormalizedMatch | null {
   return match
 }
 
-export function isMatchFinished(
+function hasMatchKickoffPassed(
   match: NormalizedMatch,
   comparingDate?: number,
 ): boolean {
-  if (!match) return false
   const timestamp = match.dateTime?.seconds ? match.dateTime.seconds * 1000 : 0
-  const hasScore = match.scores?.A !== null && match.scores?.B !== null
-  return timestamp <= (comparingDate ?? Date.now()) || hasScore
+  if (timestamp === 0) {
+    return false
+  }
+
+  return timestamp <= (comparingDate ?? Date.now())
+}
+
+export function isMatchStarted(
+  match: NormalizedMatch,
+  comparingDate?: number,
+): boolean {
+  if (match.status !== 'PLANNED') {
+    return true
+  }
+
+  return hasMatchKickoffPassed(match, comparingDate)
+}
+
+export function isMatchFinished(match: NormalizedMatch): boolean {
+  return match.status === 'FINISHED'
+}
+
+export function isMatchBettingClosed(
+  match: NormalizedMatch,
+  comparingDate?: number,
+): boolean {
+  if (match.status !== 'PLANNED') {
+    return true
+  }
+
+  return hasMatchKickoffPassed(match, comparingDate)
 }

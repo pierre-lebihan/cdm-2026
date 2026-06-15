@@ -32,10 +32,10 @@ interface BaseLineProps {
 }
 
 const BaseLine = ({ label, value, maxValue }: BaseLineProps) => (
-  <div className="flex justify-between items-center gap-3">
-    <span className="text-xs text-gray-600">{label}</span>
+  <div className="flex justify-between items-start gap-3">
+    <span className="text-xs text-gray-600 min-w-0 break-words">{label}</span>
     <span
-      className={`text-xs font-semibold tabular-nums ${value > 0 ? 'text-navy' : 'text-gray-300'}`}
+      className={`text-xs font-semibold tabular-nums shrink-0 ${value > 0 ? 'text-navy' : 'text-gray-300'}`}
     >
       {value} / {maxValue}
     </span>
@@ -82,26 +82,23 @@ const ScoreBreakdownPanel = ({
 
   return (
     <>
-      <div className="text-xs text-gray-500 mb-4 leading-relaxed">
-        <div>
-          <span className="font-semibold text-navy">
-            {t.scoring.finalScore} : {teamAName ?? '—'} {scoreA} – {scoreB}{' '}
-            {teamBName ?? '—'}
-          </span>{' '}
-          · {t.matchPhases[tournamentPhase]}
+      <div className="text-xs text-gray-500 mb-4 leading-relaxed space-y-1 break-words">
+        <div className="font-semibold text-navy">
+          {t.scoring.finalScore} : {teamAName ?? '—'} {scoreA} – {scoreB}{' '}
+          {teamBName ?? '—'}
         </div>
+        <div>{t.matchPhases[tournamentPhase]}</div>
         {playoffWinnerName && (
-          <div className="mt-1 font-semibold text-amber-700">
+          <div className="font-semibold text-amber-700">
             {t.scoring.finalWinner} : {playoffWinnerName}
           </div>
         )}
         {hasBet && (
-          <div className="mt-1">
+          <div>
             {t.scoring.prediction} : {betTeamA} – {betTeamB}
             {betPlayoffWinnerName && (
-              <span className="font-semibold text-indigo-700">
-                {' '}
-                · {t.scoring.winnerIfDraw} : {betPlayoffWinnerName}
+              <span className="block font-semibold text-indigo-700">
+                {t.scoring.winnerIfDraw} : {betPlayoffWinnerName}
               </span>
             )}
           </div>
@@ -152,11 +149,11 @@ const ScoreBreakdownPanel = ({
                 value={breakdown.bonus}
                 maxValue={4}
               />
-              <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-200">
-                <span className="text-xs font-semibold text-navy">
+              <div className="flex justify-between items-start gap-3 pt-2 mt-2 border-t border-gray-200">
+                <span className="text-xs font-semibold text-navy min-w-0 break-words">
                   {t.scoring.baseTotal}
                 </span>
-                <span className="text-sm font-bold text-navy tabular-nums">
+                <span className="text-sm font-bold text-navy tabular-nums shrink-0">
                   {breakdown.base} / 20
                 </span>
               </div>
@@ -168,19 +165,19 @@ const ScoreBreakdownPanel = ({
               {t.scoring.phaseMultiplier}
             </h3>
             <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-1.5">
-              <div className="flex justify-between items-center gap-3">
-                <span className="text-xs text-gray-600">
+              <div className="flex justify-between items-start gap-3">
+                <span className="text-xs text-gray-600 min-w-0 break-words">
                   {t.scoring.winningOdds}
                 </span>
-                <span className="text-xs font-semibold text-navy tabular-nums">
+                <span className="text-xs font-semibold text-navy tabular-nums shrink-0">
                   × {formatOdds(breakdown.winningOdds)}
                 </span>
               </div>
-              <div className="flex justify-between items-center gap-3">
-                <span className="text-xs text-gray-600">
+              <div className="flex justify-between items-start gap-3">
+                <span className="text-xs text-gray-600 min-w-0 break-words">
                   {t.scoring.phaseMultiplier}
                 </span>
-                <span className="text-xs font-semibold text-navy tabular-nums">
+                <span className="text-xs font-semibold text-navy tabular-nums shrink-0">
                   × {breakdown.phaseMultiplier}
                 </span>
               </div>
