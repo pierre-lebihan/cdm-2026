@@ -13,7 +13,7 @@ const MATCH_CHECK_THROTTLE_MINUTES = 10
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 type Confidence = 'high' | 'medium' | 'low'
-type MatchStatus =
+type GeminiMatchStatus =
   | 'not_started'
   | 'in_progress'
   | 'halftime'
@@ -21,6 +21,7 @@ type MatchStatus =
   | 'postponed'
   | 'abandoned'
   | 'unknown'
+type MatchStatus = 'PLANNED' | 'ONGOING' | 'FINISHED'
 type WinnerSide = 'A' | 'B' | 'unknown'
 type SupabaseClient = ReturnType<typeof createClient>
 
@@ -36,7 +37,7 @@ interface MatchRow {
 
 interface GeminiScoreResult {
   available: boolean
-  status: MatchStatus
+  status: GeminiMatchStatus
   scoreA: number | null
   scoreB: number | null
   winnerSide: WinnerSide
@@ -241,7 +242,7 @@ function readIntegerOrNull(
   return value
 }
 
-function normalizeStatus(value: unknown): MatchStatus {
+function normalizeStatus(value: unknown): GeminiMatchStatus {
   if (value === 'not_started') {
     return 'not_started'
   }
@@ -613,6 +614,7 @@ async function recordMatchCheckFailure(
   const { error } = await supabase
     .from('matches')
     .update({
+      status: 'ONGOING',
       score_provider: 'gemini',
       score_payload: buildFailurePayload(match, message, models, checkedAt),
       score_checked_at: checkedAt,
@@ -638,6 +640,14 @@ function isPersistableScore(result: GeminiScoreResult): boolean {
 
 function isFinishedResult(result: GeminiScoreResult): boolean {
   return result.status === 'finished'
+}
+
+function lifecycleStatusFromResult(result: GeminiScoreResult): MatchStatus {
+  if (isFinishedResult(result)) {
+    return 'FINISHED'
+  }
+
+  return 'ONGOING'
 }
 
 function resolvePlayoffWinner(
@@ -705,6 +715,7 @@ async function updateMatchScore(
 ): Promise<Record<string, unknown>> {
   const checkedAt = new Date().toISOString()
   const update: Record<string, unknown> = {
+    status: lifecycleStatusFromResult(lookup.result),
     score_provider: 'gemini',
     score_payload: buildScorePayload(match, lookup, checkedAt),
     score_checked_at: checkedAt,
@@ -713,7 +724,6 @@ async function updateMatchScore(
   if (isPersistableScore(lookup.result)) {
     update.score_a = lookup.result.scoreA
     update.score_b = lookup.result.scoreB
-    update.finished = isFinishedResult(lookup.result)
   }
 
   const playoffWinner = resolvePlayoffWinner(match, lookup.result)
@@ -737,9 +747,29 @@ async function updateMatchScore(
     status: lookup.result.status,
     score_a: lookup.result.scoreA,
     score_b: lookup.result.scoreB,
-    finished: update.finished ?? false,
+    match_status: update.status,
     confidence: lookup.result.confidence,
   }
+}
+
+async function markStartedMatchesOngoing(
+  supabase: SupabaseClient,
+): Promise<number> {
+  const now = new Date()
+  const { data, error } = await supabase
+    .from('matches')
+    .update({ status: 'ONGOING' })
+    .eq('status', 'PLANNED')
+    .eq('visible_to_users', true)
+    .not('date_time', 'is', null)
+    .lte('date_time', now.toISOString())
+    .select('id')
+
+  if (error) {
+    throw error
+  }
+
+  return data?.length ?? 0
 }
 
 async function findMatchesToUpdate(
@@ -761,7 +791,7 @@ async function findMatchesToUpdate(
     .select(
       'id, date_time, team_a_name, team_a_code, team_b_name, team_b_code, bet_format',
     )
-    .eq('finished', false)
+    .neq('status', 'FINISHED')
     .eq('visible_to_users', true)
     .not('date_time', 'is', null)
     .gte('date_time', startedAfter.toISOString())
@@ -789,6 +819,11 @@ async function handleRequest(_req: Request): Promise<Response> {
   const supabase = createClient(supabaseUrl, serviceKey)
 
   try {
+    const ongoingCount = await markStartedMatchesOngoing(supabase)
+    if (ongoingCount > 0) {
+      console.log(`[update-results] marked ${ongoingCount} match(es) ongoing`)
+    }
+
     const matches = await findMatchesToUpdate(supabase)
     if (matches.length === 0) {
       console.log('[update-results] no matches in lookback window')
@@ -819,7 +854,7 @@ async function handleRequest(_req: Request): Promise<Response> {
         )
         const result = await updateMatchScore(supabase, match, lookup)
         console.log(
-          `[update-results] ${match.id} ${label} → model=${lookup.model} status=${lookup.result.status} score=${lookup.result.scoreA}-${lookup.result.scoreB} finished=${result.finished} confidence=${lookup.result.confidence}`,
+          `[update-results] ${match.id} ${label} → model=${lookup.model} status=${lookup.result.status} match_status=${result.match_status} score=${lookup.result.scoreA}-${lookup.result.scoreB} confidence=${lookup.result.confidence}`,
         )
         results.push(result)
       } catch (error) {

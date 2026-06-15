@@ -10,6 +10,8 @@ export type BetOutcomeStatusEnum = 'rate' | 'good_result' | 'perfect_score'
 
 export type MatchBetFormatEnum = 'regulation_1x2' | 'knockout_decider'
 
+export type MatchStatusEnum = 'PLANNED' | 'ONGOING' | 'FINISHED'
+
 export type MatchTournamentPhaseEnum =
   | 'group'
   | 'round_of_16'
@@ -233,7 +235,6 @@ export type Database = {
           city: string | null
           competition_id: string | null
           date_time: string | null
-          finished: boolean | null
           id: string
           odds_a: number | null
           odds_b: number | null
@@ -245,6 +246,7 @@ export type Database = {
           score_checked_at: string | null
           score_payload: Json | null
           score_provider: string | null
+          status: MatchStatusEnum
           streaming: string | null
           team_a: string | null
           team_b: string | null
@@ -257,7 +259,6 @@ export type Database = {
           city?: string | null
           competition_id?: string | null
           date_time?: string | null
-          finished?: boolean | null
           id: string
           odds_a?: number | null
           odds_b?: number | null
@@ -269,6 +270,7 @@ export type Database = {
           score_checked_at?: string | null
           score_payload?: Json | null
           score_provider?: string | null
+          status?: MatchStatusEnum
           streaming?: string | null
           team_a?: string | null
           team_b?: string | null
@@ -281,7 +283,6 @@ export type Database = {
           city?: string | null
           competition_id?: string | null
           date_time?: string | null
-          finished?: boolean | null
           id?: string
           odds_a?: number | null
           odds_b?: number | null
@@ -293,6 +294,7 @@ export type Database = {
           score_checked_at?: string | null
           score_payload?: Json | null
           score_provider?: string | null
+          status?: MatchStatusEnum
           streaming?: string | null
           team_a?: string | null
           team_b?: string | null
@@ -426,7 +428,6 @@ export type Database = {
           city: string | null
           competition_id: string | null
           date_time: string | null
-          finished: boolean | null
           id: string | null
           odds_a: number | null
           odds_b: number | null
@@ -435,6 +436,10 @@ export type Database = {
           pre_match_reminder_sent_at: string | null
           score_a: number | null
           score_b: number | null
+          score_checked_at: string | null
+          score_payload: Json | null
+          score_provider: string | null
+          status: MatchStatusEnum | null
           streaming: string | null
           team_a: string | null
           team_a_code: string | null
@@ -503,6 +508,7 @@ export type Database = {
     Enums: {
       bet_outcome_status: BetOutcomeStatusEnum
       match_bet_format: MatchBetFormatEnum
+      match_status: MatchStatusEnum
       match_tournament_phase: MatchTournamentPhaseEnum
     }
     CompositeTypes: {
