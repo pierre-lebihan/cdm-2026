@@ -32,7 +32,9 @@ import Loader from 'components/Loader'
 import { formatTournamentPhaseLabel } from '../lib/matchEnums'
 
 type AdminTab = 'scores' | 'winner' | 'eliminations' | 'groups' | 'users'
-type AdminMatchFilter = 'all' | 'pending' | 'finished'
+type AdminMatchFilter = 'all' | 'upcoming' | 'live' | 'finished'
+type AdminMatchStatus = 'upcoming' | 'live' | 'finished'
+type AdminScoreStatus = 'live' | 'finished'
 type AdminPlayoffWinner = 'A' | 'B' | null
 type AdminGroupRow = Tables<'groups'>
 type AdminGroupMemberRow = Tables<'group_members'>
@@ -744,6 +746,7 @@ type MatchScoreEdit = {
   scoreA: string
   scoreB: string
   playoffWinner: string
+  status: AdminScoreStatus
 }
 
 function normalizeAdminPlayoffWinner(value: string): AdminPlayoffWinner {
@@ -763,6 +766,10 @@ function scoreEditNeedsPlayoffWinner(
   scores: MatchScoreEdit,
 ): boolean {
   if (match.betFormat !== 'knockout_decider') {
+    return false
+  }
+
+  if (scores.status !== 'finished') {
     return false
   }
 
@@ -825,12 +832,134 @@ function jsonNumberField(value: unknown, key: string): number {
   return 0
 }
 
+function adminMatchHasScore(match: NormalizedMatch): boolean {
+  return match.scores.A !== null && match.scores.B !== null
+}
+
 function getAdminMatchTimestamp(match: NormalizedMatch): number {
   if (!match.dateTime) {
     return 0
   }
 
   return match.dateTime.seconds
+}
+
+function getAdminMatchStatus(
+  match: NormalizedMatch,
+  comparingDate: number = Date.now(),
+): AdminMatchStatus {
+  if (match.finished) {
+    return 'finished'
+  }
+
+  if (adminMatchHasScore(match)) {
+    return 'live'
+  }
+
+  const kickoffTimestamp = getAdminMatchTimestamp(match) * 1000
+
+  if (kickoffTimestamp > 0 && kickoffTimestamp <= comparingDate) {
+    return 'live'
+  }
+
+  return 'upcoming'
+}
+
+function getAdminScoreStatus(match: NormalizedMatch): AdminScoreStatus {
+  if (getAdminMatchStatus(match) === 'finished') {
+    return 'finished'
+  }
+
+  return 'live'
+}
+
+function createMatchScoreEdit(match: NormalizedMatch): MatchScoreEdit {
+  return {
+    scoreA: match.scores.A?.toString() ?? '',
+    scoreB: match.scores.B?.toString() ?? '',
+    playoffWinner: match.playoffWinner ?? '',
+    status: getAdminScoreStatus(match),
+  }
+}
+
+function getAdminMatchStatusLabel(status: AdminMatchStatus): string {
+  if (status === 'finished') {
+    return 'Terminé'
+  }
+
+  if (status === 'live') {
+    return 'Démarré'
+  }
+
+  return 'À venir'
+}
+
+function getAdminMatchStatusClasses(status: AdminMatchStatus): string {
+  if (status === 'finished') {
+    return 'bg-green-100 text-green-800'
+  }
+
+  if (status === 'live') {
+    return 'bg-amber-100 text-amber-900'
+  }
+
+  return 'bg-blue-50 text-blue-700'
+}
+
+function formatAdminMatchKickoff(match: NormalizedMatch): string {
+  const timestamp = getAdminMatchTimestamp(match) * 1000
+
+  if (timestamp === 0) {
+    return 'Date à définir'
+  }
+
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(timestamp))
+}
+
+function adminMatchMatchesFilter(
+  match: NormalizedMatch,
+  filter: AdminMatchFilter,
+): boolean {
+  if (filter === 'all') {
+    return true
+  }
+
+  return getAdminMatchStatus(match) === filter
+}
+
+function filterAdminMatches(
+  matches: NormalizedMatch[],
+  filter: AdminMatchFilter,
+): NormalizedMatch[] {
+  const filteredMatches: NormalizedMatch[] = []
+
+  for (let i = 0; i < matches.length; i += 1) {
+    if (adminMatchMatchesFilter(matches[i], filter)) {
+      filteredMatches.push(matches[i])
+    }
+  }
+
+  return filteredMatches
+}
+
+function countAdminMatchesByStatus(
+  matches: NormalizedMatch[],
+  status: AdminMatchStatus,
+): number {
+  let count = 0
+
+  for (let i = 0; i < matches.length; i += 1) {
+    if (getAdminMatchStatus(matches[i]) === status) {
+      count += 1
+    }
+  }
+
+  return count
 }
 
 function compareAdminMatchesNewestFirst(
@@ -863,51 +992,58 @@ function AdminMatchRow({
     scoreA: number,
     scoreB: number,
     playoffWinner: AdminPlayoffWinner,
+    status: AdminScoreStatus,
   ) => Promise<void>
   onClear: (matchId: string) => Promise<void>
   onVisibilityChange: (matchId: string, visible: boolean) => Promise<void>
 }) {
-  const [scores, setScores] = useState<MatchScoreEdit>({
-    scoreA: match.scores.A?.toString() ?? '',
-    scoreB: match.scores.B?.toString() ?? '',
-    playoffWinner: match.playoffWinner ?? '',
+  const [scores, setScores] = useState<MatchScoreEdit>(() => {
+    return createMatchScoreEdit(match)
   })
   const [saving, setSaving] = useState(false)
   const [clearing, setClearing] = useState(false)
   const [visibilityBusy, setVisibilityBusy] = useState(false)
 
-  const hasScore = match.scores.A !== null && match.scores.B !== null
+  const hasScore = adminMatchHasScore(match)
+  const matchStatus = getAdminMatchStatus(match)
+  const scoreStatus = getAdminScoreStatus(match)
 
   const hasChanges =
     scores.scoreA !== (match.scores.A?.toString() ?? '') ||
     scores.scoreB !== (match.scores.B?.toString() ?? '') ||
-    scores.playoffWinner !== (match.playoffWinner ?? '')
+    scores.playoffWinner !== (match.playoffWinner ?? '') ||
+    scores.status !== scoreStatus
 
   const needsPlayoffWinner = scoreEditNeedsPlayoffWinner(match, scores)
+  const hasCompleteScore = scores.scoreA !== '' && scores.scoreB !== ''
   const isValid =
-    scores.scoreA !== '' &&
-    scores.scoreB !== '' &&
-    (!needsPlayoffWinner || scores.playoffWinner !== '')
+    hasCompleteScore && (!needsPlayoffWinner || scores.playoffWinner !== '')
 
   useEffect(() => {
-    setScores({
-      scoreA: match.scores.A?.toString() ?? '',
-      scoreB: match.scores.B?.toString() ?? '',
-      playoffWinner: match.playoffWinner ?? '',
-    })
-  }, [match.scores.A, match.scores.B, match.playoffWinner])
+    setScores(createMatchScoreEdit(match))
+  }, [
+    match.scores.A,
+    match.scores.B,
+    match.playoffWinner,
+    match.finished,
+    match.dateTime?.seconds,
+  ])
 
   const handleSave = useCallback(async () => {
-    if (!isValid || !hasChanges) return
+    if (!isValid || !hasChanges) {
+      return
+    }
+
     setSaving(true)
     const playoffWinner = needsPlayoffWinner
       ? normalizeAdminPlayoffWinner(scores.playoffWinner)
       : null
     await onSave(
       match.id,
-      parseInt(scores.scoreA),
-      parseInt(scores.scoreB),
+      parseInt(scores.scoreA, 10),
+      parseInt(scores.scoreB, 10),
       playoffWinner,
+      scores.status,
     )
     setSaving(false)
   }, [match.id, scores, isValid, hasChanges, needsPlayoffWinner, onSave])
@@ -952,7 +1088,8 @@ function AdminMatchRow({
 
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <span className="text-xs text-gray-400">
-          {formatPhaseAdmin(match)} — {match.groupName ?? ''}
+          {formatPhaseAdmin(match)} · {formatAdminMatchKickoff(match)} ·{' '}
+          {match.groupName ?? ''}
         </span>
         <div className="flex items-center gap-2">
           {!match.visibleToUsers && (
@@ -960,11 +1097,13 @@ function AdminMatchRow({
               Masqué (joueurs)
             </span>
           )}
-          {match.finished && (
-            <span className="text-[0.65rem] font-semibold py-0.5 px-2 rounded-full bg-green-100 text-green-800">
-              Terminé
-            </span>
-          )}
+          <span
+            className={`text-[0.65rem] font-semibold py-0.5 px-2 rounded-full ${getAdminMatchStatusClasses(
+              matchStatus,
+            )}`}
+          >
+            {getAdminMatchStatusLabel(matchStatus)}
+          </span>
         </div>
       </div>
 
@@ -1006,6 +1145,27 @@ function AdminMatchRow({
           placeholder="—"
         />
       </div>
+
+      {hasCompleteScore && (
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-semibold text-gray-500">
+            Statut du match
+          </label>
+          <select
+            className="w-full py-2 px-3 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-indigo-500"
+            value={scores.status}
+            onChange={(e) =>
+              setScores({
+                ...scores,
+                status: e.target.value === 'finished' ? 'finished' : 'live',
+              })
+            }
+          >
+            <option value="live">Démarré - calculer les points</option>
+            <option value="finished">Terminé - score final</option>
+          </select>
+        </div>
+      )}
 
       {needsPlayoffWinner && (
         <div className="flex flex-col gap-1">
@@ -1681,7 +1841,7 @@ const Admin = () => {
   const [adminTab, setAdminTab] = useState<AdminTab>('scores')
   const [finalWinnerTeam, setFinalWinnerTeam] = useState('')
   const [savingFinalWinner, setSavingFinalWinner] = useState(false)
-  const [filter, setFilter] = useState<AdminMatchFilter>('pending')
+  const [filter, setFilter] = useState<AdminMatchFilter>('live')
   const [groupSearch, setGroupSearch] = useState('')
   const [userSearch, setUserSearch] = useState('')
   const [recalculating, setRecalculating] = useState(false)
@@ -1725,13 +1885,14 @@ const Admin = () => {
       scoreA: number,
       scoreB: number,
       playoffWinner: AdminPlayoffWinner,
+      status: AdminScoreStatus,
     ) => {
       const { error } = await supabase
         .from('matches')
         .update({
           score_a: scoreA,
           score_b: scoreB,
-          finished: true,
+          finished: status === 'finished',
           playoff_winner: playoffWinner,
         })
         .eq('id', matchId)
@@ -1740,7 +1901,7 @@ const Admin = () => {
         toast.error(`Erreur: ${error.message}`)
         return
       }
-      toast.success('Score mis à jour — points recalculés')
+      toast.success('Score mis à jour - points recalculés')
       bumpMatchesList()
     },
     [bumpMatchesList],
@@ -1968,11 +2129,7 @@ const Admin = () => {
     return <Loader />
   }
 
-  const filteredMatchesRaw = matches.filter((m) => {
-    if (filter === 'pending') return !m.finished
-    if (filter === 'finished') return m.finished
-    return true
-  })
+  const filteredMatchesRaw = filterAdminMatches(matches, filter)
   const filteredMatches = sortAdminFilteredMatches(filteredMatchesRaw, filter)
 
   const groupedByPhase = filteredMatches.reduce<
@@ -2124,21 +2281,27 @@ const Admin = () => {
 
       {adminTab === 'scores' && (
         <>
-          <div className="flex gap-1 justify-center mb-6">
+          <div className="flex flex-wrap gap-1 justify-center mb-6">
             <button
-              className={`py-2 px-6 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${filter === 'pending' ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
-              onClick={() => setFilter('pending')}
+              className={`py-2 px-4 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${filter === 'upcoming' ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
+              onClick={() => setFilter('upcoming')}
             >
-              À jouer ({matches.filter((m) => !m.finished).length})
+              À venir ({countAdminMatchesByStatus(matches, 'upcoming')})
             </button>
             <button
-              className={`py-2 px-6 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${filter === 'finished' ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
+              className={`py-2 px-4 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${filter === 'live' ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
+              onClick={() => setFilter('live')}
+            >
+              Démarrés ({countAdminMatchesByStatus(matches, 'live')})
+            </button>
+            <button
+              className={`py-2 px-4 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${filter === 'finished' ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
               onClick={() => setFilter('finished')}
             >
-              Terminés ({matches.filter((m) => m.finished).length})
+              Terminés ({countAdminMatchesByStatus(matches, 'finished')})
             </button>
             <button
-              className={`py-2 px-6 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${filter === 'all' ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
+              className={`py-2 px-4 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${filter === 'all' ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
               onClick={() => setFilter('all')}
             >
               Tous ({matches.length})
