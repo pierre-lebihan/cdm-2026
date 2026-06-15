@@ -62,7 +62,8 @@ export function dynamicMultiplier(
   if (raw > 10) {
     return 10
   }
-  return raw
+
+  return Math.round(raw * 10) / 10
 }
 
 export function mergeBetsWithDraft(

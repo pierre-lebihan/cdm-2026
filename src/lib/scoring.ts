@@ -130,6 +130,9 @@ export function computeScoringBreakdown(
 }
 
 export function formatOdds(odds: number | null | undefined): string {
-  if (odds === null || odds === undefined) return '–'
-  return odds.toFixed(2)
+  if (odds === null || odds === undefined) {
+    return '–'
+  }
+
+  return odds.toFixed(1)
 }
