@@ -780,9 +780,17 @@ function scoreEditNeedsPlayoffWinner(
   return scores.scoreA === scores.scoreB
 }
 
-function getNextScoreStatus(scoreA: string, scoreB: string): AdminScoreStatus {
+function getNextScoreStatus(
+  scoreA: string,
+  scoreB: string,
+  currentStatus: AdminScoreStatus,
+): AdminScoreStatus {
   if (scoreA === '' && scoreB === '') {
     return 'upcoming'
+  }
+
+  if (currentStatus === 'finished') {
+    return 'finished'
   }
 
   return 'live'
@@ -792,7 +800,7 @@ function updateScoreA(scores: MatchScoreEdit, scoreA: string): MatchScoreEdit {
   return {
     ...scores,
     scoreA,
-    status: getNextScoreStatus(scoreA, scores.scoreB),
+    status: getNextScoreStatus(scoreA, scores.scoreB, scores.status),
   }
 }
 
@@ -800,7 +808,7 @@ function updateScoreB(scores: MatchScoreEdit, scoreB: string): MatchScoreEdit {
   return {
     ...scores,
     scoreB,
-    status: getNextScoreStatus(scores.scoreA, scoreB),
+    status: getNextScoreStatus(scores.scoreA, scoreB, scores.status),
   }
 }
 
