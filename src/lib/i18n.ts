@@ -287,6 +287,7 @@ export interface TranslationDictionary {
     scoreFinal: string
     scoringHelp: string
     tabFinished: string
+    tabLive: string
     tabUpcoming: string
     unavailableText: string
     unavailableTitle: string
@@ -852,6 +853,7 @@ const frTranslations: TranslationDictionary = {
     scoreFinal: 'Score final',
     scoringHelp: 'Comment les points sont calculés ?',
     tabFinished: 'Terminés',
+    tabLive: 'En cours',
     tabUpcoming: 'À venir',
     unavailableText: 'Les pronostics seront bientôt accessibles !',
     unavailableTitle: 'Bientôt disponible',
@@ -1481,6 +1483,7 @@ const enTranslations: TranslationDictionary = {
     scoreFinal: 'Final score',
     scoringHelp: 'How are points calculated?',
     tabFinished: 'Finished',
+    tabLive: 'Live',
     tabUpcoming: 'Upcoming',
     unavailableText: 'Predictions will be available soon!',
     unavailableTitle: 'Coming soon',
@@ -2110,6 +2113,7 @@ const mkTranslations: TranslationDictionary = {
     scoreFinal: 'Конечен резултат',
     scoringHelp: 'Како се пресметуваат поените?',
     tabFinished: 'Завршени',
+    tabLive: 'Во тек',
     tabUpcoming: 'Следни',
     unavailableText: 'Прогнозите наскоро ќе бидат достапни!',
     unavailableTitle: 'Наскоро достапно',

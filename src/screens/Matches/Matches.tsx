@@ -26,6 +26,13 @@ interface ScoringHelpButtonProps {
   onClick: () => void
 }
 
+type MatchTabKey = 'upcoming' | 'live' | 'finished'
+
+type MatchTab = {
+  key: MatchTabKey
+  label: string
+}
+
 function groupMatchesByDate(matches: NormalizedMatch[]) {
   const groups: { date: Date; matches: NormalizedMatch[] }[] = []
   for (const match of matches) {
@@ -39,6 +46,47 @@ function groupMatchesByDate(matches: NormalizedMatch[]) {
     }
   }
   return groups
+}
+
+function normalizeMatchesTab(value: string | null): MatchTabKey {
+  if (value === 'live') {
+    return 'live'
+  }
+
+  if (value === 'finished' || value === '1') {
+    return 'finished'
+  }
+
+  return 'upcoming'
+}
+
+function isUpcomingMatch(
+  match: NormalizedMatch,
+  comparingDate: number,
+): boolean {
+  return !isMatchFinished(match, comparingDate)
+}
+
+function isLiveMatch(match: NormalizedMatch, comparingDate: number): boolean {
+  if (match.finished) {
+    return false
+  }
+
+  return isMatchFinished(match, comparingDate)
+}
+
+function isFinishedMatch(match: NormalizedMatch): boolean {
+  return match.finished === true
+}
+
+function matchTabExists(tabs: MatchTab[], selectedTab: MatchTabKey): boolean {
+  for (let i = 0; i < tabs.length; i += 1) {
+    if (tabs[i].key === selectedTab) {
+      return true
+    }
+  }
+
+  return false
 }
 
 const ScoringHelpButton = ({ onClick }: ScoringHelpButtonProps) => {
@@ -219,14 +267,14 @@ const Matches = () => {
     () => new URLSearchParams(location.search),
     [location.search],
   )
-  const [selectedTab, setSelectedTab] = useState(
-    Number(urlParams.get('tab') || '0'),
-  )
+  const [selectedTab, setSelectedTab] = useState<MatchTabKey>(() => {
+    return normalizeMatchesTab(urlParams.get('tab'))
+  })
   const [comparingDate, setComparingDate] = useState(Date.now())
 
-  const handleTabChange = (value: number) => {
+  const handleTabChange = (value: MatchTabKey) => {
     captureEvent('matches_tab_changed', {
-      tab: value === 0 ? 'upcoming' : 'finished',
+      tab: value,
     })
     setSelectedTab(value)
     navigate(`${location.pathname}?tab=${value}`)
@@ -260,8 +308,7 @@ const Matches = () => {
   }, [])
 
   useEffect(() => {
-    const tabFromUrl = urlParams.get('tab') || '0'
-    setSelectedTab(Number(tabFromUrl))
+    setSelectedTab(normalizeMatchesTab(urlParams.get('tab')))
   }, [urlParams])
 
   const matches = useMatches()
@@ -273,21 +320,77 @@ const Matches = () => {
   }, [matches])
 
   const upcomingMatches = useMemo(() => {
-    return visibleMatches.filter(
-      (match) => !isMatchFinished(match, comparingDate),
-    )
+    return visibleMatches.filter((match) => {
+      return isUpcomingMatch(match, comparingDate)
+    })
   }, [visibleMatches, comparingDate])
 
+  const liveMatches = useMemo(() => {
+    return visibleMatches.filter((match) => {
+      return isLiveMatch(match, comparingDate)
+    })
+  }, [visibleMatches, comparingDate])
+
+  const finishedMatches = useMemo(() => {
+    return visibleMatches.filter(isFinishedMatch).reverse()
+  }, [visibleMatches])
+
+  const tabs = useMemo(() => {
+    const nextTabs: MatchTab[] = [
+      {
+        key: 'upcoming',
+        label: t.matches.tabUpcoming,
+      },
+    ]
+
+    if (liveMatches.length > 0) {
+      nextTabs.push({
+        key: 'live',
+        label: t.matches.tabLive,
+      })
+    }
+
+    nextTabs.push({
+      key: 'finished',
+      label: t.matches.tabFinished,
+    })
+
+    return nextTabs
+  }, [
+    liveMatches.length,
+    t.matches.tabFinished,
+    t.matches.tabLive,
+    t.matches.tabUpcoming,
+  ])
+
+  useEffect(() => {
+    if (!matches) {
+      return
+    }
+
+    if (matchTabExists(tabs, selectedTab)) {
+      return
+    }
+
+    setSelectedTab('upcoming')
+    navigate(`${location.pathname}?tab=upcoming`, { replace: true })
+  }, [location.pathname, matches, navigate, selectedTab, tabs])
+
   const filteredMatches = useMemo(() => {
-    if (selectedTab === 0) return upcomingMatches
-    return visibleMatches
-      .filter((match) => isMatchFinished(match, comparingDate))
-      .reverse()
-  }, [visibleMatches, selectedTab, upcomingMatches, comparingDate])
+    if (selectedTab === 'upcoming') {
+      return upcomingMatches
+    }
+
+    if (selectedTab === 'live') {
+      return liveMatches
+    }
+
+    return finishedMatches
+  }, [finishedMatches, liveMatches, selectedTab, upcomingMatches])
 
   const showAiButton =
     isConnected &&
-    selectedTab === 0 &&
+    selectedTab === 'upcoming' &&
     bettedMatchIds !== null &&
     upcomingMatches.length > 0
 
@@ -298,7 +401,7 @@ const Matches = () => {
 
   const showFinalWinnerReminder =
     isConnected &&
-    selectedTab === 0 &&
+    selectedTab === 'upcoming' &&
     selectedWinner !== undefined &&
     !finalWinnerLocked
 
@@ -313,7 +416,7 @@ const Matches = () => {
 
   const showFinalWinnerAliveReminder =
     isConnected &&
-    selectedTab === 1 &&
+    selectedTab === 'finished' &&
     finalWinnerLocked &&
     selectedWinnerStillAlive
 
@@ -340,19 +443,16 @@ const Matches = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="sticky top-14 z-10 flex gap-1 justify-center py-3 px-4 bg-cream/[0.85] backdrop-blur-sm">
-        <button
-          className={`py-2 px-6 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${selectedTab === 0 ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
-          onClick={() => handleTabChange(0)}
-        >
-          {t.matches.tabUpcoming}
-        </button>
-        <button
-          className={`py-2 px-6 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${selectedTab === 1 ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
-          onClick={() => handleTabChange(1)}
-        >
-          {t.matches.tabFinished}
-        </button>
+      <div className="sticky top-14 z-10 flex flex-wrap gap-1 justify-center py-3 px-4 bg-cream/[0.85] backdrop-blur-sm">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            className={`py-2 px-4 rounded-full text-sm font-semibold border-[1.5px] cursor-pointer transition-all duration-200 ${selectedTab === tab.key ? 'text-white bg-navy border-navy' : 'text-gray-500 bg-transparent border-gray-200 hover:text-navy hover:border-navy'}`}
+            onClick={() => handleTabChange(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       <div className="flex justify-center px-4 pt-3 pb-1">
@@ -397,7 +497,7 @@ const Matches = () => {
               </span>
             </div>
             <div className="flex flex-col gap-2.5">
-              {selectedTab === 0
+              {selectedTab === 'upcoming'
                 ? map(group.matches, (match) => (
                     <MatchToBet
                       match={match}
