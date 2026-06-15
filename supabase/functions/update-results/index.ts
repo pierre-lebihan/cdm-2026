@@ -10,6 +10,10 @@ const GEMINI_API_BASE =
 const MATCH_LOOKBACK_MINUTES = 720
 const MATCH_FIRST_CHECK_DELAY_MINUTES = 0
 const MATCH_CHECK_THROTTLE_MINUTES = 10
+const GEMINI_REQUEST_TIMEOUT_MS = readPositiveIntegerEnv(
+  'GEMINI_REQUEST_TIMEOUT_MS',
+  12000,
+)
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
 type Confidence = 'high' | 'medium' | 'low'
@@ -91,6 +95,24 @@ class GeminiRequestError extends Error {
     this.statusCode = statusCode
     this.apiStatus = apiStatus
   }
+}
+
+function readPositiveIntegerEnv(name: string, fallback: number): number {
+  const value = Deno.env.get(name)
+  if (!value) {
+    return fallback
+  }
+
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed)) {
+    return fallback
+  }
+
+  if (parsed <= 0) {
+    return fallback
+  }
+
+  return parsed
 }
 
 const SCORE_RESPONSE_SCHEMA: Record<string, unknown> = {
@@ -459,6 +481,7 @@ async function fetchGeminiScore(
       'Content-Type': 'application/json',
       'x-goog-api-key': apiKey,
     },
+    signal: AbortSignal.timeout(GEMINI_REQUEST_TIMEOUT_MS),
     body: JSON.stringify(buildGeminiRequest(match)),
   })
 
