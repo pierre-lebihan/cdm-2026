@@ -8,7 +8,7 @@ const DEFAULT_GEMINI_MODELS: string[] = [
 const GEMINI_API_BASE =
   'https://generativelanguage.googleapis.com/v1beta/models'
 const MATCH_LOOKBACK_MINUTES = 720
-const MATCH_FIRST_CHECK_DELAY_MINUTES = 180
+const MATCH_FIRST_CHECK_DELAY_MINUTES = 0
 const MATCH_CHECK_THROTTLE_MINUTES = 10
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
@@ -118,14 +118,14 @@ const SCORE_RESPONSE_SCHEMA: Record<string, unknown> = {
       minimum: 0,
       maximum: 99,
       description:
-        'goals for team_a exactly as provided in the prompt; for knockout_decider, use the 90-minute regulation score before extra time or penalties',
+        'current live goals for team_a, or final goals when finished; for knockout_decider after regulation time, use the 90-minute regulation score before extra time or penalties',
     },
     score_b: {
       type: ['integer', 'null'],
       minimum: 0,
       maximum: 99,
       description:
-        'goals for team_b exactly as provided in the prompt; for knockout_decider, use the 90-minute regulation score before extra time or penalties',
+        'current live goals for team_b, or final goals when finished; for knockout_decider after regulation time, use the 90-minute regulation score before extra time or penalties',
     },
     winner_side: {
       type: 'string',
@@ -385,9 +385,11 @@ function buildPrompt(match: MatchRow): string {
     `team_b: ${teamB}`,
     `scheduled_kickoff_utc: ${kickoff}`,
     `bet_format: ${betFormat}`,
-    'For standard matches, score_a and score_b must be the final score after regulation time.',
-    'For bet_format=knockout_decider, score_a and score_b must be the 90-minute regulation score, before extra time or penalties.',
-    'For bet_format=knockout_decider, if the match is tied after 90 minutes and decided after extra time or penalties, keep the tied 90-minute score and set winner_side to the team that advanced or won.',
+    'If the match is live, score_a and score_b must be the current live score.',
+    'If the match is finished and bet_format=standard, score_a and score_b must be the final score after regulation time.',
+    'If bet_format=knockout_decider and regulation time is still in progress, score_a and score_b must be the current live regulation-time score.',
+    'If bet_format=knockout_decider and regulation time is over, score_a and score_b must remain the 90-minute regulation score, before extra time or penalties.',
+    'If bet_format=knockout_decider and the match is tied after 90 minutes then decided after extra time or penalties, keep the tied 90-minute score and set winner_side to the team that advanced or won.',
     'Example for bet_format=knockout_decider: if team_a wins 2-1 after extra time after a 1-1 draw at 90 minutes, return score_a=1, score_b=1, winner_side=A.',
     'If you cannot verify the exact match from current sources, set available to false, score_a and score_b to null, status to unknown, winner_side to unknown, and confidence to low.',
     'Do not infer or predict a score. Only report a score found in current web results.',
@@ -638,14 +640,6 @@ function isFinishedResult(result: GeminiScoreResult): boolean {
   return result.status === 'finished'
 }
 
-function isPersistableFinishedScore(result: GeminiScoreResult): boolean {
-  if (!isFinishedResult(result)) {
-    return false
-  }
-
-  return isPersistableScore(result)
-}
-
 function resolvePlayoffWinner(
   match: MatchRow,
   result: GeminiScoreResult,
@@ -716,10 +710,10 @@ async function updateMatchScore(
     score_checked_at: checkedAt,
   }
 
-  if (isPersistableFinishedScore(lookup.result)) {
+  if (isPersistableScore(lookup.result)) {
     update.score_a = lookup.result.scoreA
     update.score_b = lookup.result.scoreB
-    update.finished = true
+    update.finished = isFinishedResult(lookup.result)
   }
 
   const playoffWinner = resolvePlayoffWinner(match, lookup.result)
