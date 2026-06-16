@@ -81,16 +81,17 @@ UPDATE profiles SET role = 'admin' WHERE id = '<user-uuid>';
 
 ### 5. Scores live via Gemini
 
-La fonction Supabase `update-results` utilise Gemini avec Google Search pour récupérer les scores des matchs en cours. Elle s'exécute toutes les 5 minutes via `pg_cron`, entre 19h et 10h heure de Sofia, marque les matchs démarrés en `ONGOING`, ne contacte Gemini que si un match visible a démarré depuis moins de 4 heures et n'est pas `FINISHED`, puis met à jour `matches.score_a`, `matches.score_b`, `matches.status`, `matches.playoff_winner` et l'audit JSON `matches.score_payload`.
+La fonction Supabase `update-results` utilise Gemini avec Google Search pour récupérer les scores des matchs en cours. Elle s'exécute toutes les 10 minutes via `pg_cron`, entre 19h et 10h heure de Sofia, marque les matchs démarrés en `ONGOING`, ne contacte Gemini que si un match visible a démarré depuis moins de 12 heures et n'est pas `FINISHED`, puis met à jour `matches.score_a`, `matches.score_b`, `matches.status`, `matches.playoff_winner` et l'audit JSON `matches.score_payload`.
 
 Créer une clé dans [Google AI Studio](https://aistudio.google.com/app/apikey), puis l'enregistrer comme secret Supabase :
 
 ```bash
 supabase secrets set GEMINI_API_KEY=<votre-cle>
-supabase secrets set GEMINI_MODEL=gemini-3-flash-preview
+supabase secrets set GEMINI_API_KEYS=<cle-1>,<cle-2>
+supabase secrets set GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
-`GEMINI_MODEL` est optionnel. Le modèle par défaut est `gemini-3-flash-preview`, utilisé parce que Gemini 3 permet de combiner Google Search et sortie JSON structurée.
+`GEMINI_API_KEYS` est optionnel et permet de configurer plusieurs clés Gemini séparées par des virgules. La fonction essaie ces clés avant de revenir à `GEMINI_API_KEY`, ce qui évite qu'un seul projet Google capped bloque tous les scores. `GEMINI_MODEL` est optionnel. Le modèle par défaut est `gemini-3.1-flash-lite`, utilisé parce que Gemini 3 permet de combiner Google Search et sortie JSON structurée. Ne mettre `gemini-3.5-flash` dans `GEMINI_MODEL` que si son coût est explicitement accepté.
 
 ---
 
@@ -144,7 +145,7 @@ Le projet est configuré pour se déployer automatiquement sur GitHub Pages via 
    - `SUPABASE_PROJECT_ID`
 4. Pusher sur `main` → déploiement automatique
 
-Les secrets Edge Functions (`GEMINI_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ONESIGNAL_*`) se configurent côté Supabase avec `supabase secrets set ...`, pas dans le bundle frontend.
+Les secrets Edge Functions (`GEMINI_API_KEY`, `GEMINI_API_KEYS`, `SUPABASE_SERVICE_ROLE_KEY`, `ONESIGNAL_*`) se configurent côté Supabase avec `supabase secrets set ...`, pas dans le bundle frontend.
 
 ---
 

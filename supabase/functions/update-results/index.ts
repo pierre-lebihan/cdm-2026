@@ -1,10 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
-const DEFAULT_GEMINI_MODELS: string[] = [
-  'gemini-3.1-flash-lite',
-  'gemini-3.5-flash',
-]
+const DEFAULT_GEMINI_MODELS: string[] = ['gemini-3.1-flash-lite']
 const GEMINI_API_BASE =
   'https://generativelanguage.googleapis.com/v1beta/models'
 const MATCH_LOOKBACK_MINUTES = 720
@@ -53,8 +50,14 @@ interface GeminiScoreResult {
 
 interface GeminiScoreLookup {
   model: string
+  credentialLabel: string
   result: GeminiScoreResult
   webSearchQueries: string[]
+}
+
+interface GeminiCredential {
+  apiKey: string
+  label: string
 }
 
 interface GeminiPart {
@@ -437,6 +440,10 @@ function buildGeminiRequest(match: MatchRow): Record<string, unknown> {
     ],
     generationConfig: {
       temperature: 0,
+      maxOutputTokens: 512,
+      thinkingConfig: {
+        thinkingLevel: 'minimal',
+      },
       responseMimeType: 'application/json',
       responseJsonSchema: SCORE_RESPONSE_SCHEMA,
     },
@@ -471,7 +478,7 @@ function extractSearchQueries(data: GeminiApiResponse): string[] {
 }
 
 async function fetchGeminiScore(
-  apiKey: string,
+  credential: GeminiCredential,
   model: string,
   match: MatchRow,
 ): Promise<GeminiScoreLookup> {
@@ -479,7 +486,7 @@ async function fetchGeminiScore(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey,
+      'x-goog-api-key': credential.apiKey,
     },
     signal: AbortSignal.timeout(GEMINI_REQUEST_TIMEOUT_MS),
     body: JSON.stringify(buildGeminiRequest(match)),
@@ -509,6 +516,7 @@ async function fetchGeminiScore(
 
   return {
     model,
+    credentialLabel: credential.label,
     result,
     webSearchQueries: extractSearchQueries(data),
   }
@@ -550,6 +558,78 @@ function resolveGeminiModels(): string[] {
   return models
 }
 
+function splitConfiguredCredentials(value: string): string[] {
+  const credentials: string[] = []
+  for (const rawCredential of value.split(',')) {
+    const credential = rawCredential.trim()
+    if (credential) {
+      credentials.push(credential)
+    }
+  }
+
+  return credentials
+}
+
+function addUniqueCredential(
+  credentials: GeminiCredential[],
+  apiKey: string,
+): void {
+  for (const credential of credentials) {
+    if (credential.apiKey === apiKey) {
+      return
+    }
+  }
+
+  credentials.push({
+    apiKey,
+    label: `key_${credentials.length + 1}`,
+  })
+}
+
+function resolveGeminiCredentials(): GeminiCredential[] {
+  const credentials: GeminiCredential[] = []
+  const configured = Deno.env.get('GEMINI_API_KEYS')
+  if (configured) {
+    for (const credential of splitConfiguredCredentials(configured)) {
+      addUniqueCredential(credentials, credential)
+    }
+  }
+
+  const fallback = Deno.env.get('GEMINI_API_KEY')
+  if (fallback) {
+    addUniqueCredential(credentials, fallback)
+  }
+
+  return credentials
+}
+
+function stableIndex(value: string, length: number): number {
+  let hash = 0
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) % length
+  }
+
+  return hash
+}
+
+function rotateCredentials(
+  credentials: GeminiCredential[],
+  matchId: string,
+): GeminiCredential[] {
+  if (credentials.length <= 1) {
+    return credentials
+  }
+
+  const ordered: GeminiCredential[] = []
+  const start = stableIndex(matchId, credentials.length)
+  for (let i = 0; i < credentials.length; i += 1) {
+    const index = (start + i) % credentials.length
+    ordered.push(credentials[index])
+  }
+
+  return ordered
+}
+
 function isAuthGeminiError(error: unknown): boolean {
   if (!(error instanceof GeminiRequestError)) {
     return false
@@ -587,8 +667,8 @@ function shouldStopModelFallback(error: unknown): boolean {
   return isSpendingCapGeminiError(error)
 }
 
-async function fetchGeminiScoreWithFallback(
-  apiKey: string,
+async function fetchGeminiScoreWithModelFallback(
+  credential: GeminiCredential,
   models: string[],
   match: MatchRow,
 ): Promise<GeminiScoreLookup> {
@@ -596,26 +676,54 @@ async function fetchGeminiScoreWithFallback(
 
   for (const model of models) {
     try {
-      return await fetchGeminiScore(apiKey, model, match)
+      return await fetchGeminiScore(credential, model, match)
     } catch (error) {
       const message = errorMessage(error)
-      errors.push(`${model}: ${message}`)
+      errors.push(`${credential.label}/${model}: ${message}`)
 
       if (shouldStopModelFallback(error)) {
         throw new Error(errors.join(' | '))
       }
 
-      console.warn(`[update-results] ${match.id} ${model} failed: ${message}`)
+      console.warn(
+        `[update-results] ${match.id} ${credential.label}/${model} failed: ${message}`,
+      )
     }
   }
 
-  throw new Error(`All Gemini models failed: ${errors.join(' | ')}`)
+  throw new Error(
+    `All Gemini models failed for ${credential.label}: ${errors.join(' | ')}`,
+  )
+}
+
+async function fetchGeminiScoreWithFallback(
+  credentials: GeminiCredential[],
+  models: string[],
+  match: MatchRow,
+): Promise<GeminiScoreLookup> {
+  const errors: string[] = []
+  const orderedCredentials = rotateCredentials(credentials, match.id)
+
+  for (const credential of orderedCredentials) {
+    try {
+      return await fetchGeminiScoreWithModelFallback(credential, models, match)
+    } catch (error) {
+      const message = errorMessage(error)
+      errors.push(message)
+      console.warn(
+        `[update-results] ${match.id} ${credential.label} exhausted: ${message}`,
+      )
+    }
+  }
+
+  throw new Error(`All Gemini credentials failed: ${errors.join(' | ')}`)
 }
 
 function buildFailurePayload(
   match: MatchRow,
   message: string,
   models: string[],
+  credentials: GeminiCredential[],
   checkedAt: string,
 ): Record<string, unknown> {
   return {
@@ -623,6 +731,7 @@ function buildFailurePayload(
     match_id: match.id,
     checked_at: checkedAt,
     attempted_models: models,
+    attempted_credentials: credentials.map((credential) => credential.label),
     error: message,
   }
 }
@@ -632,6 +741,7 @@ async function recordMatchCheckFailure(
   match: MatchRow,
   message: string,
   models: string[],
+  credentials: GeminiCredential[],
 ): Promise<void> {
   const checkedAt = new Date().toISOString()
   const { error } = await supabase
@@ -639,7 +749,13 @@ async function recordMatchCheckFailure(
     .update({
       status: 'ONGOING',
       score_provider: 'gemini',
-      score_payload: buildFailurePayload(match, message, models, checkedAt),
+      score_payload: buildFailurePayload(
+        match,
+        message,
+        models,
+        credentials,
+        checkedAt,
+      ),
       score_checked_at: checkedAt,
     })
     .eq('id', match.id)
@@ -714,6 +830,7 @@ function buildScorePayload(
   return {
     provider: 'gemini',
     model: lookup.model,
+    credential: lookup.credentialLabel,
     match_id: match.id,
     checked_at: checkedAt,
     result: {
@@ -767,6 +884,7 @@ async function updateMatchScore(
     match: match.id,
     success: true,
     model: lookup.model,
+    credential: lookup.credentialLabel,
     status: lookup.result.status,
     score_a: lookup.result.scoreA,
     score_b: lookup.result.scoreB,
@@ -859,9 +977,9 @@ async function handleRequest(_req: Request): Promise<Response> {
         .join(', ')}`,
     )
 
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
-    if (!geminiApiKey) {
-      return jsonResponse({ error: 'Missing GEMINI_API_KEY env' }, 500)
+    const credentials = resolveGeminiCredentials()
+    if (credentials.length === 0) {
+      return jsonResponse({ error: 'Missing Gemini API key env' }, 500)
     }
 
     const models = resolveGeminiModels()
@@ -871,19 +989,25 @@ async function handleRequest(_req: Request): Promise<Response> {
       const label = `${match.teamAName ?? '?'} vs ${match.teamBName ?? '?'}`
       try {
         const lookup = await fetchGeminiScoreWithFallback(
-          geminiApiKey,
+          credentials,
           models,
           match,
         )
         const result = await updateMatchScore(supabase, match, lookup)
         console.log(
-          `[update-results] ${match.id} ${label} → model=${lookup.model} status=${lookup.result.status} match_status=${result.match_status} score=${lookup.result.scoreA}-${lookup.result.scoreB} confidence=${lookup.result.confidence}`,
+          `[update-results] ${match.id} ${label} → credential=${lookup.credentialLabel} model=${lookup.model} status=${lookup.result.status} match_status=${result.match_status} score=${lookup.result.scoreA}-${lookup.result.scoreB} confidence=${lookup.result.confidence}`,
         )
         results.push(result)
       } catch (error) {
         let message = errorMessage(error)
         try {
-          await recordMatchCheckFailure(supabase, match, message, models)
+          await recordMatchCheckFailure(
+            supabase,
+            match,
+            message,
+            models,
+            credentials,
+          )
         } catch (recordError) {
           message = `${message}; failed to store check failure: ${errorMessage(recordError)}`
         }
