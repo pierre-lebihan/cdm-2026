@@ -1,6 +1,6 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { QueryFunctionContext } from '@tanstack/react-query'
+import type { QueryClient, QueryFunctionContext } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -8,12 +8,17 @@ import { useCompetition } from '../contexts/CompetitionContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import type { BetOutcomeStatusEnum, Tables } from '../lib/database.types'
 import type { MatchPrediction } from '../lib/openrouter'
+import type { BetDistributionCounts } from '../lib/bettingOdds'
 import { captureEvent } from '../lib/posthog'
 import {
+  betDistributionsQueryKey,
+  betDistributionsRootQueryKey,
   betForUserQueryKey,
   betsForMatchQueryKey,
   betsRootQueryKey,
   matchesRootQueryKey,
+  userBetsByMatchQueryKey,
+  userBetsByMatchRootQueryKey,
   userBetsQueryKey,
   userBetsRootQueryKey,
 } from '../lib/queryKeys'
@@ -21,9 +26,13 @@ import { queryKeyStringValue } from '../lib/queryHelpers'
 import { queryClient as appQueryClient } from '../lib/queryClient'
 
 type BetRow = Tables<'bets'>
+type BetDistributionRow = Tables<'bet_distribution_by_match'>
+type NormalizedBetsByMatch = Record<string, NormalizedBet>
+type BetDistributionsByMatch = Record<string, BetDistributionCounts>
 
 interface NormalizedBet {
   id: string
+  competitionId: string | null
   matchId: string | null
   uid: string | null
   betTeamA: number | null
@@ -32,6 +41,7 @@ interface NormalizedBet {
   outcomeStatus: BetOutcomeStatusEnum | null
   pointsWon: number | null
   updatedAt: string | null
+  competition_id: string | null
   match_id: string | null
   user_id: string | null
   bet_team_a: number | null
@@ -54,6 +64,7 @@ function normalizeBet(row: BetRow | null): NormalizedBet | undefined {
   if (!row) return undefined
   return {
     ...row,
+    competitionId: row.competition_id,
     matchId: row.match_id,
     uid: row.user_id,
     betTeamA: row.bet_team_a,
@@ -63,6 +74,101 @@ function normalizeBet(row: BetRow | null): NormalizedBet | undefined {
     pointsWon: row.points_won,
     updatedAt: row.updated_at,
   }
+}
+
+function normalizeBetsByMatch(rows: BetRow[] | null): NormalizedBetsByMatch {
+  const byMatch: NormalizedBetsByMatch = {}
+
+  for (const row of rows ?? []) {
+    const bet = normalizeBet(row)
+    if (bet?.matchId) {
+      byMatch[bet.matchId] = bet
+    }
+  }
+
+  return byMatch
+}
+
+function normalizeBetDistribution(
+  row: BetDistributionRow,
+): { matchId: string; distribution: BetDistributionCounts } | null {
+  if (!row.match_id) {
+    return null
+  }
+
+  return {
+    matchId: row.match_id,
+    distribution: {
+      countA: row.count_a ?? 0,
+      countN: row.count_n ?? 0,
+      countB: row.count_b ?? 0,
+      total: row.total ?? 0,
+    },
+  }
+}
+
+function normalizeBetDistributionsByMatch(
+  rows: BetDistributionRow[] | null,
+): BetDistributionsByMatch {
+  const byMatch: BetDistributionsByMatch = {}
+
+  for (const row of rows ?? []) {
+    const item = normalizeBetDistribution(row)
+    if (item) {
+      byMatch[item.matchId] = item.distribution
+    }
+  }
+
+  return byMatch
+}
+
+function mergeBetByMatch(
+  current: NormalizedBetsByMatch | undefined,
+  bet: NormalizedBet,
+): NormalizedBetsByMatch {
+  const next: NormalizedBetsByMatch = { ...(current ?? {}) }
+
+  if (bet.matchId) {
+    next[bet.matchId] = bet
+  }
+
+  return next
+}
+
+function setCachedUserBet(
+  queryClient: QueryClient,
+  competitionId: string | null,
+  userId: string,
+  bet: NormalizedBet,
+): void {
+  const key = userBetsByMatchQueryKey(competitionId, userId)
+  const current = queryClient.getQueryData<NormalizedBetsByMatch>(key)
+  queryClient.setQueryData(key, mergeBetByMatch(current, bet))
+}
+
+function betFromMap(
+  betsByMatch: NormalizedBetsByMatch | undefined,
+  matchId: string | undefined,
+): NormalizedBet | null | undefined {
+  if (!matchId) {
+    return undefined
+  }
+
+  if (!betsByMatch) {
+    return undefined
+  }
+
+  return betsByMatch[matchId] ?? null
+}
+
+function bettedMatchIdsFromMap(
+  betsByMatch: NormalizedBetsByMatch | undefined,
+): Set<string> | null {
+  if (!betsByMatch) {
+    return null
+  }
+
+  return new Set(Object.keys(betsByMatch))
 }
 
 async function fetchBetsFromGame(
@@ -97,44 +203,13 @@ async function fetchBetsFromGameQuery(
   return fetchBetsFromGame(matchId)
 }
 
-async function fetchBetFromUser(
-  matchId: string,
-  uid: string,
-): Promise<NormalizedBet | null> {
+async function fetchUserBetsByMatch(
+  competitionId: string,
+  userId: string,
+): Promise<NormalizedBetsByMatch> {
   const { data, error } = await supabase
     .from('bets')
     .select('*')
-    .eq('match_id', matchId)
-    .eq('user_id', uid)
-    .maybeSingle()
-
-  if (error) {
-    throw error
-  }
-
-  return normalizeBet(data) ?? null
-}
-
-async function fetchBetFromUserQuery(
-  context: QueryFunctionContext,
-): Promise<NormalizedBet | null> {
-  const matchId = queryKeyStringValue(context.queryKey[2])
-  const uid = queryKeyStringValue(context.queryKey[3])
-
-  if (!matchId || !uid) {
-    return null
-  }
-
-  return fetchBetFromUser(matchId, uid)
-}
-
-async function fetchAllUserBets(
-  competitionId: string,
-  userId: string,
-): Promise<Set<string> | null> {
-  const { data, error } = await supabase
-    .from('bets')
-    .select('match_id')
     .eq('user_id', userId)
     .eq('competition_id', competitionId)
 
@@ -142,24 +217,47 @@ async function fetchAllUserBets(
     throw error
   }
 
-  const ids = new Set(
-    (data ?? []).flatMap((b) => (b.match_id ? [b.match_id] : [])),
-  )
-
-  return ids
+  return normalizeBetsByMatch(data ?? null)
 }
 
-async function fetchAllUserBetsQuery(
+async function fetchUserBetsByMatchQuery(
   context: QueryFunctionContext,
-): Promise<Set<string> | null> {
+): Promise<NormalizedBetsByMatch> {
   const competitionId = queryKeyStringValue(context.queryKey[2])
-  const userId = queryKeyStringValue(context.queryKey[3])
+  const uid = queryKeyStringValue(context.queryKey[3])
 
-  if (!competitionId || !userId) {
-    return null
+  if (!competitionId || !uid) {
+    return {}
   }
 
-  return fetchAllUserBets(competitionId, userId)
+  return fetchUserBetsByMatch(competitionId, uid)
+}
+
+async function fetchBetDistributions(
+  competitionId: string,
+): Promise<BetDistributionsByMatch> {
+  const { data, error } = await supabase
+    .from('bet_distribution_by_match')
+    .select('*')
+    .eq('competition_id', competitionId)
+
+  if (error) {
+    throw error
+  }
+
+  return normalizeBetDistributionsByMatch(data ?? null)
+}
+
+async function fetchBetDistributionsQuery(
+  context: QueryFunctionContext,
+): Promise<BetDistributionsByMatch> {
+  const competitionId = queryKeyStringValue(context.queryKey[2])
+
+  if (!competitionId) {
+    return {}
+  }
+
+  return fetchBetDistributions(competitionId)
 }
 
 export function useBetsFromGame(
@@ -179,13 +277,41 @@ export function useBetFromUser(
   matchId: string | undefined,
   uid: string | undefined,
 ): [NormalizedBet | null | undefined, boolean] {
+  const { activeCompetitionId } = useCompetition()
+  const { user } = useAuth()
   const query = useQuery({
-    enabled: Boolean(matchId && uid),
-    queryFn: fetchBetFromUserQuery,
-    queryKey: betForUserQueryKey(matchId, uid),
+    enabled: Boolean(activeCompetitionId && uid && user?.id),
+    queryFn: fetchUserBetsByMatchQuery,
+    queryKey: userBetsByMatchQueryKey(activeCompetitionId, uid),
   })
 
-  return [query.data, query.isPending && Boolean(matchId && uid)]
+  return [
+    betFromMap(query.data, matchId),
+    query.isPending &&
+      Boolean(matchId && activeCompetitionId && uid && user?.id),
+  ]
+}
+
+export function useBetDistribution(
+  matchId: string | undefined,
+  enabled: boolean = true,
+): [BetDistributionCounts | null, boolean] {
+  const { activeCompetitionId } = useCompetition()
+  const { user } = useAuth()
+  const query = useQuery({
+    enabled: Boolean(activeCompetitionId && user?.id && enabled),
+    queryFn: fetchBetDistributionsQuery,
+    queryKey: betDistributionsQueryKey(activeCompetitionId),
+  })
+
+  const distribution =
+    matchId && query.data ? (query.data[matchId] ?? null) : null
+
+  return [
+    distribution,
+    query.isPending &&
+      Boolean(matchId && activeCompetitionId && user?.id && enabled),
+  ]
 }
 
 export function useBet(
@@ -205,9 +331,9 @@ export function useBet(
   const uid = user?.id
   const queryClient = useQueryClient()
   const query = useQuery({
-    enabled: Boolean(matchId && uid),
-    queryFn: fetchBetFromUserQuery,
-    queryKey: betForUserQueryKey(matchId, uid),
+    enabled: Boolean(activeCompetitionId && uid),
+    queryFn: fetchUserBetsByMatchQuery,
+    queryKey: userBetsByMatchQueryKey(activeCompetitionId, uid),
   })
 
   const setBet = useCallback(
@@ -245,14 +371,24 @@ export function useBet(
           id: toastId,
         })
       } else if (data) {
+        const normalizedBet = normalizeBet(data)
         queryClient.setQueryData(
           betForUserQueryKey(matchId, uid),
-          normalizeBet(data) ?? null,
+          normalizedBet ?? null,
         )
+        if (normalizedBet) {
+          setCachedUserBet(queryClient, activeCompetitionId, uid, normalizedBet)
+        }
         queryClient.invalidateQueries({
           queryKey: betsForMatchQueryKey(matchId),
         })
+        queryClient.invalidateQueries({
+          queryKey: betDistributionsRootQueryKey(),
+        })
         queryClient.invalidateQueries({ queryKey: matchesRootQueryKey() })
+        queryClient.invalidateQueries({
+          queryKey: userBetsByMatchQueryKey(activeCompetitionId, uid),
+        })
         queryClient.invalidateQueries({
           queryKey: userBetsQueryKey(activeCompetitionId, uid),
         })
@@ -277,9 +413,9 @@ export function useBet(
   )
 
   return [
-    query.data ?? undefined,
+    betFromMap(query.data, matchId) ?? undefined,
     setBet,
-    query.isPending && Boolean(matchId && uid),
+    query.isPending && Boolean(matchId && activeCompetitionId && uid),
   ]
 }
 
@@ -289,17 +425,21 @@ export function useAllUserBets() {
   const queryClient = useQueryClient()
   const query = useQuery({
     enabled: Boolean(user?.id && activeCompetitionId),
-    queryFn: fetchAllUserBetsQuery,
-    queryKey: userBetsQueryKey(activeCompetitionId, user?.id),
+    queryFn: fetchUserBetsByMatchQuery,
+    queryKey: userBetsByMatchQueryKey(activeCompetitionId, user?.id),
   })
+
+  const bettedMatchIds = useMemo(() => {
+    return bettedMatchIdsFromMap(query.data)
+  }, [query.data])
 
   const refresh = useCallback(() => {
     queryClient.invalidateQueries({
-      queryKey: userBetsQueryKey(activeCompetitionId, user?.id),
+      queryKey: userBetsByMatchQueryKey(activeCompetitionId, user?.id),
     })
   }, [activeCompetitionId, queryClient, user?.id])
 
-  return { bettedMatchIds: query.data ?? null, refresh }
+  return { bettedMatchIds, refresh }
 }
 
 export async function saveBatchBets(
@@ -336,8 +476,13 @@ export async function saveBatchBets(
   })
 
   appQueryClient.invalidateQueries({ queryKey: betsRootQueryKey() })
+  appQueryClient.invalidateQueries({ queryKey: betDistributionsRootQueryKey() })
   appQueryClient.invalidateQueries({ queryKey: matchesRootQueryKey() })
+  appQueryClient.invalidateQueries({ queryKey: userBetsByMatchRootQueryKey() })
   appQueryClient.invalidateQueries({ queryKey: userBetsRootQueryKey() })
+  appQueryClient.invalidateQueries({
+    queryKey: userBetsByMatchQueryKey(competitionId, userId),
+  })
   appQueryClient.invalidateQueries({
     queryKey: userBetsQueryKey(competitionId, userId),
   })

@@ -4,12 +4,14 @@ import { useAuth } from '../contexts/AuthContext'
 import { useCompetition } from '../contexts/CompetitionContext'
 import {
   allOpponentsQueryKey,
+  betDistributionsRootQueryKey,
   betForUserQueryKey,
   betsForMatchQueryKey,
   betsRootQueryKey,
   matchesRootQueryKey,
   rankingsRootQueryKey,
   teamsRootQueryKey,
+  userBetsByMatchRootQueryKey,
   userBetsRootQueryKey,
 } from '../lib/queryKeys'
 import { supabase } from '../lib/supabase'
@@ -63,12 +65,14 @@ function invalidateBetChange(queryClient, payload, userId: string | undefined) {
     queryClient.invalidateQueries({ queryKey: betsRootQueryKey() })
   }
 
+  queryClient.invalidateQueries({ queryKey: betDistributionsRootQueryKey() })
   queryClient.invalidateQueries({ queryKey: matchesRootQueryKey() })
 
   if (!userId || betUserId !== userId) {
     return
   }
 
+  queryClient.invalidateQueries({ queryKey: userBetsByMatchRootQueryKey() })
   queryClient.invalidateQueries({ queryKey: userBetsRootQueryKey() })
   if (matchId) {
     queryClient.invalidateQueries({

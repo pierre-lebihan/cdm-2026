@@ -10,8 +10,24 @@ export interface BetLike {
   userId: string | null
 }
 
+export interface BetDistributionCounts {
+  countA: number
+  countN: number
+  countB: number
+  total: number
+}
+
 function isRegulation1x2(betFormat: MatchBetFormat): boolean {
   return betFormat === 'regulation_1x2'
+}
+
+export function emptyBetDistribution(): BetDistributionCounts {
+  return {
+    countA: 0,
+    countN: 0,
+    countB: 0,
+    total: 0,
+  }
 }
 
 export function predictionPopularityKey(

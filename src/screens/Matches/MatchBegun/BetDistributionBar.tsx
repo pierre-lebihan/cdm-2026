@@ -1,7 +1,9 @@
 import { useMemo, useState, type FocusEvent, type MouseEvent } from 'react'
 import {
   dynamicMultiplier,
+  emptyBetDistribution,
   predictionPopularityKey,
+  type BetDistributionCounts,
 } from '../../../lib/bettingOdds'
 import { formatOdds } from '../../../lib/scoring'
 import type { MatchBetFormat } from '../../../lib/matchEnums'
@@ -15,7 +17,8 @@ interface BetItem {
 }
 
 interface BetDistributionBarProps {
-  bets: BetItem[] | null
+  bets?: BetItem[] | null
+  distribution?: BetDistributionCounts | null
   betFormat: MatchBetFormat
 }
 
@@ -37,7 +40,7 @@ interface SegmentViewData extends SegmentData {
 function computeDistribution(
   bets: BetItem[],
   betFormat: MatchBetFormat,
-): { countA: number; countN: number; countB: number; total: number } {
+): BetDistributionCounts {
   let countA = 0
   let countN = 0
   let countB = 0
@@ -67,7 +70,7 @@ function pctLabel(count: number, total: number): string {
 }
 
 function buildSegments(
-  dist: { countA: number; countN: number; countB: number; total: number },
+  dist: BetDistributionCounts,
   betFormat: MatchBetFormat,
 ): SegmentData[] {
   const isKnockout = betFormat === 'knockout_decider'
@@ -176,7 +179,11 @@ function segmentKeyFromEvent(
   return event.currentTarget.dataset.segmentKey ?? null
 }
 
-const BetDistributionBar = ({ bets, betFormat }: BetDistributionBarProps) => {
+const BetDistributionBar = ({
+  bets,
+  distribution,
+  betFormat,
+}: BetDistributionBarProps) => {
   const [showOdds, setShowOdds] = useState(false)
   const [hoveredSegmentKey, setHoveredSegmentKey] = useState<string | null>(
     null,
@@ -185,11 +192,16 @@ const BetDistributionBar = ({ bets, betFormat }: BetDistributionBarProps) => {
   const { t } = useLanguage()
 
   const dist = useMemo(() => {
-    if (!bets) {
-      return { countA: 0, countN: 0, countB: 0, total: 0 }
+    if (distribution) {
+      return distribution
     }
+
+    if (!bets) {
+      return emptyBetDistribution()
+    }
+
     return computeDistribution(bets, betFormat)
-  }, [bets, betFormat])
+  }, [bets, distribution, betFormat])
 
   const segments = useMemo(() => {
     if (dist.total === 0) {
@@ -202,7 +214,7 @@ const BetDistributionBar = ({ bets, betFormat }: BetDistributionBarProps) => {
     return buildSegmentViews(segments, dist.total, showOdds)
   }, [segments, dist.total, showOdds])
 
-  if (!bets || segmentViews.length === 0) {
+  if (segmentViews.length === 0) {
     return null
   }
 

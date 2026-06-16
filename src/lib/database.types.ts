@@ -391,6 +391,39 @@ export type Database = {
       }
     }
     Views: {
+      bet_distribution_by_match: {
+        Row: {
+          competition_id: string | null
+          count_a: number | null
+          count_b: number | null
+          count_n: number | null
+          match_id: string | null
+          total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'bets_match_id_fkey'
+            columns: ['match_id']
+            isOneToOne: false
+            referencedRelation: 'matches'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'bets_match_id_fkey'
+            columns: ['match_id']
+            isOneToOne: false
+            referencedRelation: 'matches_with_teams'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'bets_competition_id_fkey'
+            columns: ['competition_id']
+            isOneToOne: false
+            referencedRelation: 'competitions'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       bets_with_profiles: {
         Row: {
           bet_team_a: number | null

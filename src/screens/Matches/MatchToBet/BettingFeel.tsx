@@ -3,11 +3,11 @@ import { useMemo, useState } from 'react'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useLanguage } from '../../../contexts/LanguageContext'
 import {
+  dynamicMultiplier,
+  emptyBetDistribution,
   estimatedPotentialGain,
-  mergeBetsWithDraft,
   predictionPopularityKey,
-  statsForPopularity,
-  type BetLike,
+  type BetDistributionCounts,
 } from '../../../lib/bettingOdds'
 import {
   tournamentPhaseMultiplier,
@@ -26,14 +26,14 @@ interface BettingFeelStatus {
 }
 
 interface BetRow {
-  uid: string | null
   betTeamA: number | null
   betTeamB: number | null
   betPlayoffWinner: 'A' | 'B' | null
 }
 
 interface BettingFeelInput {
-  bets: BetRow[] | null
+  distribution: BetDistributionCounts | null
+  savedBet: BetRow | null | undefined
   betFormat: MatchBetFormat
   tournamentPhase: MatchTournamentPhase
   betTeamA: number | null | undefined
@@ -42,7 +42,7 @@ interface BettingFeelInput {
 }
 
 interface BettingFeelData {
-  merged: BetLike[]
+  distribution: BetDistributionCounts
   showLive: boolean
   gainMax: number
   thermo: string | null
@@ -100,8 +100,103 @@ function iconForThermoKind(kind: BettingFeelKind | null) {
   return UsersRound
 }
 
+function bucketForPopularityKey(key: string | null): 'A' | 'N' | 'B' | null {
+  if (key === 'G_A' || key === 'P_A') {
+    return 'A'
+  }
+
+  if (key === 'G_N') {
+    return 'N'
+  }
+
+  if (key === 'G_B' || key === 'P_B') {
+    return 'B'
+  }
+
+  return null
+}
+
+function decrementBucket(
+  distribution: BetDistributionCounts,
+  bucket: 'A' | 'N' | 'B' | null,
+): void {
+  if (bucket === 'A' && distribution.countA > 0) {
+    distribution.countA -= 1
+  }
+
+  if (bucket === 'N' && distribution.countN > 0) {
+    distribution.countN -= 1
+  }
+
+  if (bucket === 'B' && distribution.countB > 0) {
+    distribution.countB -= 1
+  }
+}
+
+function incrementBucket(
+  distribution: BetDistributionCounts,
+  bucket: 'A' | 'N' | 'B' | null,
+): void {
+  if (bucket === 'A') {
+    distribution.countA += 1
+  }
+
+  if (bucket === 'N') {
+    distribution.countN += 1
+  }
+
+  if (bucket === 'B') {
+    distribution.countB += 1
+  }
+}
+
+function adjustedDistributionForDraft(
+  distribution: BetDistributionCounts,
+  savedKey: string | null,
+  draftKey: string | null,
+): BetDistributionCounts {
+  const next = {
+    ...distribution,
+  }
+
+  if (draftKey === null) {
+    return next
+  }
+
+  if (draftKey !== savedKey) {
+    decrementBucket(next, bucketForPopularityKey(savedKey))
+    incrementBucket(next, bucketForPopularityKey(draftKey))
+  }
+
+  next.total = next.countA + next.countN + next.countB
+
+  return next
+}
+
+function sameCountForPopularityKey(
+  distribution: BetDistributionCounts,
+  key: string | null,
+): number {
+  const bucket = bucketForPopularityKey(key)
+
+  if (bucket === 'A') {
+    return distribution.countA
+  }
+
+  if (bucket === 'N') {
+    return distribution.countN
+  }
+
+  if (bucket === 'B') {
+    return distribution.countB
+  }
+
+  return 0
+}
+
 export function useBettingFeelData({
-  bets,
+  distribution,
+  savedBet,
   betFormat,
   tournamentPhase,
   betTeamA,
@@ -111,19 +206,6 @@ export function useBettingFeelData({
   const { user } = useAuth()
   const { t } = useLanguage()
   const uid = user?.id
-  const betsRows = bets
-
-  const draft: BetLike | null = useMemo(() => {
-    if (!uid) {
-      return null
-    }
-    return {
-      userId: uid,
-      betTeamA: betTeamA ?? null,
-      betTeamB: betTeamB ?? null,
-      betPlayoffWinner: betPlayoffWinner ?? null,
-    }
-  }, [uid, betTeamA, betTeamB, betPlayoffWinner])
 
   const draftKey = useMemo(() => {
     return predictionPopularityKey(
@@ -134,25 +216,35 @@ export function useBettingFeelData({
     )
   }, [betFormat, betTeamA, betTeamB, betPlayoffWinner])
 
-  const betLikes: BetLike[] = useMemo(() => {
-    return (betsRows ?? []).map((b) => ({
-      userId: b.uid,
-      betTeamA: b.betTeamA,
-      betTeamB: b.betTeamB,
-      betPlayoffWinner: b.betPlayoffWinner,
-    }))
-  }, [betsRows])
+  const savedKey = useMemo(() => {
+    if (!savedBet) {
+      return null
+    }
 
-  const merged = useMemo(() => {
-    return mergeBetsWithDraft(betFormat, betLikes, uid, draft)
-  }, [betFormat, betLikes, uid, draft])
+    return predictionPopularityKey(
+      betFormat,
+      savedBet.betTeamA,
+      savedBet.betTeamB,
+      savedBet.betPlayoffWinner,
+    )
+  }, [betFormat, savedBet])
+
+  const liveDistribution = useMemo(() => {
+    const baseDistribution = distribution ?? emptyBetDistribution()
+    return adjustedDistributionForDraft(baseDistribution, savedKey, draftKey)
+  }, [distribution, savedKey, draftKey])
 
   const { totalValid, sameCount, multiplier } = useMemo(() => {
     if (draftKey === null) {
       return { totalValid: 0, sameCount: 0, multiplier: 1 }
     }
-    return statsForPopularity(betFormat, merged, draftKey)
-  }, [betFormat, merged, draftKey])
+    const count = sameCountForPopularityKey(liveDistribution, draftKey)
+    return {
+      totalValid: liveDistribution.total,
+      sameCount: count,
+      multiplier: dynamicMultiplier(liveDistribution.total, count),
+    }
+  }, [liveDistribution, draftKey])
 
   const popularity = totalValid > 0 ? sameCount / totalValid : 0
   const thermo = thermoStatus(popularity, totalValid, t)
@@ -165,7 +257,7 @@ export function useBettingFeelData({
   const showLive = Boolean(uid && draftKey !== null)
 
   return {
-    merged,
+    distribution: liveDistribution,
     showLive,
     gainMax,
     thermo: thermo.message,
@@ -223,7 +315,10 @@ export const BettingPotentialGain = ({ data }: BettingPotentialGainProps) => {
 const BettingFeel = ({ betFormat, data }: BettingFeelProps) => {
   return (
     <div className="space-y-2 pt-0.5 border-t border-gray-100">
-      <BetDistributionBar bets={data.merged} betFormat={betFormat} />
+      <BetDistributionBar
+        distribution={data.distribution}
+        betFormat={betFormat}
+      />
     </div>
   )
 }

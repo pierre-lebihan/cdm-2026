@@ -42,11 +42,32 @@ export function betsForMatchQueryKey(
   return ['bets', 'match', matchId]
 }
 
+export function betDistributionsRootQueryKey(): string[] {
+  return ['bets', 'distributions']
+}
+
+export function betDistributionsQueryKey(
+  competitionId: string | null,
+): Array<string> {
+  return ['bets', 'distributions', competitionId ?? '']
+}
+
 export function betForUserQueryKey(
   matchId: string | undefined,
   userId: string | undefined,
 ): Array<string | undefined> {
   return ['bets', 'user', matchId, userId]
+}
+
+export function userBetsByMatchRootQueryKey(): string[] {
+  return ['bets', 'by-user']
+}
+
+export function userBetsByMatchQueryKey(
+  competitionId: string | null,
+  userId: string | undefined,
+): Array<string | undefined> {
+  return ['bets', 'by-user', competitionId ?? '', userId]
 }
 
 export function userBetsRootQueryKey(): string[] {

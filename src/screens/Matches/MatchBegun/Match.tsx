@@ -1,4 +1,4 @@
-import { useBet, useBetsFromGame } from '../../../hooks/bets'
+import { useBet, useBetDistribution } from '../../../hooks/bets'
 import { useLanguage } from '../../../contexts/LanguageContext'
 import Flag from '../../../components/Flag'
 import PointsWon from './PointsWon'
@@ -23,12 +23,12 @@ const Match = ({
 }) => {
   const { t } = useLanguage()
   const [currentBet, , betLoading] = useBet(match.id)
-  const [allBets, betsLoading] = useBetsFromGame(match.id, true)
+  const [distribution, distributionLoading] = useBetDistribution(match.id)
   const navigate = useNavigate()
 
   if (!match.display) return null
 
-  if (betLoading || betsLoading) {
+  if (betLoading || distributionLoading) {
     return <MatchSkeleton />
   }
 
@@ -140,7 +140,10 @@ const Match = ({
         </div>
       )}
 
-      <BetDistributionBar bets={allBets} betFormat={match.betFormat} />
+      <BetDistributionBar
+        distribution={distribution}
+        betFormat={match.betFormat}
+      />
     </div>
   )
 }

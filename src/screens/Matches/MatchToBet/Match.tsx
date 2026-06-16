@@ -2,7 +2,7 @@ import conformsTo from 'lodash/conformsTo'
 import isNumber from 'lodash/isNumber'
 import { useEffect, useRef, useState } from 'react'
 import { format } from 'date-fns'
-import { useBet, useBetsFromGame } from '../../../hooks/bets'
+import { useBet, useBetDistribution } from '../../../hooks/bets'
 import { useAuth } from '../../../contexts/AuthContext'
 import { useLanguage } from '../../../contexts/LanguageContext'
 import InformationMatch from './InformationMatch'
@@ -22,7 +22,10 @@ const Match = ({ match }) => {
   const { user } = useAuth()
   const { dateLocale, t } = useLanguage()
   const [bet, saveBet, betLoading] = useBet(match.id)
-  const [allBets, betsLoading] = useBetsFromGame(match.id, Boolean(user?.id))
+  const [distribution, distributionLoading] = useBetDistribution(
+    match.id,
+    Boolean(user?.id),
+  )
   const [currentBet, setCurrentBet] = useState(bet)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -144,7 +147,8 @@ const Match = ({ match }) => {
   }
 
   const bettingFeel = useBettingFeelData({
-    bets: allBets,
+    distribution,
+    savedBet: bet,
     betFormat: match.betFormat,
     tournamentPhase: match.tournamentPhase,
     betTeamA: currentBet?.betTeamA,
@@ -154,7 +158,7 @@ const Match = ({ match }) => {
 
   if (!match.display) return null
 
-  if (betLoading || betsLoading) {
+  if (betLoading || distributionLoading) {
     return <MatchSkeleton />
   }
 
