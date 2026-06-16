@@ -6,7 +6,7 @@ const GEMINI_API_BASE =
   'https://generativelanguage.googleapis.com/v1beta/models'
 const MATCH_LOOKBACK_MINUTES = 720
 const MATCH_FIRST_CHECK_DELAY_MINUTES = 0
-const MATCH_CHECK_THROTTLE_MINUTES = 10
+const MATCH_CHECK_THROTTLE_MINUTES = 9
 const GEMINI_REQUEST_TIMEOUT_MS = readPositiveIntegerEnv(
   'GEMINI_REQUEST_TIMEOUT_MS',
   12000,
