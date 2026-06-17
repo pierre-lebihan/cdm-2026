@@ -7,9 +7,7 @@ const GEMINI_API_BASE =
 const MATCH_LOOKBACK_MINUTES = 720
 const MATCH_FIRST_CHECK_DELAY_MINUTES = 0
 const MATCH_CHECK_THROTTLE_MINUTES = 9
-const STANDARD_FINAL_LOCK_MINUTES = 130
-const KNOCKOUT_FINAL_LOCK_MINUTES = 180
-const FINISHED_RECHECK_WINDOW_MINUTES = 240
+const FINAL_LOCK_MINUTES = 109
 const GEMINI_REQUEST_TIMEOUT_MS = readPositiveIntegerEnv(
   'GEMINI_REQUEST_TIMEOUT_MS',
   12000,
@@ -37,8 +35,6 @@ interface MatchRow {
   teamBName: string | null
   teamBCode: string | null
   betFormat: string | null
-  status: MatchStatus
-  scoreProvider: string | null
 }
 
 interface GeminiScoreResult {
@@ -312,18 +308,6 @@ function normalizeWinnerSide(value: unknown): WinnerSide {
   return 'unknown'
 }
 
-function normalizePersistedMatchStatus(value: unknown): MatchStatus {
-  if (value === 'ONGOING') {
-    return 'ONGOING'
-  }
-
-  if (value === 'FINISHED') {
-    return 'FINISHED'
-  }
-
-  return 'PLANNED'
-}
-
 function normalizeConfidence(value: unknown): Confidence {
   if (value === 'high') {
     return 'high'
@@ -377,8 +361,6 @@ function normalizeMatchRow(value: unknown): MatchRow | null {
     teamBName: readString(value, 'team_b_name'),
     teamBCode: readString(value, 'team_b_code'),
     betFormat: readString(value, 'bet_format'),
-    status: normalizePersistedMatchStatus(value.status),
-    scoreProvider: readString(value, 'score_provider'),
   }
 }
 
@@ -816,14 +798,6 @@ function elapsedMinutesSinceKickoff(match: MatchRow, now: Date): number | null {
   return Math.floor((now.getTime() - kickoffTime) / 60000)
 }
 
-function finalLockMinutesForMatch(match: MatchRow): number {
-  if (match.betFormat === 'knockout_decider') {
-    return KNOCKOUT_FINAL_LOCK_MINUTES
-  }
-
-  return STANDARD_FINAL_LOCK_MINUTES
-}
-
 function canLockFinishedStatus(
   match: MatchRow,
   result: GeminiScoreResult,
@@ -838,7 +812,7 @@ function canLockFinishedStatus(
     return false
   }
 
-  return elapsedMinutes >= finalLockMinutesForMatch(match)
+  return elapsedMinutes >= FINAL_LOCK_MINUTES
 }
 
 function lifecycleStatusFromResult(
@@ -887,23 +861,6 @@ function resolvePlayoffWinner(
   return null
 }
 
-function shouldCheckMatch(match: MatchRow, now: Date): boolean {
-  if (match.status !== 'FINISHED') {
-    return true
-  }
-
-  if (match.scoreProvider === 'manual') {
-    return false
-  }
-
-  const elapsedMinutes = elapsedMinutesSinceKickoff(match, now)
-  if (elapsedMinutes === null) {
-    return false
-  }
-
-  return elapsedMinutes <= FINISHED_RECHECK_WINDOW_MINUTES
-}
-
 function buildScorePayload(
   match: MatchRow,
   lookup: GeminiScoreLookup,
@@ -920,7 +877,7 @@ function buildScorePayload(
     persisted_status: status,
     final_lock: {
       elapsed_minutes: elapsedMinutes,
-      minimum_elapsed_minutes: finalLockMinutesForMatch(match),
+      minimum_elapsed_minutes: FINAL_LOCK_MINUTES,
       accepted_finished: status === 'FINISHED',
     },
     result: {
@@ -1029,8 +986,9 @@ async function findMatchesToUpdate(
   const { data, error } = await supabase
     .from('matches_with_teams')
     .select(
-      'id, date_time, team_a_name, team_a_code, team_b_name, team_b_code, bet_format, status, score_provider',
+      'id, date_time, team_a_name, team_a_code, team_b_name, team_b_code, bet_format',
     )
+    .neq('status', 'FINISHED')
     .eq('visible_to_users', true)
     .not('date_time', 'is', null)
     .gte('date_time', startedAfter.toISOString())
@@ -1044,15 +1002,7 @@ async function findMatchesToUpdate(
     throw error
   }
 
-  const matches = normalizeMatchRows(data)
-  const matchesToCheck: MatchRow[] = []
-  for (const match of matches) {
-    if (shouldCheckMatch(match, now)) {
-      matchesToCheck.push(match)
-    }
-  }
-
-  return matchesToCheck
+  return normalizeMatchRows(data)
 }
 
 async function handleRequest(_req: Request): Promise<Response> {
