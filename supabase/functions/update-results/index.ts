@@ -7,6 +7,9 @@ const GEMINI_API_BASE =
 const MATCH_LOOKBACK_MINUTES = 720
 const MATCH_FIRST_CHECK_DELAY_MINUTES = 0
 const MATCH_CHECK_THROTTLE_MINUTES = 9
+const STANDARD_FINAL_LOCK_MINUTES = 130
+const KNOCKOUT_FINAL_LOCK_MINUTES = 180
+const FINISHED_RECHECK_WINDOW_MINUTES = 240
 const GEMINI_REQUEST_TIMEOUT_MS = readPositiveIntegerEnv(
   'GEMINI_REQUEST_TIMEOUT_MS',
   12000,
@@ -34,6 +37,8 @@ interface MatchRow {
   teamBName: string | null
   teamBCode: string | null
   betFormat: string | null
+  status: MatchStatus
+  scoreProvider: string | null
 }
 
 interface GeminiScoreResult {
@@ -307,6 +312,18 @@ function normalizeWinnerSide(value: unknown): WinnerSide {
   return 'unknown'
 }
 
+function normalizePersistedMatchStatus(value: unknown): MatchStatus {
+  if (value === 'ONGOING') {
+    return 'ONGOING'
+  }
+
+  if (value === 'FINISHED') {
+    return 'FINISHED'
+  }
+
+  return 'PLANNED'
+}
+
 function normalizeConfidence(value: unknown): Confidence {
   if (value === 'high') {
     return 'high'
@@ -360,6 +377,8 @@ function normalizeMatchRow(value: unknown): MatchRow | null {
     teamBName: readString(value, 'team_b_name'),
     teamBCode: readString(value, 'team_b_code'),
     betFormat: readString(value, 'bet_format'),
+    status: normalizePersistedMatchStatus(value.status),
+    scoreProvider: readString(value, 'score_provider'),
   }
 }
 
@@ -413,6 +432,8 @@ function buildPrompt(match: MatchRow): string {
     `bet_format: ${betFormat}`,
     'If the match is live, score_a and score_b must be the current live score.',
     'If the match is finished and bet_format=standard, score_a and score_b must be the final score after regulation time.',
+    'Set status=finished only when the source explicitly shows FT, full-time, final, match ended, or an official final result.',
+    'A score shown at 90 minutes, 90+ minutes, stoppage time, or without an explicit full-time/final label is still in_progress.',
     'If bet_format=knockout_decider and regulation time is still in progress, score_a and score_b must be the current live regulation-time score.',
     'If bet_format=knockout_decider and regulation time is over, score_a and score_b must remain the 90-minute regulation score, before extra time or penalties.',
     'If bet_format=knockout_decider and the match is tied after 90 minutes then decided after extra time or penalties, keep the tied 90-minute score and set winner_side to the team that advanced or won.',
@@ -781,8 +802,51 @@ function isFinishedResult(result: GeminiScoreResult): boolean {
   return result.status === 'finished'
 }
 
-function lifecycleStatusFromResult(result: GeminiScoreResult): MatchStatus {
-  if (isFinishedResult(result)) {
+function elapsedMinutesSinceKickoff(match: MatchRow, now: Date): number | null {
+  if (!match.dateTime) {
+    return null
+  }
+
+  const kickoff = new Date(match.dateTime)
+  const kickoffTime = kickoff.getTime()
+  if (Number.isNaN(kickoffTime)) {
+    return null
+  }
+
+  return Math.floor((now.getTime() - kickoffTime) / 60000)
+}
+
+function finalLockMinutesForMatch(match: MatchRow): number {
+  if (match.betFormat === 'knockout_decider') {
+    return KNOCKOUT_FINAL_LOCK_MINUTES
+  }
+
+  return STANDARD_FINAL_LOCK_MINUTES
+}
+
+function canLockFinishedStatus(
+  match: MatchRow,
+  result: GeminiScoreResult,
+  now: Date,
+): boolean {
+  if (!isFinishedResult(result)) {
+    return false
+  }
+
+  const elapsedMinutes = elapsedMinutesSinceKickoff(match, now)
+  if (elapsedMinutes === null) {
+    return false
+  }
+
+  return elapsedMinutes >= finalLockMinutesForMatch(match)
+}
+
+function lifecycleStatusFromResult(
+  match: MatchRow,
+  result: GeminiScoreResult,
+  now: Date,
+): MatchStatus {
+  if (canLockFinishedStatus(match, result, now)) {
     return 'FINISHED'
   }
 
@@ -792,12 +856,13 @@ function lifecycleStatusFromResult(result: GeminiScoreResult): MatchStatus {
 function resolvePlayoffWinner(
   match: MatchRow,
   result: GeminiScoreResult,
+  status: MatchStatus,
 ): string | null {
   if (match.betFormat !== 'knockout_decider') {
     return null
   }
 
-  if (!isFinishedResult(result)) {
+  if (status !== 'FINISHED') {
     return null
   }
 
@@ -822,10 +887,29 @@ function resolvePlayoffWinner(
   return null
 }
 
+function shouldCheckMatch(match: MatchRow, now: Date): boolean {
+  if (match.status !== 'FINISHED') {
+    return true
+  }
+
+  if (match.scoreProvider === 'manual') {
+    return false
+  }
+
+  const elapsedMinutes = elapsedMinutesSinceKickoff(match, now)
+  if (elapsedMinutes === null) {
+    return false
+  }
+
+  return elapsedMinutes <= FINISHED_RECHECK_WINDOW_MINUTES
+}
+
 function buildScorePayload(
   match: MatchRow,
   lookup: GeminiScoreLookup,
   checkedAt: string,
+  status: MatchStatus,
+  elapsedMinutes: number | null,
 ): Record<string, unknown> {
   return {
     provider: 'gemini',
@@ -833,6 +917,12 @@ function buildScorePayload(
     credential: lookup.credentialLabel,
     match_id: match.id,
     checked_at: checkedAt,
+    persisted_status: status,
+    final_lock: {
+      elapsed_minutes: elapsedMinutes,
+      minimum_elapsed_minutes: finalLockMinutesForMatch(match),
+      accepted_finished: status === 'FINISHED',
+    },
     result: {
       available: lookup.result.available,
       status: lookup.result.status,
@@ -853,11 +943,20 @@ async function updateMatchScore(
   match: MatchRow,
   lookup: GeminiScoreLookup,
 ): Promise<Record<string, unknown>> {
-  const checkedAt = new Date().toISOString()
+  const now = new Date()
+  const checkedAt = now.toISOString()
+  const status = lifecycleStatusFromResult(match, lookup.result, now)
+  const elapsedMinutes = elapsedMinutesSinceKickoff(match, now)
   const update: Record<string, unknown> = {
-    status: lifecycleStatusFromResult(lookup.result),
+    status,
     score_provider: 'gemini',
-    score_payload: buildScorePayload(match, lookup, checkedAt),
+    score_payload: buildScorePayload(
+      match,
+      lookup,
+      checkedAt,
+      status,
+      elapsedMinutes,
+    ),
     score_checked_at: checkedAt,
   }
 
@@ -866,7 +965,7 @@ async function updateMatchScore(
     update.score_b = lookup.result.scoreB
   }
 
-  const playoffWinner = resolvePlayoffWinner(match, lookup.result)
+  const playoffWinner = resolvePlayoffWinner(match, lookup.result, status)
   if (playoffWinner) {
     update.playoff_winner = playoffWinner
   }
@@ -930,9 +1029,8 @@ async function findMatchesToUpdate(
   const { data, error } = await supabase
     .from('matches_with_teams')
     .select(
-      'id, date_time, team_a_name, team_a_code, team_b_name, team_b_code, bet_format',
+      'id, date_time, team_a_name, team_a_code, team_b_name, team_b_code, bet_format, status, score_provider',
     )
-    .neq('status', 'FINISHED')
     .eq('visible_to_users', true)
     .not('date_time', 'is', null)
     .gte('date_time', startedAfter.toISOString())
@@ -946,7 +1044,15 @@ async function findMatchesToUpdate(
     throw error
   }
 
-  return normalizeMatchRows(data)
+  const matches = normalizeMatchRows(data)
+  const matchesToCheck: MatchRow[] = []
+  for (const match of matches) {
+    if (shouldCheckMatch(match, now)) {
+      matchesToCheck.push(match)
+    }
+  }
+
+  return matchesToCheck
 }
 
 async function handleRequest(_req: Request): Promise<Response> {
