@@ -459,9 +459,10 @@ export async function saveBatchBets(
     updated_at: new Date().toISOString(),
   }))
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('bets')
     .upsert(rows, { onConflict: 'id' })
+    .select()
 
   if (error) {
     captureEvent('ai_batch_bets_save_failed', {
@@ -471,22 +472,41 @@ export async function saveBatchBets(
     throw new Error(saveErrorMessage)
   }
 
+  for (const row of data ?? []) {
+    const normalizedBet = normalizeBet(row)
+    if (!normalizedBet) {
+      continue
+    }
+
+    appQueryClient.setQueryData(
+      betForUserQueryKey(row.match_id ?? undefined, userId),
+      normalizedBet,
+    )
+    setCachedUserBet(appQueryClient, competitionId, userId, normalizedBet)
+  }
+
   captureEvent('ai_batch_bets_saved', {
     competition_id: competitionId,
     predictions_count: rows.length,
   })
 
-  appQueryClient.invalidateQueries({ queryKey: betsRootQueryKey() })
-  appQueryClient.invalidateQueries({ queryKey: betDistributionsRootQueryKey() })
-  appQueryClient.invalidateQueries({ queryKey: matchesRootQueryKey() })
-  appQueryClient.invalidateQueries({ queryKey: userBetsByMatchRootQueryKey() })
-  appQueryClient.invalidateQueries({ queryKey: userBetsRootQueryKey() })
-  appQueryClient.invalidateQueries({
-    queryKey: userBetsByMatchQueryKey(competitionId, userId),
-  })
-  appQueryClient.invalidateQueries({
-    queryKey: userBetsQueryKey(competitionId, userId),
-  })
+  await Promise.all([
+    appQueryClient.invalidateQueries({ queryKey: betsRootQueryKey() }),
+    appQueryClient.invalidateQueries({
+      queryKey: betDistributionsRootQueryKey(),
+    }),
+    appQueryClient.invalidateQueries({ queryKey: matchesRootQueryKey() }),
+    appQueryClient.invalidateQueries({
+      queryKey: userBetsByMatchRootQueryKey(),
+    }),
+    appQueryClient.invalidateQueries({ queryKey: userBetsRootQueryKey() }),
+    appQueryClient.invalidateQueries({
+      queryKey: userBetsByMatchQueryKey(competitionId, userId),
+    }),
+    appQueryClient.invalidateQueries({
+      queryKey: userBetsQueryKey(competitionId, userId),
+    }),
+  ])
 
   return rows.length
 }
