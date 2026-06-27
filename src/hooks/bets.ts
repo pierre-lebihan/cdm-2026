@@ -455,6 +455,7 @@ export async function saveBatchBets(
     competition_id: competitionId,
     bet_team_a: p.score_a,
     bet_team_b: p.score_b,
+    bet_playoff_winner: p.playoff_winner,
     updated_at: new Date().toISOString(),
   }))
 
