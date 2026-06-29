@@ -35,7 +35,7 @@ interface LanguageProviderProps {
 const LanguageContext = createContext<LanguageContextValue | null>(null)
 
 function isLanguageCode(value: string | null): value is LanguageCode {
-  return value === 'fr' || value === 'en' || value === 'mk' || value === 'eu'
+  return value in ['fr', 'en', 'mk', 'eu', 'br']
 }
 
 function readStoredLanguage(): LanguageCode {

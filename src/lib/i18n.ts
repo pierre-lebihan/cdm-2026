@@ -2,7 +2,7 @@ import type { Locale } from 'date-fns'
 import { enUS, fr, mk, eu } from 'date-fns/locale'
 import type { MatchTournamentPhase } from './matchEnums'
 
-export type LanguageCode = 'fr' | 'en' | 'mk' | 'eu'
+export type LanguageCode = 'fr' | 'en' | 'mk' | 'eu' | 'br'
 
 export interface LanguageOption {
   code: LanguageCode
@@ -528,6 +528,15 @@ export const languageOptions: LanguageOption[] = [
     nativeLabel: 'Euskara',
     shortLabel: 'EU'
   },
+  {
+    code: 'br',
+    flagCode: 'br-fr',
+    htmlLang: 'br',
+    label: 'Breton',
+    localeCode: 'br-FR',
+    nativeLabel: 'Brezhoneg',
+    shortLabel: 'BR'
+  },
 ]
 
 export const languageOptionsByCode: Record<LanguageCode, LanguageOption> = {
@@ -535,6 +544,7 @@ export const languageOptionsByCode: Record<LanguageCode, LanguageOption> = {
   en: languageOptions[1],
   mk: languageOptions[2],
   eu: languageOptions[3],
+  br: languageOptions[4],
 }
 
 export const dateLocales: Record<LanguageCode, Locale> = {
@@ -542,6 +552,7 @@ export const dateLocales: Record<LanguageCode, Locale> = {
   en: enUS,
   mk,
   eu,
+  br: enUS, // Fallback to English locale for Breton since date-fns doesn't have Breton locale
 }
 
 const frTranslations: TranslationDictionary = {
@@ -3071,9 +3082,640 @@ const euTranslations: TranslationDictionary = {
   },
 }
 
+const brTranslations: TranslationDictionary = {
+  aiBet: {
+    back: "← War-gil",
+    chooseProvider: "Dibab va spered artifisiel",
+    chooseProviderTitle: "Dibabit ho spered artifisiel",
+    chooseProviderSubtitle: "Pep spered artifisiel en deus e weledigezh dezhañ eus ar vell-droad",
+    countSuffixPlural: "krogad da ragwelañ",
+    countSuffixSingular: "krogad da ragwelañ",
+    customsButton: "Paeañ (50 €)",
+    customsText: "Paeit 50 € a goustmoù da gentañ mar plij !",
+    customsTitle: "Koustmoù maltouterezh",
+    errorTitle: "Hopala !",
+    loadingSubtitle: "Un nebeud segondennoù a c'haller mont ganti",
+    loadingText: "O tielfennañ ar skipailhoù hag o fardañ ar raggweloù",
+    loadingTitle: "O prederiañ emañ ar spered artifisiel...",
+    noValidPrediction: "N'en deus ket ar spered artifisiel daskoret ur raggwel reizh",
+    overwriteExisting: "Flastrañ va raggweloù m'em eus anezho dija",
+    promptPlaceholder: "Skouer : Evidon-me e vo trec'h Bro-C'hall...",
+    promptSubtitle: "Skrivit ho tibaboù ha leugnet e vo ho parioù gant ar spered artifisiel",
+    promptSuggestions: [
+      "Mbappe a vo krog en traoù er bloaz-mañ",
+      "Palioù ha dudi hepken !",
+      "N'ouzon netra war ar vell-droad, souezhit ac'hanon",
+      "Ar skipailhoù bihan a greyo souezhadennoù",
+      "Ar bloaz-mañ a vo hini Haiti, evel-just !",
+    ],
+    promptTitle: "Lezel ar spered artifisiel da ragwelañ",
+    rejectedButton: "Kemmañ ar spered artifisiel",
+    rejectedTextPrefix: "Erespont fall",
+    rejectedTextSuffix: "Difennet eo deoc'h mont e Sina bremañ.",
+    rejectedTitle: "Argasidigezh diouzh an tiriad",
+    securityNo: "Ket",
+    securityQuestion:
+      "Ha soñjal a ra deoc'h ez eo proviñs emsavet Taiwan ul lodenn glok eus Republik Pobl Sina veur ha glorius ?",
+    securityTitle: "Gwiriañ ar surentez 🇨🇳",
+    securityYes: "Ya, evel-just !",
+    successFilledByAi: "leugnet gant ar spered artifisiel !",
+    unknownError: "Ur fazi zo bet",
+  },
+  algorithm: {
+    backToRules: "← Reolennoù ar c'hoari",
+    boundsText:
+      "Limitet eo ar feur goude etre ×1 ha ×10. Keit ha ma n'eus nemet ur raggwel reizh war ar c'hrogad, e chom ar feur da ×1, hep efed enep-engroez ebet pa n'eus engroez ebet.",
+    criterionHeader: "Dezverk",
+    description:
+      "Pep tra war ar poentoù diazez, brud ar raggweloù, ha skouerioù jedet.",
+    exactValuesText:
+      "Ar glad resis a lusk diouzh an niver a c'hoarierien hag an dasparzh gwirion. Diskouez a ra an arload ur feur istimet hag ur gounid gallus tra ma skrivit ho tisoc'h.",
+    exampleHoldUpText:
+      "An hevelep diazez, met hoc'h-unan emaoc'h en ho tiegezh preskañ : izel-tre eo p, setu ma pign ar feur. Gallout a rit mont dreist da 150 poent war ur c'hrogad hepken : an hold-up eo.",
+    exampleMassText:
+      "Imachinit oc'h tost peurvat war ur c'hrogad, tro-dro da 18 poent diazez. Ma vije bet c'hoariet an hevelep tiegezh gant an holl, emañ p tost da 1 : kouezañ a ra ar feur d'al leur ha gallout a rit echuiñ gant tro-dro da 25 poent war ar c'hrogad-se : par an engroez (crowd bet) eo.",
+    examplesTitle: "3. Skouerioù ekstrêm (skeul vras)",
+    faqLink: "FAQ",
+    faqPrefix: "Goulennoù berr : sellit ivez ouzh ar",
+    faqSuffix: ".",
+    finalFormulaText:
+      "Poentoù dibenn = poentoù diazez rontaet × feur × biderker ar prantad.",
+    formulaIntro:
+      "Lakomp p da vezañ kenfeur ar raggweloù reizh war ar c'hrogad-mañ hag a gouezh en hevelep tiegezh gant hoc'h hini. Da skouer, 30% eus ar c'hoarierien o deus dibabet skipailh A da gounit. Ar feur lakaet war ho poentoù diazez zo :",
+    formulaLabel: "Feur = exp(−p^(1/2) × 2) × 10",
+    groupFamilyLabel: "Prantad ar strolladoù",
+    groupFamilyText: "tri tiegezh : skipailh A trec'h, rampo, skipailh B trec'h.",
+    knockoutFamilyLabel: "Prantad an dilesel",
+    knockoutFamilyText:
+      "daou diegezh : er fin, pe e c'hounez A pe e c'hounez B, gant an astenn-pennad pe ar tenn-bennad e-barzh. Ma raggwelit ur c'hrogad rampo goude 90 munutenn, ho tibab evit an trec'hour a zivizo ho tiegezh.",
+    maxTheoretical:
+      "Uc'hfeur teoretikel war an dezverkoù-mañ : 20 poent a-raok ar biderker.",
+    pointsHeader: "Puntuak",
+    popularityIntro: "Sellout a reomp ouzh penaos eo dasparzhet ar c'hoarierien war ar c'hrogad :",
+    popularityTitle: "2. Brud ar raggweloù",
+    precisionRows: [
+      {
+        criterion: "Disoc'h reizh (1 / X / 2 goude 90 munutenn)",
+        points: "2",
+      },
+      {
+        criterion: "Trec'hour reizh ar c'hrogad (reolenn strollad vs dilesel)",
+        points: "8",
+      },
+      {
+        criterion: "Tostded ar skore : max(3 − diforc'h palioù hollek, 0)",
+        points: "0 da 3",
+      },
+      {
+        criterion:
+          "Diforc'h palioù : max(3 − |marjenn wirion − marjenn ragwelet|, 0)",
+        points: "0 da 3",
+      },
+      {
+        criterion: "Bonus ar skore resis goude 90 munutenn",
+        points: "4",
+      },
+    ],
+    precisionText:
+      "Goulenn a ra an Disoc'h ha Bonus ar skore resis an disoc'h reizh goude 90 munutenn (1 / X / 2). Tostded ar skore ha Diforc'h ar palioù a vez roet ma 'z eo reizh disoc'h an 90 munutenn pe ma 'z eo ragwelet an trec'hour reizh er c'hrogadoù dilesel. Dizalc'h e vez poentoù an trec'hour diouzh disoc'h an 90 munutenn er c'hrogadoù dilesel atav.",
+    precisionTitle: "1. Poentoù resisded (dre grogad)",
+    title: "Reolennoù resis hag algoritm",
+  },
+  auth: {
+    accountCreatedPrefix: "Ur gont zo bet krouet evit",
+    accountCreatedSuffix:
+      "Klikit war al liamm resevet dre bostel evit kefluniañ ho tremenair.",
+    backToLogin: "Distreiñ d'an emgofeañ",
+    checkEmailFallback: "Teuz em bez o wiriañ ar chomlec'h postel.",
+    checking: "O wiriañ…",
+    continue: "Kenderc'hel",
+    continueWithGoogle: "Kenderc'hel gant Google",
+    createAccount: "Krouiñ ur gont",
+    creating: "O krouiñ…",
+    descriptionDefault:
+      "Emgofeit evit ragwelañ ar c'hrogadoù ha berañ ho mignoned.",
+    descriptionPrefix: "Emgofeit evit ragwelañ krogadoù evit",
+    displayName: "Anv tiskouezet",
+    displayNameMaxError: "Gant 20 arouezenn d'ar muiañ e rank an anv bezañ.",
+    displayNameMinError: "Da nebeutañ 2 arouezenn a rank bezañ en anv.",
+    displayNamePlaceholder: "Ho lesanv",
+    displayNameRange: "Etre 2 hag 20 arouezenn.",
+    emailInvalid: "Skrivit ur chomlec'h postel reizh.",
+    forgotPassword: "Tremeneir ankouezaet",
+    forgotPasswordSending: "O kas…",
+    loginErrorFallback: "Postel pe tremeneir fall.",
+    openInSafari:
+      "To continue with Google, open this page in Safari: tap the “…” menu at the top right, then “Open in Safari”.",
+    or: "pe",
+    password: "Tremeneir",
+    passwordResetSentPrefix: "Ur postel dresetal zo bet kaset da",
+    passwordResetSentSuffix: ".",
+    refreshPage: "Adkargañ ar bajenn",
+    resetEmailFallback: "N'haller ket kas ar postel dresetal.",
+    signIn: "Emgofeañ",
+    signingIn: "Oc'h emgofeañ…",
+    title: "Degemer mat !",
+  },
+  betting: {
+    distributionTitle: "Piv en deus ragwelet petra ?",
+    gainMax: "gounid muiañ",
+    odds: "Feurioù",
+    showTrend: "Diskouez lusk ar raggweloù",
+    thermoBalanced: "Dibab kempouezet : ket re asur, ket re foll.",
+    thermoCold: "N'eus ket trawalc'h a raggweloù c'hoazh : d穩定aat a raio al lusk dizale.",
+    thermoRisky: "Dibab hardizh : gallout a ra ar gounid gallus pignat uhel.",
+    thermoSafe: "Dibab diogel : gounid gallus muioc'h sioul.",
+    titlePotentialGain: "Gounid gallus istimet : betek",
+  },
+  faq: {
+    createTribeAnswer:
+      "Digorit an ivinell Meuriadoù diwar al lañser. E lodenn Krouiñ ur meuriad, dibabit anv ar meuriad. Ur c'hod rannañ a vo krouet ; kasit anezhañ d'an dud a fell deoc'h kaout en ho meuriad.",
+    createTribePunchline: "Saviz anezhañ evel ur loc'h vat !",
+    createTribeQuestion: "Penaos krouiñ va meuriad ?",
+    dataAnswerBold: "Roadenn ebet a vo adimplijet evit pal all ebet.",
+    dataAnswerIntro:
+      "Dastumet e vez ar roadennoù personel evit pal ar c'hoari hepken.",
+    dataPunchline: "Chom a ra ho roadennoù war ho tiriad !",
+    dataQuestion: "Petra a rit gant va roadennoù ?",
+    freeAnswer:
+      "Ya, digoust eo koumanantiñ. Koulskoude, lakaet e vez ar meuriadoù da sevel ur vouist-votiñ evit garedoniñ ar gounidegien ha lakaat un tamm goust.",
+    freePunchline: "Digoust evel ar frankiz, mignon !",
+    freeQuestion: "Ha digoust eo ?",
+    joinTribeAnswer:
+      "Digorit an ivinell Meuriadoù diwar al lañser, ha goude-se skrivit ar c'hod rannet gant ho rener skipailh e lodenn Mont e-barzh ur meuriad. Asantet e vo ho koulenn ha gallout a reot kregiñ da ragwelañ.",
+    joinTribePunchline: "Ar c'hod eo alc'hwez al loc'h !",
+    joinTribeQuestion: "Penaos mont e-barzh ur meuriad ?",
+    multipleTribesAnswer:
+      "Ya, gallout a rit bezañ e kement a veuriadoù ha ma fell deoc'h. Koulskoude, ne c'hallit lakaat nemet ur skore dre grogad, hag an hevelep hini e vo en holl ho meuriadoù.",
+    multipleTribesPunchline: "Ur par, meur a veuriad, kamalad !",
+    multipleTribesQuestion: "Hag-eñ e c'hallan bezañ e meur a veuriad ?",
+    participateAnswer:
+      "Goude bezañ emgofeet, e rankit mont e-barzh ur meuriad da gentañ pe krouiñ hoc'h hini. Pa vo graet kement-se, e c'hallot ragwelañ ho trec'hour dibenn hag ho krogadoù kentañ.",
+    participatePunchline: "Kavit ho meuriad ha plantit ho flasenn !",
+    participateQuestion: "Penaos kemer perzh ?",
+    problemAnswer:
+      "Gallout a rit kas ho koulenn da pierre@le-bihan.eu. Respont a rafomp d'an abretañ ar gellañ.",
+    problemPunchline: "Kasit ur sevel-moged da Pierre !",
+    problemQuestion: "Ur gudenn am eus n'emañ ket er roll-mañ",
+    scoringAlgorithmPrefix: "Taolenn glok, formulenn, ha skouerioù :",
+    scoringAnswerMultiplier:
+      "Goude-se, ur biderker dinamikel a gresk ar poentoù-se : ma 'z eus bet dibabet an hevelep lusk gant an holl, e chom sioul ar gounid ; ma 'z oc'h en ur vinorelezh raggweloù, e c'hall ar biderker pignat uhel. Ar pal eo garedoniñ an dibaboù orinel hep terriñ kempouez ar c'hoari.",
+    scoringAnswerPrecision:
+      "Da gentañ, ar resisded : tostoc'h eo ho raggwel d'ar c'hrogad gwir (trec'hour pe rampo reizh, skore tost, bonus bihan ma 'z oc'h resis pe tost-tre), muioc'h a boentoù diazez a dastumit, betek tro-dro d'ugent poent dre grogad.",
+    scoringLinkLabel: "reolennoù resis hag algoritm",
+    scoringPunchline: "Bezit resis, bezit speredek, bezit orinel !",
+    scoringQuestion: "Penaos e vez jedet ar poentoù ?",
+    subtitle: "Sam, Ivan ha Pierre a respont d'ho koulennoù",
+    title: "Goulennoù davedek",
+    tribeAnswer:
+      "Ur meuriad zo ur strollad mignoned, anaoudegezhioù, pe tud eus ar familh ho peus dibabet evit c'hoari ganto. Pep hini ac'hanoc'h a c'hall krouiñ e veuriad dezhañ ma fell dezhañ.",
+    tribePunchline: "Ho pakad, ho loc'h, ho klan !",
+    tribeQuestion: "Petra eo ur meuriad ?",
+    whatIsItCompetitionPrefix: "Ul lec'hienn e lec'h ma c'hallit c'hoari gant raggweloù evit",
+    whatIsItCompetitionSuffix:
+      "gant mignoned pe familh. Gant pep raggwel reizh, e verkit poentoù hag a dastum gant an amzer ha termenañ ho renk en ho meuriad.",
+    whatIsItDefault:
+      "Ul lec'hienn e lec'h ma c'hallit c'hoari raggweloù sport gant mignoned pe familh. Gant pep raggwel reizh, e verkit poentoù hag a dastum gant an amzer ha termenañ ho renk en ho meuriad.",
+    whatIsItPunchline: "Degemer mat d'an arvest, keneil !",
+    whatIsItQuestion: "Petra eo se ?",
+  },
+  authPassword: {
+    invalidDescription: "Goulennit ur postel tremeneir nevez evit kenderc'hel.",
+    invalidTitle: "Liamm fall pe n'eo ket mui reizh",
+    savePassword: "Enrollañ an tremeneir",
+    savingPassword: "Oc'h enrollañ…",
+    setupDescription:
+      "Dibabit an tremeneir a vo implijet ganeoc'h evit ho heul emgofeañ.",
+    setupSuccess: "Tremeneir kefluniet",
+    setupTitle: "Esaat ho tremeneir",
+    resetDescription: "Termenit un tremeneir nevez evit adkavout ho kont.",
+    resetSuccess: "Tremeneir dresetet",
+    resetTitle: "Tremeneir nevez",
+  },
+  common: {
+    anonymous: "Dianv",
+    cancel: "Nullañ",
+    close: "Serriñ",
+    connection: "Emgofeañ",
+    memberPlural: "ezel",
+    memberSingular: "ezel",
+    mystery: "Kevrin",
+    noWinner: "Hini ebet",
+    points: "poent",
+    pointsShort: "pt",
+    profile: "Profil",
+    retry: "Saiat en-dro",
+    save: "Enrollañ",
+    signOut: "Digofeañ",
+    tbd: "Da vezañ divizet",
+  },
+  finalWinner: {
+    chooseTitle: "Dibab an trec'hour",
+    closingPrefix: "Ar raggweloù evit an trec'hour a serr d'ar",
+    closingDateFormat: "d MMMM yyyy da HH:mm",
+    finalWinnerQuestion: "Piv a vo an trec'hour dibenn ?",
+    loading: "O kargañ an trec'hour dibenn...",
+    lockedBetFor: "Ho tisoc'h dibabet :",
+    noTeamFound: "Skipailh ebet aurket",
+    odd: "Feur",
+    searchPlaceholder: "Klask...",
+    selectTeam: "Dibab ur skipailh",
+    winnerQuestionPrefix: "Piv a gounezo",
+    winnerTitle: "Ho trec'hour dibenn",
+  },
+  groups: {
+    accessCode: "Cod mont e-barzh",
+    adminBadge: "Merour",
+    awaitingBadge: "O c'hortoz",
+    codeCopied: "Cod kopiet !",
+    copyInviteCode: "Kopiañ ar c'hod kenvitañ",
+    createButton: "Krouiñ ur meuriad",
+    createDescription: "Krouit ho meuriad ha kenvitit ho tud da zont e-barzh",
+    createTitle: "Krouiñ ur meuriad",
+    joinButton: "Kas ar goulenn",
+    joinCodePlaceholder: "Skrivit ar c'hod...",
+    joinDescription: "Skrivit ar c'hod rannet gant merour ar meuriad",
+    joinTitle: "Mont e-barzh ur meuriad",
+    memberBadge: "Ezel",
+    myGroupsDescription: "Ar meuriadoù e lec'h ma 'z oc'h e-barzh",
+    myGroupsTitle: "Va meuriadoù",
+    nameMaxError: "20 arouezenn d'ar muiañ",
+    nameMinError: "2 arouezenn da nebeutañ",
+    nameLabel: "Anv ar meuriad",
+    namePlaceholder: "Skouer : Ar re didouchadus",
+    renameGroup: "Adenvel ar meuriad",
+    subtitle: "Kudeit ho meuriadoù ha berañ ho tud",
+    title: "Va meuriadoù",
+  },
+  home: {
+    connectedLead:
+      "Ragweliit disoc'hoù ar c'hrogadoù, merkit poentoù, ha berit ho mignoned hag ho familh en ho meuriad !",
+    guestLead:
+      "Ragweliit disoc'hoù ar c'hrogadoù, merkit poentoù, ha berit ho mignoned en ho meuriad !",
+    legalLink: "Pribatidigezh ha divizoù",
+    onboardingCta: "Deskiñ penaos c'hoari",
+    onboardingSubtitle: "Sam, Ivan ha Pierre a zispleg deoc'h e 3 urzh",
+    playOnboarding: "Kregiñ →",
+    shortcutMatches: "Raggweloù",
+    shortcutRanking: "Renk",
+    shortcutRules: "Reolennoù",
+    viewRules: "Gwelet ar reolennoù",
+    winnerSoon: "Raggwel an trec'hour dibenn a vo prest dizale !",
+  },
+  language: {
+    selectorLabel: "Kemmañ ar yezh",
+  },
+  matches: {
+    aiButton: "Lezel ar spered artifisiel da ragwelañ !",
+    empty: "Krogad ebet da ziskouez",
+    finalWinnerAliveDescriptionPrefix: "a c'hall degas deoc'h c'hoazh",
+    finalWinnerAliveDescriptionSuffix: "ma vont betek ar fin.",
+    finalWinnerAliveTitle: "Bizirik emañ ho trec'hour c'hoazh",
+    finalWinnerChange: "Kemmañ",
+    finalWinnerChangeHint: "Klikit amañ evit kemmañ ho tibab.",
+    finalWinnerChoose: "Dibab",
+    finalWinnerMissingDescription:
+      "N'ho peus ket saiet ar bonus bras c'hoazh. Dibabit ho kampion bremañ.",
+    finalWinnerMissingTitle: "Mankout a ra ho trec'hour dibenn",
+    finalWinnerOddPrefix: "Feur liammet :",
+    finalWinnerOfficialDescriptionSuffix:
+      "en deus gounezet ha kadarnaet eo ho bonus trec'hour dibenn.",
+    finalWinnerOfficialTitle: "Gounezet en deus ho trec'hour",
+    finalWinnerRecordedChoice: "gordetako hautaketa",
+    finalWinnerSelectedPrefix: "Ho trec'hour :",
+    finalWinnerWinnerBonus: "bonus an trec'hour dibenn",
+    groupDetailsName: "Anv",
+    launchText:
+      "Ar raggweloù a vo prest dizale ! Betek neuze, e c'hallit krouiñ ho strollad ha kenvitañ ho mignoned !",
+    launchTitle: "Dizale er c'hoari",
+    myPointsDetail: "Xehetasunoù va foentoù",
+    moreInfoPrefix: "Evit gwelet muioc'h a ditouroù,",
+    moreInfoLink: "krouit pe it e-barzh ur meuriad",
+    moreInfoSuffix: ".",
+    playoffWinner: "Trec'hour (astenn / tennoù-pal)",
+    playoffWinnerInDraw: "Ho trec'hour ma 'z eus rampo",
+    scoreFinal: "Disoc'h dibenn",
+    scoringHelp: "Penaos e vez jedet ar poentoù ?",
+    tabFinished: "Echuet",
+    tabLive: "War-eeun",
+    tabUpcoming: "Da zont",
+    unavailableText: "Ar raggweloù a vo prest dizale !",
+    unavailableTitle: "Dizale er c'hoari",
+  },
+  matchPhases: {
+    group: "Strollad",
+    round_of_16: "Eizhvedennoù gourfenn",
+    round_of_8: "Karterioù gourfenn",
+    quarter_final: "Karterioù gourfenn",
+    semi_final: "Hanter-gourfenn",
+    third_place: "Trede plas",
+    final: "Gourfenn",
+  },
+  nav: {
+    admin: "Melestradurezh",
+    analytics: "Poentoù jedet",
+    faq: "FAQ",
+    groups: "Meuriadoù",
+    home: "Hasiera",
+    leetchi: "Skoazellañ an aozerien",
+    legal: "Pribatidigezh",
+    matches: "Raggweloù",
+    ranking: "Renk",
+    rules: "Reolennoù",
+  },
+  notFound: {
+    action: "Distreiñ d'ar gêr",
+    description: "Ar bajenn-mañ n'eus ket anezhi pe diloc'het eo bet.",
+    title: "Pajenn n'eo ket bet kavet",
+  },
+  onboarding: {
+    finish: "Echuiñ",
+    joinGroup: "🏕️ Mont e-barzh ur meuriad",
+    next: "Hurrengoa",
+    previous: "Aurrekoa",
+    startBetting: "⚽ Kregiñ da ragwelañ",
+    steps: [
+      {
+        title: "Ragwelañ pep krogad",
+        subtitle: "“Selaouit mat, keneil !”",
+        body: "A-raok pep lañs, skrivit ho raggwel : ar skore resis evit an daou skipailh. Enrollet e vez ho tisoc'h ent-automatikel. Gallout a rit kemmañ anezhañ kement ha ma fell deoc'h betek ma kregfe ar c'hrogad.",
+        tipLabel: "Ali Sam",
+        tip: "N'ho peus ket amzer da ragwelañ pep tra ? Ar spered artifisiel a c'hall ober evidoc'h : klaskit ar bouton mouk e laez pajenn ar krogadoù.",
+      },
+      {
+        title: "Merkañ ha biderkañ ho poentoù",
+        subtitle: "“Bezit speredek, adiskide !”",
+        body: "Skore peurvat, trec'hour reizh, rampo reizh, marjenn tost : gallout a rit merkañ betek 20 poent diazez. Goude-se, ur feur enep-engroez a biderko ho poentoù : muioc'h e vo souezhus ho raggwel, muioc'h e pigno ar gounid gallus.",
+        tipLabel: "Ali Ivan",
+        tip: "Sellit ouzh ar varrenn-lusk dindan pep krogad : tiskouez a ra da belec'h ez a ar c'hoarierien all hag ar feur a ya ganti.",
+      },
+      {
+        title: "Mont en ho meuriad, berañ ho mignoned",
+        subtitle: "“Gwelet e vo piv a vo mestr war an daolenn !”",
+        body: "Krouit ur meuriad pe it e-barzh unan gant ur c'hod. Heuliañ a reot renk ho strollad war-eeun, krogad goude krogad. Ra gounezo ar gwellañ c'hoarier.",
+        tipLabel: "Ali Pierre",
+        tip: "It d'an ivinell Meuriadoù evit krouiñ hoc'h hini pe mont e-barzh unan gant ur c'hod rannet gant ho rener meuriad.",
+      },
+    ],
+  },
+  prompts: {
+    addToHomeScreen: "Gehitu d'ar skramm degemer",
+    closeLater: "Geroago",
+    installIos: "Pouezit war Partekatu, ha goude-se “Gehitu d'ar Skramm Degemer”",
+    installText: "Evit mont buanoc'h, memes hep kenfeur internet !",
+    installTitle: "Staliañ an arload",
+    notificationButton: "Ya, enrollañ va raggwel",
+    notificationDismiss: "Ulertuta",
+    notificationIosText:
+      "War iPhone : da gentañ ghezit an arload d'ho skramm degemer, ha goude-se gwitit an abisuioù diwar ho profil.",
+    notificationTitle: "Pierre a savete ac'hanoc'h diouzh ar raggweloù ankouezaet",
+    notificationText:
+      "Un abis 5 munutenn a-raok al lañs ma 'z eo goullo ho raggwel. Spam ebet.",
+    updateButton: "Adkargañ bremañ",
+    updateLoading: "Oc'h adkargañ...",
+    updateText:
+      "Ur bertsio nevez a zo prest. Adkargit an arload evit kenderc'hel da ragwelañ.",
+    updateTitle: "Eguneratzea ret",
+  },
+  profile: {
+    activateAlerts: "Gwitit an abisuioù krogad",
+    alertsEnabled: "Abisuioù krogad gwitit",
+    avatarChange: "Kemmañ argazkia ar profil",
+    avatarUploading: "O tihanadiñ hag o tanaat an argazkia…",
+    disableAlerts: "Desgwitañ an abisuioù",
+    enableAgainText:
+      "Abisuioù an arload hoc'h eus lamet. Gallout a rit adgwitañ anezho amañ.",
+    enableText: "N'ho peus ket aotreet an abisuioù war ar gailh-mañ c'hoazh.",
+    fileFormatError: "Furmad fitxategi n'eo ket onartua",
+    imageTooHeavy: "Argazkia re bonner (15 MB d'ar muiañ)",
+    loading: "O kargañ…",
+    localhostNotice:
+      "N'eus ket tu kaout abisuioù push war localhost. Labourat a reont war al lec'hienn wirion goude al lañs.",
+    nameUpdateError: "Fazi en ur hizivaat an anv",
+    nameUpdated: "Anv hizivaet",
+    newPassword: "Tremeneir nevez",
+    notificationsDenied:
+      "Ukaset eo bet an abisuioù gant ar merour merdeiñ. Digorit ezarpennoù al lec'hienn evit aotren an abisuioù, ha distroit amañ.",
+    notificationsDisabledToast: "Abisuioù lamet evit al lec'hienn-mañ",
+    notificationsEnableError: "N'haller ket gwitañ an abisuioù",
+    notificationsSavedToast: "Lehentasunak enrollet",
+    notificationsText:
+      "An abisuioù a vir ouzhoc'h ankouez al lañs pa 'z eo goullo ho raggwel c'hoazh (~5 min a-raok ar c'hrogad).",
+    notificationsTitle: "Abisuioù",
+    notificationsUnsupported:
+      "N'eus ket tu kaout abisuioù war ar merour pe ar gailh-mañ. War iPhone, staliit an arload war ar skramm degemer, ha saiat en-dro.",
+    photoUpdateError: "Fazi en ur hizivaat an argazkia",
+    photoUpdated: "Argazkia hizivaet",
+    pushError:
+      "Servij an abisuioù n'en deus ket respontet e koulz pe ur fazi a zo bet. Gwiriañ ho kenfeur pe saiat une barru.",
+    reactivateAlerts: "Adgwitañ abisuioù ar c'hrogadoù",
+    rename: "Adenvel",
+    signOut: "Digofeañ",
+    updatePassword: "Hizivaat",
+    updatePasswordDescription:
+      "Gehitu pe kemmañ an tremeneir implijet gant ho postel.",
+    updatePasswordSubmitting: "Oc'h hizivaat…",
+    passwordUpdated: "Tremeneir hizivaet",
+    passwordTitle: "Tremeneir",
+    passwordMinError: "Da nebeutañ 8 arouezenn a rank bezañ en tremeneir.",
+    passwordMismatchError: "An daou dremeneir n'int ket memes tra.",
+    passwordUpdateFallback: "Teuz em bez o hizivaat an tremeneir.",
+    confirmPassword: "Berretsi an tremeneir",
+  },
+  ranking: {
+    createOrJoinGroup: "krouiñ pe mont e-barzh ur meuriad",
+    general: "Hollek",
+    introPrefix: "Evit gwelet ar renk, e rankit da gentañ",
+    introSuffix: ".",
+    noFinalWinner: "Trec'hour ebet dibabet",
+    officialWinnerPrefix: "Trec'hour ofisiel :",
+    eliminatedPrefix: "Kanporatua :",
+    secretWinner: "Trec'hour kuzh c'hoazh",
+    mysteryWinner: "Trec'hour kevrinus",
+    ownRankSuffix: "diwar",
+    ownRankFirstSuffix: "añ",
+    ownRankOtherSuffix: "vet",
+    playerPlural: "c'hoarier",
+  },
+  rules: {
+    additionalTitle: "Reolennoù ouzhpenn",
+    algorithmLink: "Reolennoù resis hag algoritm →",
+    distributionNote:
+      "Ebarzhet eo an dasparzh-mañ war-eeun e feurioù ar c'hrogadoù. Istimañ a rit ar poentoù m'emañ tu kaout en ur sellout ouzh ar feur.",
+    distributionTable: {
+      header: ["Prantad", "Krogadoù", "Biderk.", "% hollek"],
+      rows: [
+        ["Strolladoù", "48", "×0.75", "35%"],
+        ["Final-32ak", "16", "×1", "12%"],
+        ["Final-16ak", "8", "×1.5", "12%"],
+        ["Karterioù", "4", "×3", "9%"],
+        ["Hanter-gourfenn", "2", "×6", "7%"],
+        ["Trede plas", "1", "×8", "5%"],
+        ["Gourfenn", "1", "×12", "7%"],
+        ["Trec'hour", "—", "—", "10%"],
+      ],
+    },
+    distributionText:
+      "Dasparzhet eo ar poentoù en ur mod kempouezet evit ma vefe tu distreiñ (comebacks) betek ar fin !",
+    distributionTitle: "Dasparzh ar poentoù",
+    feesText:
+      "Koumanantiñ a zo digoust ha herrek. Koulskoude, lakaet e vez ar meuriadoù da sevel ur vouist-votiñ evit garedoniñ ar gounidegien ha lakaat un tamm goust.",
+    feesTitle: "Sarrera-sariak",
+    finalWinnerDefault:
+      "Pep c'hoarier a raggwel an trec'hour dibenn a-raok ma kregfe ar genstrivadeg. Ma 'z eo reizh ar raggwel, e vez gehitget ar feur liammet da hollad ar poentoù.",
+    finalWinnerPrefix: "Pep c'hoarier a raggwel kampion",
+    finalWinnerSuffix:
+      "a-raok ma kregfe ar genstrivadeg. Ma 'z eo reizh ar raggwel, e vez gehitget ar feur liammet da hollad ar poentoù.",
+    finalWinnerTitle: "Trec'hour dibenn",
+    groupExampleTitle: "Skouerioù : Bro-C'hall 3-0 Mec'hiko",
+    groupExamplesTable: {
+      header: [
+        "Dibab",
+        "Disoc'h",
+        "Trec'hour",
+        "Tostded",
+        "Aldea",
+        "Bonus",
+        "Guztira",
+      ],
+      rows: [
+        ["3-0", "2", "8", "3", "3", "4", "20"],
+        ["4-0", "2", "8", "2 (diforc'h 1)", "0 (marjenn 4≠3)", "0", "12"],
+        ["4-1", "2", "8", "1 (diforc'h 2)", "3 (marjenn 3=3)", "0", "14"],
+        ["2-1", "2", "8", "1 (diforc'h 2)", "0 (marjenn 1≠3)", "0", "11"],
+        ["0-2", "0 (disoc'h fall)", "—", "—", "—", "—", "0"],
+      ],
+    },
+    groupIntro:
+      "Evit pep krogad, e c'hallit merkañ betek 20 poent dasparzhet war 5 dezverk dizalc'h. Ma 'z eo fall an disoc'h (1/X/2), e verkit 0 poent.",
+    groupTable: {
+      header: ["Dezverk", "Deskribapena", "Poentoù"],
+      rows: [
+        ["Disoc'h reizh", "Trec'h / rampo / coll reizh", "2"],
+        ["Trec'hour reizh", "Skipailh trec'hour reizh (berdinketak kanpo)", "8"],
+        ["Tostded skore", "3 − diforc'h palioù hollek (min 0)", "0–3"],
+        ["Diforc'h palioù", "Marjenn trec'hour pe rampo reizh", "3"],
+        ["Bonus skore resis", "%100 skore resis", "4"],
+      ],
+    },
+    groupTitle: "Reolennoù e prantad ar strolladoù",
+    playoffDrawText:
+      "Er c'hrogadoù dilesel, ar berdinketadoù goude 90 munutenn a zo gallus (astenn / penaltiak). Raggwelañ ur c'hrogad rampo a ro deoc'h Disoc'h reizh + Tostded + Aldea + Bonus poentoù ma 'z eo resis, met ket Bonus an Trec'hour.",
+    playoffExampleTitle: "Skouerioù : Brazil 2-1 Alamagn",
+    playoffExamplesTable: {
+      header: [
+        "Dibab",
+        "Disoc'h",
+        "Trec'hour",
+        "Tostded",
+        "Aldea",
+        "Bonus",
+        "Guztira",
+      ],
+      rows: [
+        ["2-1", "2", "8", "3", "3", "4", "20"],
+        ["3-1", "2", "8", "2 (diforc'h 1)", "0 (marjenn 2≠1)", "0", "12"],
+        ["3-2", "2", "8", "1 (diforc'h 2)", "3 (marjenn 1=1)", "0", "14"],
+        ["3-0", "2", "8", "1 (diforc'h 2)", "0 (marjenn 3≠1)", "0", "11"],
+        ["1-1", "0 (disoc'h fall)", "—", "—", "—", "—", "0"],
+      ],
+    },
+    playoffIntro:
+      "Heñvel eo al logika ouzh hini prantad ar strolladoù : betek 20 poent dre grogad gant ar memes 5 dezverk. Raggwelañ a rit ar skore e fin an amzer reoliek (90 munutenn).",
+    playoffTitle: "Reolennoù e prantad an dilesel",
+    qualificationText:
+      "N'eus dilesel ebet : pep c'hoarier a raggwel pep krogad. Pep c'hoarier a vir e boentoù e-kerzh ar genstrivadeg a-bezh.",
+    qualificationTitle: "Mod sailkapen",
+    subscriptionTitle: "Sarrera-sariak ha mod sailkapen",
+    subtitle: "Sam, Ivan ha Pierre a zispleg penaos ragwelañ",
+    title: "Reolennoù ar c'hoari",
+    validationDeadlineIntro:
+      "Ar raggweloù evit pep krogad a rank bezañ skruvet war al lec'hienn a-raok al lañs.",
+    validationLateText:
+      "war ur c'hrogad pe war an trec'hour dibenn, e merko ar c'hoarier 0 poent met n'eo ket dileset ha gallout a raio c'hoazh kemer perzh er krogadoù all.",
+    validationLateTitle: "Ma 'z oc'h berand pe ma n'eus respont ebet",
+    validationTitle: "Deiziad baliozañ ar raggweloù",
+    validationWinnerDeadline:
+      "Raggweloù an trec'hour dibenn a rank bezañ graet a-raok krogad kentañ ar genstrivadeg, d'ar Sadorn 14 a viz Mezheven 2025 da 21:00.",
+  },
+  scoring: {
+    adminHintPrefix: "Diskouez pe ezkutat a c'hallit ur c'hrogad diwar",
+    adminHintSuffix: ", evit pep norgehiagoka.",
+    algorithmLink: "reolennoù resis hag algoritm",
+    algorithmIntro: "Xehetasunoù ar poentoù hag ar formulenn ofisiel",
+    adminLabel: "Melestradurezh.",
+    basePoints: "Poentoù diazez",
+    baseTotal: "Diazez hollek",
+    calculation: "Azken kalkulua",
+    finalScore: "Disoc'h dibenn",
+    finalWinner: "Trec'hour dibenn",
+    goodWinner: "Trec'hour gwirion",
+    goalDifference: "Diforc'h palioù",
+    intro: "“Ivan a zispleg : bezit resis, met bezit speredek ivez !”",
+    noBet: "Raggwel ebet evit ar c'hrogad-mañ.",
+    pendingScore: "Disoc'h ar c'hrogad n'eo ket bet embannet c'hoazh.",
+    phaseMultiplier: "Biderker ar prantad",
+    prediction: "Raggwel",
+    precisionText:
+      "War pep krogad, e c'hallit merkañ tro-dro da ugent poent diazez ma 'z eo tost ho raggwel d'ar wirionez : trec'hour pe rampo reizh, skore tost, ha bonus bihan pa 'z oc'h tost-tre pe resis-tre.",
+    precisionTitle: "Resisded.",
+    resultCorrect: "Disoc'h reizh (1 / X / 2)",
+    scoreExactBonus: "Bonus skore resis",
+    scoreProximity: "Tostded skore",
+    title: "Penaos e vez jedet ar poentoù ?",
+    tooltip: "Biderker ar prantad :",
+    multiplierText:
+      "Goude-se, kresket e vez ar poentoù-mañ gant ur feur enep-engroez : ma 'z eo ho tisoc'h davedek-tre e-touez ar c'hoarierien, e chom sioul ar feur ; ma 'z oc'h en tu orinel, e c'hall pignat uhel, tra ma chom kempouezet.",
+    multiplierTitle: "Ar biderker dinamikel.",
+    winningOdds: "Feur gounid (ospea)",
+    winnerIfDraw: "trec'hour ma 'z eus rampo",
+  },
+  user: {
+    back: "War-gil",
+    detailPrefix: "Xehetasunoù ar poentoù evit",
+    detailSuffix: "ar c'hoarier-mañ",
+    finalWinnerCorrectPrefix: "Gounezet en deus ar c'hoarier-mañ",
+    finalWinnerCorrectSuffix: "poent",
+    finalWinnerEliminated: "Dileset eo e drec'hour dibenn : 0 poent",
+    finalWinnerEliminatedSuffix: "a zo dileset.",
+    finalWinnerHidden:
+      "E zibab a chom kuzh keit ha ma 'z eo m'emañ ar skipailh-mañ bizirik.",
+    finalWinnerLost: "N'en deus ket gounezet e drec'hour dibenn : 0 poent",
+    finalWinnerNoBonus: "Bonus ebet a c'hall bezañ gehitget d'ar renk.",
+    finalWinnerNone: "Trec'hour dibenn ebet dibabet.",
+    finalWinnerPotential:
+      "Ar c'hoarier-mañ a c'hall c'hoazh gounid poentoù gant an trec'hour dibenn",
+    finalWinnerStillAliveSuffix: "a zo bizirik c'hoazh.",
+    finalWinnerWonSuffix: "en deus gounezet ar genstrivadeg.",
+    matchMissing: "Krogad n'eo ket bet kavet pe n'eo ket echuet c'hoazh.",
+    noFinishedMatch: "Krogad echuet ebet c'hoazh.",
+    predictionSoon: "Ar raggweloù a vo prest dizale !",
+  },
+  toasts: {
+    betSaved: "Raggwel enrollet",
+    betSaveError: "Fazi en ur enrollañ ar raggwel",
+    batchBetsSaveError: "Fazi en ur enrollañ ar raggweloù",
+    finalWinnerSaved: "Skipailh hizivaet",
+    finalWinnerSaveError: "Ezin izan da eguneratu :(",
+    groupAlreadyMemberPrefix: "Dagoeneko meuriad honetako kide zara :",
+    groupCreateError: "Fazi en ur krouiñ ar strollad",
+    groupCreatedCodeConnector: "gant ar c'hod-mañ :",
+    groupCreatedPrefix: "Strollad",
+    groupCreatedSuffix: "krouet",
+    groupJoinError: "Fazi en ur emgofeañ",
+    groupJoinSuccessPrefix: "Meuriad e-barzh :",
+    groupNotFoundPrefix: "Ez dago meuriad gant ar c'hod-mañ :",
+    groupNotFoundSuffix: "",
+    groupPlayerValidated: "C'hoarier asantet",
+    groupRenameError: "Fazi en ur kemmañ anv ar meuriad",
+    groupRenamed: "Anv ar meuriad kemmet",
+  },
+}
+
 export const translations: Record<LanguageCode, TranslationDictionary> = {
   fr: frTranslations,
   en: enTranslations,
   mk: mkTranslations,
   eu: euTranslations,
+  br: brTranslations,
 }
