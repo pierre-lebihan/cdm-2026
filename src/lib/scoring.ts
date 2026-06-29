@@ -88,7 +88,7 @@ export function computeScoringBreakdown(
 
   let proximite = 0
   let ecart = 0
-  if (betResult === realResult || gagnant > 0) {
+  if (betResult === realResult) {
     const totalDiff = Math.abs(scoreA - betTeamA) + Math.abs(scoreB - betTeamB)
     proximite = Math.max(3 - totalDiff, 0)
     ecart = Math.max(3 - Math.abs(realMargin - betMargin), 0)

@@ -629,7 +629,7 @@ const frTranslations: TranslationDictionary = {
       },
     ],
     precisionText:
-      'Le Résultat et le Bonus score exact nécessitent le bon résultat à 90 min (V / N / D). La Proximité et l’Écart de buts sont attribués si le résultat à 90 min est correct ou si le bon gagnant est prédit en phase finale. Le Gagnant est toujours indépendant du résultat à 90 min en phase finale.',
+      'Le Résultat, la Proximité, l’Écart de buts et le Bonus score exact nécessitent le bon résultat à 90 min (V / N / D). Le Gagnant reste indépendant du résultat à 90 min en phase finale.',
     precisionTitle: '1. Points de précision (par match)',
     title: 'Règlement détaillé et algorithme',
   },
