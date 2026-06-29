@@ -14,6 +14,7 @@ const ogLocalesByLanguage: Record<LanguageCode, string> = {
   fr: 'fr_FR',
   en: 'en_US',
   mk: 'mk_MK',
+  eu: 'eu-ES',
 }
 
 type StaticRouteSeo = {
