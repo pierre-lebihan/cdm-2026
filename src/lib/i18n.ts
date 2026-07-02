@@ -896,7 +896,7 @@ const frTranslations: TranslationDictionary = {
     faq: 'FAQ',
     groups: 'Tribus',
     home: 'Accueil',
-    leetchi: 'Soutenez les organisateurs',
+    leetchi: 'Offrir une biere aux organisateurs',
     legal: 'Confidentialité',
     matches: 'Pronostics',
     ranking: 'Classement',
